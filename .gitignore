@@ -22,6 +22,7 @@ config.json
 *.swp
 *.swo
 .DS_Store
+.cursorrules
 
 # Build artifacts
 dist/
