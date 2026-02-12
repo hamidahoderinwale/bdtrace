@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.pyc
+
+# Data and logs
+companion/data/
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Environment
+.env
+.env.local
+config.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Build artifacts
+dist/
+build/
+*.o
+*.so
+*.dylib
+target/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Research outputs
+research/results/
+research/cache/
+research/data/*.json
+research/data/*.pkl
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS
+Thumbs.db
+
