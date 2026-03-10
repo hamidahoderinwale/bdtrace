@@ -1,34 +1,37 @@
 # Representations for Learning from Developer-Agent Workflows
 
-Multi-level representation extractors for transforming raw developer workflow traces into privacy-preserving abstractions.
+Multi-level representation extractors for transforming raw developer workflow traces into privacy-preserving abstractions. Supports SWE-bench, agent trajectories (intermediate states), and Cursor exports.
 
 ---
 
 ## Quick Start
 
-### SWE-bench / SWE-bench Lite
+### Baseline Extraction (SWE-bench Lite)
 
 ```bash
-# Fetch from Hugging Face, convert to traces, run representations
-python scripts/run_swe_bench.py --dataset lite --split dev --limit 10 --output traces.jsonl
+# Extract: patch → trace → edits/modules/motifs certificates
+python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --output-dir output
 
-# Single rung (e.g. tokens only)
+# Push to midah/procedural-info-theory (uses HF_TOKEN or huggingface_hub login)
+python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --push
+```
+
+### SWE-bench / SWE-bench Lite (Legacy Script)
+
+```bash
+python scripts/run_swe_bench.py --dataset lite --split dev --limit 10 --output traces.jsonl
 python scripts/run_swe_bench.py --dataset lite --split test --rung tokens --output tokens.jsonl
 ```
 
-### Custom traces
+### Custom Traces
 
 ```bash
-# 1. Extract raw data from Cursor databases (optional)
 ./scripts/extract_cursor_data.sh ./cursor_exports
-
-# 2. Parse to traces
 python scripts/parse_to_traces.py --input ./cursor_exports --output traces.jsonl
 
-# 3. Transform traces
 python -c "
 from representations import motifs_repr, tokens_repr, semantic_edits_repr
-trace = {'events': [...]}  # Your trace data
+trace = {'events': [...]}
 motifs = motifs_repr(trace)
 tokens = tokens_repr(trace)
 edits = semantic_edits_repr(trace)
@@ -50,27 +53,9 @@ Each level trades privacy for expressiveness:
 | **Modules** | 100× | Import + co-edit dependencies across files | Team collaboration |
 | **Motifs** | 240× | Abstract workflow patterns | Public sharing |
 
-### Example Outputs
+### Inferred Representations (DSPy)
 
-```json
-// Raw
-{"events": [{"type": "code_change", "file": "utils.ts", "diff": "+15, -8", "before": "...", "after": "..."}]}
-
-// Tokens
-["FUNCTION_DECL", "ASYNC", "PARAM:input", "RETURN_TYPE:Promise", "AWAIT", "CALL:process"]
-
-// Edits
-["EDIT(modify)→OP:async_wrapper", "EDIT(delete)→OP:remove_function"]
-
-// Functions
-["MODIFY processData params:(string)→(string,Config) return:void→Promise<string>"]
-
-// Modules
-["utils.ts→api.ts (imports, co-edited 5×)", "api.ts→config.ts (depends_on)"]
-
-// Motifs
-["PROMPT→EXPLORE→REFACTOR→ABSTRACT→TEST→COMMIT", "intent:'refactoring', freq:23"]
-```
+Behavioral, mechanistic, and functional annotations are LLM-derived and require grounding (edits certificate, module graph). Not included in the extraction pipeline by default.
 
 ---
 
@@ -78,22 +63,37 @@ Each level trades privacy for expressiveness:
 
 ```
 representations/           # Transformation (Python)
-├── encoders/
-│   ├── raw.py, tokens.py, edits.py, functions.py, motifs.py
-│   └── modules/           # Module graph (import + co-edit)
-│       ├── import_extractor.py
-│       └── graph.py
-└── core/                 # Intent extraction
+├── computed/             # edits, modules, motifs (structure from code/traces)
+├── inferred/             # behavioral, mechanistic, functional (LLM-derived)
+├── encoders/             # raw, tokens, functions
+└── core/                 # intent, utils
 
 data/
-└── swe_bench.py          # SWE-bench / SWE-bench Lite (HF fetch, patch parsing)
+├── swe_bench.py          # SWE-bench / SWE-bench Lite
+└── agent_trajectories.py # Agent trajectories (intermediate states)
+
+configs/
+└── datasets.py           # Dataset configs for extraction pipeline
+
+pipeline/
+└── utils.py              # Extraction, serialization, HF token
 
 scripts/
-├── run_swe_bench.py        # SWE-bench pipeline: fetch → trace → representations
-├── extract_cursor_data.sh  # Extract from Cursor SQLite DBs
-├── parse_to_traces.py      # Parse raw exports to trace format
-└── convert_format.py       # Convert traces (JSONL ↔ Parquet)
+├── run_extraction_pipeline.py  # Main pipeline: datasets → parquet + HF export
+├── run_swe_bench.py            # Legacy SWE-bench pipeline
+├── run_agent_trajectories.py  # Agent trajectories only
+├── extract_cursor_data.sh
+├── parse_to_traces.py
+└── convert_format.py
 ```
+
+---
+
+## Procedural-Info-Theory Dataset
+
+Outputs are published to [midah/procedural-info-theory](https://huggingface.co/datasets/midah/procedural-info-theory) on Hugging Face.
+
+**Baseline scope:** SWE-bench Lite only. Three computed representations: edits (structural certificate), modules (co-edit subgraph), motifs (event subsequences + soft membership). No inferred representations; enrich later.
 
 ---
 
@@ -102,71 +102,40 @@ scripts/
 ```python
 from representations import (
     raw_repr, tokens_repr, semantic_edits_repr,
-    functions_repr, module_graph_repr, file_edit_graph_repr, motifs_repr
+    functions_repr, file_edit_graph_repr, motifs_repr
 )
 
-# Trace-based (no repo on disk)
 trace = {"events": [...]}
 raw = raw_repr(trace)
 tokens = tokens_repr(trace)
 edits = semantic_edits_repr(trace)
 functions = functions_repr(trace)
-modules = file_edit_graph_repr(trace)  # co-edit from events
+modules = file_edit_graph_repr(trace)
 motifs = motifs_repr(trace)
-
-# Repo-based (full import + co-edit graph)
-graph = module_graph_repr(
-    repo_path="/path/to/repo",
-    commit="abc123",
-    touched_files=["src/foo.py", "src/bar.py"],  # optional, restricts subgraph
-)
-# graph["nodes"], graph["import_edges"], graph["coedit_edges"], graph["graph"]
 ```
 
 ---
 
-## SWE-bench
+## Agent Trajectories
 
-Load [SWE-bench](https://huggingface.co/datasets/princeton-nlp/SWE-bench) or [SWE-bench Lite](https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite) from Hugging Face. Patches are parsed into unified diff format; each instance becomes a trace with `problem_statement` as prompt and `patch`/`test_patch` as code_change events.
+SWE-bench records only base_commit → fix_commit; the golden patch spans that gap with no checkpoints. Agent trajectories provide intermediate states (reasoning, commands, observations).
 
 ```python
-from data.swe_bench import load_swe_bench_lite, swe_bench_instance_to_trace
-from representations import tokens_repr, semantic_edits_repr
+from data.agent_trajectories import load_agent_trajectories, agent_trajectory_to_trace
 
-for trace in load_swe_bench_lite(split="dev", limit=10):
+for trace in load_agent_trajectories(dataset_id="nebius/SWE-agent-trajectories", split="train", limit=10):
+    # trace has events: prompt, model_reasoning, terminal_command, observation
     tokens = tokens_repr(trace)
-    edits = semantic_edits_repr(trace)
-    # ...
-```
-
-## Data Extraction (Cursor)
-
-Extract data directly from Cursor databases:
-
-```bash
-# Extract raw data
-./scripts/extract_cursor_data.sh ./cursor_exports
-
-# Parse to traces
-python scripts/parse_to_traces.py --input ./cursor_exports --output traces.jsonl
-
-# Convert formats
-python scripts/convert_format.py --input traces.jsonl --output traces.parquet
 ```
 
 ---
 
 ## Graduated Disclosure
+
 - **Public**: Motifs (~240× compression)
 - **Team**: Module graphs (~100×)
 - **Research**: Tokens (~10×)
 - **Internal**: Raw events
-
----
-
-## Key Algorithms
-
-**Motif Mining**: PrefixSpan (frequent subsequences) + Sequitur (grammar compression)
 
 ---
 
