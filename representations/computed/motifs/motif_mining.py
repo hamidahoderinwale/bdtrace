@@ -291,7 +291,7 @@ def transition_motifs(seq: list[str], max_count: int = 100) -> list[str]:
         return []
 
     motifs = []
-    for a, b in zip(seq, seq[1:], strict=True):
+    for a, b in zip(seq, seq[1:], strict=False):  # seq[1:] is shorter; strict=True would fail
         motifs.append(f"T_{a}_{b}")
 
     return motifs[:max_count]
