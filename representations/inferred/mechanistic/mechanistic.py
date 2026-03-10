@@ -50,11 +50,13 @@ class MechanisticModule(dspy.Module):
             structural_certificate=cert_str,
         )
         mechanism = getattr(out, "mechanism", "") or ""
+        grounded = getattr(out, "grounded", "") or ""
         return {
             "steps": mechanism.split("\n") if mechanism else [],
             "mechanism": mechanism,
             "pattern": getattr(out, "pattern", "") or "",
             "locations": getattr(out, "locations", "") or "",
+            "grounded": grounded,
             "grounded_in": cert,
             "embedding": embed_text(mechanism, embed_model),
             "provenance": provenance(cert, run_id=run_id),

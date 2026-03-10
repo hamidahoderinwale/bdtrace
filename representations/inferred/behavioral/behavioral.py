@@ -51,11 +51,13 @@ class BehavioralModule(dspy.Module):
             structural_certificate=cert_str,
         )
         claim = getattr(out, "claim", "") or ""
+        grounded = getattr(out, "grounded", "") or ""
         return {
             "claim": claim,
             "before": getattr(out, "before_behavior", "") or "",
             "after": getattr(out, "after_behavior", "") or "",
             "testable": getattr(out, "testable", "") or "",
+            "grounded": grounded,
             "grounded_in": cert,
             "embedding": embed_text(claim, embed_model),
             "provenance": provenance(cert, run_id=run_id),
