@@ -50,10 +50,12 @@ class FunctionalModule(dspy.Module):
             module_context=ctx_str,
         )
         role = getattr(out, "role", "") or ""
+        grounded = getattr(out, "grounded", "") or ""
         return {
             "role": role,
             "role_change": getattr(out, "role_change", "") or "",
             "system_impact": getattr(out, "impact", "") or "",
+            "grounded": grounded,
             "grounded_in": ctx,
             "embedding": embed_text(role, embed_model),
             "provenance": provenance(ctx, run_id=run_id),
