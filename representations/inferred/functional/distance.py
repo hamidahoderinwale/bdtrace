@@ -9,6 +9,9 @@ from typing import Any
 
 from ..utils import cosine_distance
 
+# Fixed equal weights. Override via weights= to perturb or run regressions.
+DEFAULT_WEIGHTS = {"role": 0.5, "impact": 0.5}
+
 
 def _embedding(ann: dict[str, Any], field: str) -> list[float]:
     """Get embedding for role or impact. embedding is for role by default."""
@@ -83,7 +86,7 @@ def aggregate_distance(
     """Weighted average of role_distance and impact_distance."""
     role_d = role_distance(ann_a, ann_b)
     impact_d = impact_distance(ann_a, ann_b)
-    w = weights or {"role": 0.5, "impact": 0.5}
+    w = weights or DEFAULT_WEIGHTS
     total = w.get("role", 0) + w.get("impact", 0)
     if total == 0:
         return 0.0

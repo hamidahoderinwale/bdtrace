@@ -9,6 +9,9 @@ from typing import Any
 
 from ..utils import cosine_distance
 
+# Fixed equal weights. Override via weights= to perturb or run regressions.
+DEFAULT_WEIGHTS = {"pattern": 0.5, "mechanism": 0.5}
+
 
 def _embedding(ann: dict[str, Any], field: str) -> list[float]:
     """Get embedding for mechanism or pattern. embedding is for mechanism by default."""
@@ -72,7 +75,7 @@ def aggregate_distance(
     """
     pattern_d = pattern_distance(ann_a, ann_b)
     mechanism_d = mechanism_distance(ann_a, ann_b)
-    w = weights or {"pattern": 0.5, "mechanism": 0.5}
+    w = weights or DEFAULT_WEIGHTS
     total = w.get("pattern", 0) + w.get("mechanism", 0)
     if total == 0:
         return 0.0
