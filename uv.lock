@@ -221,6 +221,10 @@ analysis = [
     { name = "python-levenshtein" },
     { name = "zss" },
 ]
+parquet = [
+    { name = "pandas" },
+    { name = "pyarrow" },
+]
 parsers = [
     { name = "esprima" },
     { name = "javalang" },
@@ -240,12 +244,14 @@ requires-dist = [
     { name = "javalang", marker = "extra == 'parsers'", specifier = ">=0.13" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "numpy", specifier = ">=1.24" },
+    { name = "pandas", marker = "extra == 'parquet'", specifier = ">=2.0" },
+    { name = "pyarrow", marker = "extra == 'parquet'", specifier = ">=14.0" },
     { name = "pydriller", specifier = ">=2.0" },
     { name = "python-levenshtein", marker = "extra == 'analysis'", specifier = ">=0.20" },
     { name = "sentence-transformers", specifier = ">=2.2" },
     { name = "zss", marker = "extra == 'analysis'", specifier = ">=1.2" },
 ]
-provides-extras = ["analysis", "parsers"]
+provides-extras = ["parquet", "analysis", "parsers"]
 
 [package.metadata.requires-dev]
 dev = [

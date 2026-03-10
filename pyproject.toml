@@ -14,6 +14,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+parquet = [
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+]
 analysis = [
     "zss>=1.2",
     "python-Levenshtein>=0.20",
