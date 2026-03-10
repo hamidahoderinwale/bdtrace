@@ -9,6 +9,9 @@ from typing import Any
 
 from ..utils import cosine_distance
 
+# Fixed equal weights. Override via weights= to perturb or run regressions.
+DEFAULT_WEIGHTS = {"claim": 1.0 / 3, "before_behavior": 1.0 / 3, "after_behavior": 1.0 / 3}
+
 
 def _embedding(ann: dict[str, Any], field: str) -> list[float]:
     """Get embedding for a field. Annotation may have 'embedding' for claim or per-field."""
@@ -52,12 +55,12 @@ def aggregate_distance(
 ) -> float:
     """
     Weighted average of field distances.
-    Default equal weights. Weights tunable — claim probably most important for divergence matrix.
+    Uses DEFAULT_WEIGHTS when weights is None. Override to perturb or run regressions.
     """
     dists = field_distances(ann_a, ann_b)
     if not dists:
         return 0.0
-    w = weights or {k: 1.0 / len(dists) for k in dists}
+    w = weights or DEFAULT_WEIGHTS
     total = sum(w.get(k, 0) for k in dists)
     if total == 0:
         return 0.0
