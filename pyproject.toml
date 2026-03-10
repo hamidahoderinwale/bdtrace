@@ -1,10 +1,35 @@
+[project]
+name = "bidirect-align-dev-traces"
+version = "1.1.0"
+description = "Multi-level representation extractors for developer workflow traces"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.24",
+    "datasets>=2.14",
+    "networkx>=3.0",
+    "pydriller>=2.0",
+    "dspy-ai>=2.5",
+    "sentence-transformers>=2.2",
+]
+
+[project.optional-dependencies]
+analysis = [
+    "zss>=1.2",
+    "python-Levenshtein>=0.20",
+]
+parsers = [
+    "esprima>=1.0",
+    "javalang>=0.13",
+]
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
 # Ignore specific rules as per .cursorrules
-ignore = ["E501", "E402", "E741", "F841", "F403"]
+ignore = ["E501", "E402", "E741", "F841", "F403", "B019"]
 
 select = [
     "E",  # pycodestyle errors
@@ -23,4 +48,10 @@ indent-style = "space"
 [tool.black]
 line-length = 120
 target-version = ['py311']
+
+[dependency-groups]
+dev = [
+    "black>=26.3.0",
+    "ruff>=0.15.5",
+]
 

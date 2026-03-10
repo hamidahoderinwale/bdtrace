@@ -1,11 +1,11 @@
 # Dependencies
 node_modules/
 venv/
+.venv/
 __pycache__/
 *.pyc
 
 # Data and logs
-companion/data/
 *.db
 *.db-wal
 *.db-shm
