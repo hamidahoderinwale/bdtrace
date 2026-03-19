@@ -4,6 +4,8 @@ Modules: computed, inter-file, import graph + co-edit history.
 Input: repo snapshot + git log.
 Grounding: import graph + co-edit history. Unit: file-level dependency edge.
 Distance: distance.graph_edit_distance (networkx).
+
+See docs/MODULES_GAP.md for design vs trace-only fallback.
 """
 
 import json

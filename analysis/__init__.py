@@ -1,1 +1,1 @@
-"""Analysis: procedures and grounding checks."""
+"""Analysis: procedures, grounding checks, diversity."""
