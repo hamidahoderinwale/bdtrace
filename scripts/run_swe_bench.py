@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Run representation pipeline on SWE-bench / SWE-bench Lite.
+Run representation pipeline on SWE-bench Lite.
 
 Fetches from Hugging Face, converts to trace format, applies representations,
 and optionally exports to JSON/JSONL.
 
 Usage:
-    python scripts/run_swe_bench.py --dataset lite --split dev --limit 5 --output traces.jsonl
-    python scripts/run_swe_bench.py --dataset full --split test --rung tokens --output tokens.jsonl
+    python scripts/run_swe_bench.py --split dev --limit 5 --output traces.jsonl
+    python scripts/run_swe_bench.py --split test --rung tokens --output tokens.jsonl
 """
 
 import argparse
@@ -18,7 +18,7 @@ from pathlib import Path
 # Add project root for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from data.swe_bench import load_swe_bench, load_swe_bench_lite
+from data.swe_bench import load_swe_bench_lite
 from representations import (
     file_edit_graph_repr,
     functions_repr,
@@ -41,8 +41,7 @@ RUNG_FUNCS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run representations on SWE-bench")
-    parser.add_argument("--dataset", choices=["lite", "full"], default="lite")
+    parser = argparse.ArgumentParser(description="Run representations on SWE-bench Lite")
     parser.add_argument("--split", default="dev")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--rung", choices=list(RUNG_FUNCS), default=None, help="Single rung or all if omitted")
@@ -50,11 +49,10 @@ def main():
     parser.add_argument("--format", choices=["jsonl", "json"], default="jsonl")
     args = parser.parse_args()
 
-    loader = load_swe_bench_lite if args.dataset == "lite" else load_swe_bench
     rungs = [args.rung] if args.rung else list(RUNG_FUNCS)
 
     records = []
-    for trace in loader(split=args.split, limit=args.limit):
+    for trace in load_swe_bench_lite(split=args.split, limit=args.limit):
         rec = {
             "instance_id": trace.get("instance_id"),
             "repo": trace.get("repo"),

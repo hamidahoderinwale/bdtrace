@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Run evaluation: grounding lift and divergence from baseline.
+Run evaluation: inferred representations and divergence from baseline.
 
-Loads traces, runs inferred representations with and without grounding,
-computes grounding lift and divergence-from-baseline analyses.
+Loads traces, runs inferred representations (behavioral, mechanistic, functional)
+with structural grounding, computes divergence-from-baseline analysis.
 
-Requires DSPy LM for inference: dspy.configure(lm=dspy.LM(...))
+Requires OPENROUTER_API_KEY or OPENAI_API_KEY (configs.dspy_config).
+Optional: DSPY_MODEL, DSPY_TEMPERATURE, DSPY_MAX_TOKENS.
 
 Usage:
     python eval/run_eval.py --from-swe-bench --limit 3
-    python eval/run_eval.py --input traces.jsonl --analysis grounding-lift
+    python eval/run_eval.py --input traces.jsonl --analysis divergence
 """
 
 import argparse
@@ -18,6 +19,22 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+# Load .env from project root or .venv before DSPy config
+_env_paths = [
+    Path(__file__).resolve().parent.parent / ".venv" / ".env",
+    Path(__file__).resolve().parent.parent / ".env",
+]
+for p in _env_paths:
+    if p.exists():
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(p)
+        except ImportError:
+            pass
+        break
+
+from configs.dspy_config import configure_dspy
 
 from representations import (
     behavioral_repr,
@@ -29,7 +46,6 @@ from representations import (
 )
 
 from eval.analysis import divergence_from_baseline
-from eval.metrics import grounding_check_score, grounding_lift
 
 
 def _first_code_change(trace: dict) -> tuple[str, str, str | None]:
@@ -50,41 +66,46 @@ def _first_code_change(trace: dict) -> tuple[str, str, str | None]:
     return "", "", None
 
 
-def _run_inferred_for_trace(
-    trace: dict,
-    with_grounding: bool,
-) -> dict:
-    """Run behavioral, mechanistic, functional for one trace. with_grounding=False passes None."""
+def _run_inferred_for_trace(trace: dict) -> dict:
+    """Run behavioral, mechanistic, functional for one trace with structural grounding."""
     before, after, file_path = _first_code_change(trace)
     if not before and not after:
-        return {"behavioral": None, "mechanistic": None, "functional": None}
+        return {"behavioral": None, "mechanistic": None, "functional": None, "edits": None}
 
-    cert = None
-    module_ctx = None
-    if with_grounding:
-        cert = semantic_edits_repr(before, after, file_path)
-        module_tokens = file_edit_graph_repr(trace)
-        module_ctx = module_tokens if module_tokens else None
+    cert = semantic_edits_repr(before, after, file_path)
+    module_tokens = file_edit_graph_repr(trace)
+    module_ctx = module_tokens if module_tokens else None
 
     behavioral = behavioral_repr(before, after, structural_certificate=cert)
     mechanistic = mechanistic_repr(before, after, structural_certificate=cert)
     functional = functional_repr(before, after, module_context=module_ctx)
 
-    return {"behavioral": behavioral, "mechanistic": mechanistic, "functional": functional}
+    edits = [cert] if isinstance(cert, dict) else (cert if isinstance(cert, list) else [])
+    return {"behavioral": behavioral, "mechanistic": mechanistic, "functional": functional, "edits": edits}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run grounding lift and divergence analyses")
+    parser = argparse.ArgumentParser(description="Run inferred representations and divergence analysis")
     parser.add_argument("--from-swe-bench", action="store_true", help="Load from SWE-bench Lite")
     parser.add_argument("--input", type=Path, help="JSONL of traces (from run_swe_bench)")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument(
         "--analysis",
-        choices=["grounding-lift", "divergence", "all"],
+        choices=["divergence", "all"],
         default="all",
     )
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--save-records", type=Path, default=None, help="Save records (with behavioral/mechanistic/functional) for procedure divergence")
+    parser.add_argument("--dataset", type=str, default=None, help="Dataset name for output path (e.g. swe_bench_verified_resolved_multifile)")
     args = parser.parse_args()
+
+    # Default output paths when dataset given
+    if args.dataset:
+        eval_dir = Path("output") / "datasets" / args.dataset / "eval"
+        if args.save_records is None:
+            args.save_records = eval_dir / "records_with_behavioral.json"
+        if args.output is None:
+            args.output = eval_dir / "divergence_results.json"
 
     traces = []
     if args.from_swe_bench:
@@ -117,59 +138,31 @@ def main():
         sys.exit(1)
 
     has_events = any(t.get("events") for t in traces)
+    if has_events and not configure_dspy():
+        print("DSPy LM not configured. Set OPENROUTER_API_KEY or OPENAI_API_KEY")
+        sys.exit(1)
 
-    records_with = []
-    records_without = []
     records_full = []
 
     for trace in traces:
         if has_events:
-            with_ann = _run_inferred_for_trace(trace, with_grounding=True)
-            without_ann = _run_inferred_for_trace(trace, with_grounding=False)
+            ann = _run_inferred_for_trace(trace)
             tokens = tokens_repr(trace)
         else:
-            with_ann = {"behavioral": None, "mechanistic": None, "functional": None}
-            without_ann = with_ann
+            ann = {"behavioral": None, "mechanistic": None, "functional": None, "edits": None}
             tokens = trace.get("tokens", [])
 
         rec = {
             "instance_id": trace.get("instance_id"),
             "tokens": tokens,
-            "behavioral": with_ann["behavioral"] if has_events else trace.get("behavioral"),
-            "mechanistic": with_ann["mechanistic"] if has_events else trace.get("mechanistic"),
-            "functional": with_ann["functional"] if has_events else trace.get("functional"),
+            "behavioral": ann["behavioral"] if has_events else trace.get("behavioral"),
+            "mechanistic": ann["mechanistic"] if has_events else trace.get("mechanistic"),
+            "functional": ann["functional"] if has_events else trace.get("functional"),
+            "edits": ann.get("edits") if has_events else trace.get("edits"),
         }
         records_full.append(rec)
-        records_with.append(with_ann)
-        records_without.append(without_ann)
 
     results = {}
-
-    if args.analysis in ("grounding-lift", "all") and has_events:
-        beh_with = [r["behavioral"] for r in records_with if r.get("behavioral")]
-        beh_without = [r["behavioral"] for r in records_without if r.get("behavioral")]
-        mech_with = [r["mechanistic"] for r in records_with if r["mechanistic"]]
-        mech_without = [r["mechanistic"] for r in records_without if r["mechanistic"]]
-        func_with = [r["functional"] for r in records_with if r["functional"]]
-        func_without = [r["functional"] for r in records_without if r["functional"]]
-
-        results["grounding_lift"] = {
-            "behavioral": grounding_lift(beh_with, beh_without, "behavioral"),
-            "mechanistic": grounding_lift(mech_with, mech_without, "mechanistic"),
-            "functional": grounding_lift(func_with, func_without, "functional"),
-        }
-        results["grounding_scores_with"] = {
-            "behavioral": grounding_check_score(beh_with, "behavioral"),
-            "mechanistic": grounding_check_score(mech_with, "mechanistic"),
-            "functional": grounding_check_score(func_with, "functional"),
-        }
-        results["grounding_scores_without"] = {
-            "behavioral": grounding_check_score(beh_without, "behavioral"),
-            "mechanistic": grounding_check_score(mech_without, "mechanistic"),
-            "functional": grounding_check_score(func_without, "functional"),
-        }
-    elif args.analysis in ("grounding-lift", "all") and not has_events:
-        results["grounding_lift"] = "skipped: no events (need traces with code_change events)"
 
     if args.analysis in ("divergence", "all"):
         div = divergence_from_baseline(
@@ -189,6 +182,12 @@ def main():
         print(f"Wrote results to {args.output}")
     else:
         print(json.dumps(results, indent=2, default=str))
+
+    if args.save_records:
+        args.save_records.parent.mkdir(parents=True, exist_ok=True)
+        with open(args.save_records, "w") as f:
+            json.dump(records_full, f, indent=2, default=str)
+        print(f"Wrote {len(records_full)} records to {args.save_records}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """
-Analysis: grounding lift and divergence from baseline.
+Analysis: divergence from baseline.
 
 Uses outputs from existing scripts. No new structural components.
 """
