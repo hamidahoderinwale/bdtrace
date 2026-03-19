@@ -1,8 +1,10 @@
 """
-Motifs: computed, process over time, trace data.
+Motifs: computed, structural co-occurrence over edit operations.
 
-Input: event sequence.
-Grounding: trace data. Unit: event subsequence.
+SWE-bench (diff-based): input = edit certificates; unit = op.type from certificate.
+Sequence is flat: [op["type"] for cert in certificates for op in cert["operations"]].
+Interpretation: structural co-occurrence patterns (e.g. guard + early return), not process patterns.
+
 Distance: distance.dtw_similarity (DTW soft membership).
 """
 
@@ -16,6 +18,71 @@ from .motif_mining import (
     extract_universal_motifs,
     motifs_from_sequence,
 )
+
+
+def _operation_sequence_from_certificates(certificates: list[dict[str, Any]]) -> list[str]:
+    """Build motif sequence from edit certificates (diff-based, SWE-bench)."""
+    if not certificates:
+        return []
+    sequence = []
+    for cert in certificates:
+        if not isinstance(cert, dict):
+            continue
+        for op in cert.get("operations", []):
+            if isinstance(op, dict) and op.get("type"):
+                sequence.append(str(op["type"]))
+    return sequence
+
+
+def motifs_repr_from_certificates(
+    certificates: list[dict[str, Any]],
+    use_statistical_mining: bool = True,
+    return_structural: bool = True,
+) -> dict[str, Any]:
+    """
+    Extract motifs from edit certificates (diff-based, SWE-bench).
+    Structural co-occurrence patterns over op types within a single diff.
+    """
+    sequence = _operation_sequence_from_certificates(certificates)
+    if not sequence or len(sequence) < 2:
+        return {"sequence": sequence, "motifs": [], "soft_membership": {}}
+
+    if use_statistical_mining:
+        motifs = motifs_from_sequence(sequence, max_total=300)
+    else:
+        from .motif_mining import extract_universal_motifs
+
+        motifs = extract_universal_motifs(
+            sequence,
+            include_transitions=True,
+            include_ngrams=True,
+            include_structural=True,
+            ngram_sizes=[3, 4],
+            use_statistical_mining=False,
+        )
+
+    motifs = list(dict.fromkeys(motifs))[:50]
+    from .motif_mining import motif_registry
+
+    soft_membership = {}
+    for m in motifs[:20]:
+        orig = motif_registry.get_original(m) if m.startswith("M_") else m
+        if orig and orig.startswith("PS_"):
+            pattern = orig[3:].split("_")
+        elif orig and orig.startswith("T_"):
+            pattern = orig[2:].split("_")
+        elif orig and orig.startswith("SQ_"):
+            pattern = orig[3:].split("_")
+        else:
+            pattern = [m]
+        key = orig if orig and len(str(orig)) < 50 else m
+        soft_membership[key] = dtw_similarity(sequence, pattern)
+
+    return {
+        "sequence": sequence,
+        "motifs": [{"pattern": m, "category": "mined"} for m in motifs],
+        "soft_membership": soft_membership,
+    }
 
 
 def _event_sequence(

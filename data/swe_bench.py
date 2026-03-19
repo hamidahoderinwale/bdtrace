@@ -1,5 +1,5 @@
 """
-SWE-bench / SWE-bench Lite loader.
+SWE-bench Lite loader.
 
 Fetches from Hugging Face and converts to trace format for representation encoders.
 """
@@ -155,13 +155,27 @@ def load_swe_bench_lite(
         yield swe_bench_instance_to_trace(dict(row))
 
 
-def load_swe_bench(
-    split: str = "dev",
+def load_swe_smith(
+    split: str = "train",
     limit: int | None = None,
+    repo_filter: list[str] | None = None,
 ) -> Iterator[dict]:
-    """Load full SWE-bench from Hugging Face and yield traces."""
-    ds = load_dataset("princeton-nlp/SWE-bench", split=split)
-    for i, row in enumerate(ds):
-        if limit and i >= limit:
+    """
+    Load SWE-smith from Hugging Face and yield traces.
+
+    SWE-smith shares the SWE-bench schema (instance_id, patch, repo, base_commit,
+    problem_statement, created_at) so we can reuse swe_bench_instance_to_trace directly.
+    Optionally filter to a subset of repos.
+    """
+    ds = load_dataset("SWE-bench/SWE-smith", split=split)
+    count = 0
+    for row in ds:
+        if limit and count >= limit:
             break
-        yield swe_bench_instance_to_trace(dict(row))
+        instance = dict(row)
+        if repo_filter and instance.get("repo") not in repo_filter:
+            continue
+        yield swe_bench_instance_to_trace(instance)
+        count += 1
+
+

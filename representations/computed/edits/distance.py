@@ -24,17 +24,32 @@ def _ast_to_zss(node: ast.AST | None) -> Any:
     return n
 
 
+def _parse_ast_from_dump(dump: str | None) -> ast.AST | None:
+    """Reconstruct AST from ast.dump() string. Returns None if invalid."""
+    if not dump or not isinstance(dump, str):
+        return None
+    try:
+        ns = {n: getattr(ast, n) for n in dir(ast) if not n.startswith("_")}
+        return eval(dump, {"__builtins__": {}}, ns)
+    except (SyntaxError, NameError, TypeError, ValueError):
+        return None
+
+
 def certificate_distance(
     cert_a: dict[str, Any],
     cert_b: dict[str, Any],
 ) -> tuple[float, dict[str, Any]]:
     """
     Tree edit distance between two edits certificates.
-    Extracts AST from each certificate, runs zss.simple_distance.
+    Extracts AST from each certificate (ast_after, ast_before, or ast_after_dump).
     Returns (scalar_distance, divergence_info).
     """
     tree_a = cert_a.get("ast_after") if isinstance(cert_a, dict) else None
     tree_b = cert_b.get("ast_after") if isinstance(cert_b, dict) else None
+    if tree_a is None and isinstance(cert_a, dict):
+        tree_a = _parse_ast_from_dump(cert_a.get("ast_after_dump"))
+    if tree_b is None and isinstance(cert_b, dict):
+        tree_b = _parse_ast_from_dump(cert_b.get("ast_after_dump"))
 
     if tree_a is None and tree_b is None:
         return 0.0, {"operation_divergence": operation_divergence(cert_a, cert_b)}
