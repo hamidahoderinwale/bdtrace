@@ -16,7 +16,7 @@ Baseline: computed representation certificates from SWE-bench Lite. Produced by 
 
 ## Scope
 
-**In scope:** Extract inputs from SWE-bench (issue text, base/fix from patch, event sequence), run three computed representations, output well-formed certificates.
+**In scope:** Extract inputs from SWE-bench Lite (issue text, base/fix from patch, event sequence), run three computed representations, output well-formed certificates.
 
 **Not in scope:** Inferred representations, procedure-level analysis, divergence matrix, ablation, grounding checks. Those consume these outputs downstream.
 
@@ -24,7 +24,7 @@ Baseline: computed representation certificates from SWE-bench Lite. Produced by 
 
 | Config | Source | Splits | Description |
 |--------|--------|--------|-------------|
-| swe_bench_lite | [princeton-nlp/SWE-bench_Lite](https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite) | dev, test | Golden patches → trace → certificates |
+| swe_bench_lite | [princeton-nlp/SWE-bench_Lite](https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite) | test | Golden patches → trace → certificates |
 
 ## Expected Outputs (Computed Representations)
 
