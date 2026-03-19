@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@6.1.0"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "data": {"name": "data-cdfe07588681e939d7b86f241a039090"}, "mark": {"type": "bar"}, "encoding": {"color": {"field": "n", "scale": {"scheme": "blues"}, "title": "Count", "type": "quantitative"}, "tooltip": [{"field": "fix_type", "type": "nominal"}, {"field": "n", "type": "quantitative"}, {"field": "n_pass", "type": "quantitative"}, {"field": "pass_rate", "format": ".1%", "type": "quantitative"}], "x": {"field": "fix_type", "sort": "-y", "title": "Fix Type", "type": "nominal"}, "y": {"axis": {"format": ".0%"}, "field": "pass_rate", "title": "Pass Rate", "type": "quantitative"}}, "height": 300, "title": "Pass Rate by Fix Type", "width": 600, "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json", "datasets": {"data-cdfe07588681e939d7b86f241a039090": [{"fix_type": "logic_fix", "n": 147, "n_pass": 31, "pass_rate": 0.2108843537414966}, {"fix_type": "exception_handling", "n": 34, "n_pass": 7, "pass_rate": 0.20588235294117646}, {"fix_type": "api_change", "n": 29, "n_pass": 6, "pass_rate": 0.20689655172413793}, {"fix_type": "config_fix", "n": 20, "n_pass": 4, "pass_rate": 0.2}, {"fix_type": "guard_clause", "n": 17, "n_pass": 3, "pass_rate": 0.17647058823529413}, {"fix_type": "refactor", "n": 13, "n_pass": 5, "pass_rate": 0.38461538461538464}, {"fix_type": "type_coercion", "n": 13, "n_pass": 7, "pass_rate": 0.5384615384615384}, {"fix_type": "string_fix", "n": 12, "n_pass": 2, "pass_rate": 0.16666666666666666}, {"fix_type": "other", "n": 5, "n_pass": 2, "pass_rate": 0.4}, {"fix_type": "test_fix", "n": 5, "n_pass": 2, "pass_rate": 0.4}, {"fix_type": "import_fix", "n": 3, "n_pass": 0, "pass_rate": 0.0}, {"fix_type": "async_fix", "n": 1, "n_pass": 0, "pass_rate": 0.0}, {"fix_type": "loop_fix", "n": 1, "n_pass": 0, "pass_rate": 0.0}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@6.1.0"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "data": {"name": "data-483542b1eaa3e795c31f725ea9973a26"}, "mark": {"type": "bar"}, "encoding": {"color": {"field": "model_id", "type": "nominal"}, "column": {"field": "metric", "title": null, "type": "nominal"}, "tooltip": [{"field": "model_id", "type": "nominal"}, {"field": "metric", "type": "nominal"}, {"field": "value", "type": "quantitative"}], "x": {"field": "model_id", "title": null, "type": "nominal"}, "y": {"field": "value", "type": "quantitative"}}, "title": "Procedural metrics: pass vs fail by model", "width": 100, "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json", "datasets": {"data-483542b1eaa3e795c31f725ea9973a26": [{"model_id": "20240402_sweagent_gpt4", "metric": "steps_pass", "value": 15.185185185185185}, {"model_id": "20240620_sweagent_claude3.5sonnet", "metric": "steps_pass", "value": 22.652173913043477}, {"model_id": "20240402_sweagent_gpt4", "metric": "steps_fail", "value": 22.784552845528456}, {"model_id": "20240620_sweagent_claude3.5sonnet", "metric": "steps_fail", "value": 35.78636363636364}, {"model_id": "20240402_sweagent_gpt4", "metric": "retries_pass", "value": 2.0555555555555554}, {"model_id": "20240620_sweagent_claude3.5sonnet", "metric": "retries_pass", "value": 1.8115942028985508}, {"model_id": "20240402_sweagent_gpt4", "metric": "retries_fail", "value": 3.8008130081300813}, {"model_id": "20240620_sweagent_claude3.5sonnet", "metric": "retries_fail", "value": 3.618181818181818}, {"model_id": "20240402_sweagent_gpt4", "metric": "retry_rate_pass", "value": 0.23477827403266002}, {"model_id": "20240620_sweagent_claude3.5sonnet", "metric": "retry_rate_pass", "value": 0.22979460153373196}, {"model_id": "20240402_sweagent_gpt4", "metric": "retry_rate_fail", "value": 0.28848842436473626}, {"model_id": "20240620_sweagent_claude3.5sonnet", "metric": "retry_rate_fail", "value": 0.26346542765245795}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>
