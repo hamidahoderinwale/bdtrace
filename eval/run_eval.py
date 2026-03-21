@@ -66,11 +66,23 @@ def _first_code_change(trace: dict) -> tuple[str, str, str | None]:
     return "", "", None
 
 
+_CONTENT_CHAR_LIMIT = 20_000
+
+
+def _truncate(text: str, limit: int = _CONTENT_CHAR_LIMIT) -> str:
+    if len(text) <= limit:
+        return text
+    return text[:limit] + f"\n... [truncated {len(text) - limit} chars]"
+
+
 def _run_inferred_for_trace(trace: dict) -> dict:
     """Run behavioral, mechanistic, functional for one trace with structural grounding."""
     before, after, file_path = _first_code_change(trace)
     if not before and not after:
         return {"behavioral": None, "mechanistic": None, "functional": None, "edits": None}
+
+    before = _truncate(before)
+    after = _truncate(after)
 
     cert = semantic_edits_repr(before, after, file_path)
     module_tokens = file_edit_graph_repr(trace)

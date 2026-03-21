@@ -16,12 +16,50 @@ Usage:
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import umap
+
+
+def _clean_staged_narrative(raw) -> dict:
+    """
+    Strip embedding vectors and provenance from staged narrative.
+    Returns {behavioral, mechanistic, functional} with only human-readable fields.
+    """
+    if not raw:
+        return {}
+
+    # If already a dict, work with it directly
+    if isinstance(raw, dict):
+        src = raw
+    else:
+        # Try JSON parse first
+        try:
+            src = json.loads(raw)
+        except Exception:
+            src = {}
+
+    # If it's a flat string (Python repr format), fall back to regex stripping
+    if not src and isinstance(raw, str):
+        cleaned = re.sub(r"'embedding':\s*\[[^\]]*(?:\[[^\]]*\][^\]]*)*\]", "", raw)
+        cleaned = re.sub(r"'provenance':\s*\{[^}]*\}", "", cleaned)
+        cleaned = re.sub(r"'grounded_in':\s*\{\}", "", cleaned)
+        cleaned = re.sub(r",\s*,", ",", cleaned)
+        return {"raw": cleaned.strip()}
+
+    out = {}
+    STRIP = {"embedding", "provenance", "grounded_in"}
+
+    for key in ("behavioral", "mechanistic", "functional"):
+        block = src.get(key, {})
+        if isinstance(block, dict):
+            out[key] = {k: v for k, v in block.items() if k not in STRIP and isinstance(v, (str, list))}
+
+    return out
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -138,7 +176,7 @@ def build_dataset() -> list[dict]:
             "locally_aligned": locally_aligned,
             "n_steps": round(float(b.get("n_steps", 0)), 1),
             "edit_retry_rate": round(float(b.get("edit_retry_rate", 0)), 3),
-            "staged_narrative": staged_map.get(iid, ""),
+            "staged_narrative": _clean_staged_narrative(staged_map.get(iid, "")),
             "x": float(coords[idx, 0]),
             "y": float(coords[idx, 1]),
         })
@@ -265,9 +303,45 @@ select.ov-select {
   letter-spacing: 0.08em; color: #555; margin-bottom: 3px;
 }
 .dsection-body { font-size: 11px; color: #bbb; line-height: 1.6; }
+
+/* ── modal ───────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.72);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: #131520; border: 1px solid #2a2d3e; border-radius: 8px;
+  padding: 28px 32px; max-width: 520px; width: 90%;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.modal h2 { font-size: 14px; font-weight: 600; color: #fff; }
+.modal p  { font-size: 12px; color: #aaa; line-height: 1.7; }
+.modal p b { color: #ddd; font-weight: 600; }
+.modal hr { border: none; border-top: 1px solid #22253a; }
+.modal-close {
+  align-self: flex-end;
+  background: #3451c7; border: none; color: #fff;
+  padding: 5px 18px; border-radius: 4px; font-size: 12px;
+  cursor: pointer;
+}
+.modal-close:hover { background: #4c6ef5; }
 </style>
 </head>
 <body>
+
+<!-- intro modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h2>SWE-bench Lite — Eval Explorer</h2>
+    <p>A <b>structural embedding browser</b> over 300 software engineering tasks. Each point is one instance; <b>proximity = procedural similarity</b> — positions are computed by UMAP over pairwise AST edit-operation distances, not semantic embeddings.</p>
+    <hr>
+    <p><b>Fix types</b> are derived in two stages: (1) hunk-local AST features are extracted from the diff (node types, control-flow signals, API calls); (2) an LLM classifies the patch into a closed vocabulary using those features as grounding. Labels are structurally anchored, not free-form.</p>
+    <hr>
+    <p><b>Color</b> by fix type, repo, pass/fail, coverage, quadrant, or models solved. <b>Filter</b> by fix type, repo, or model outcome. <b>Click</b> any point to inspect per-model outcomes, behavioral metrics, and fix summary.</p>
+    <button class="modal-close" onclick="document.getElementById('modal-backdrop').style.display='none'">Explore</button>
+  </div>
+</div>
 
 <header>
   <h1>SWE-bench Lite — Eval Explorer</h1>
@@ -595,9 +669,9 @@ function renderCard(d) {
   const fTag = `<span class="tag tag-type">${d.fix_type.replace(/_/g,' ')}</span>`;
   const rTag = `<span class="tag tag-repo">${d.repo}</span>`;
 
-  // Per-model outcomes
+  // Per-model outcomes — full name on hover, short name visible
   const modelTags = Object.entries(d.model_outcomes||{}).map(([m, solved])=>
-    `<span class="tag ${solved?'tag-pass':'tag-fail'}" title="${m}">${m.split(' ')[0]}</span>`
+    `<span class="tag ${solved?'tag-pass':'tag-fail'}" title="${m}">${m}</span>`
   ).join('');
 
   // Coverage bar
@@ -612,17 +686,59 @@ function renderCard(d) {
   const behInfo = d.n_steps > 0
     ? `<div class="dmeta">avg ${d.n_steps} steps · retry rate ${(d.edit_retry_rate*100).toFixed(0)}%</div>`
     : '';
-  const narrative = d.staged_narrative
-    ? `<div class="dsection"><div class="dsection-label">Staged narrative</div>
-       <div class="dsection-body">${d.staged_narrative}</div></div>` : '';
+
   const summary = d.summary
     ? `<div class="dsection"><div class="dsection-label">Fix summary</div>
        <div class="dsection-body">${d.summary}</div></div>` : '';
+
+  // Staged narrative — render structured fields cleanly
+  let narrativeHtml = '';
+  const sn = d.staged_narrative;
+  if (sn && typeof sn === 'object' && !sn.raw) {
+    const sections = [];
+    if (sn.behavioral) {
+      const b = sn.behavioral;
+      const lines = [b.claim, b.before && `Before: ${b.before}`, b.after && `After: ${b.after}`].filter(Boolean);
+      if (lines.length) sections.push(`<div class="dsection-label">Behavioral</div><div class="dsection-body">${lines.join('<br>')}</div>`);
+    }
+    if (sn.mechanistic) {
+      const m = sn.mechanistic;
+      const text = m.mechanism || (Array.isArray(m.steps) ? m.steps.slice(0,3).join(' → ') : '');
+      if (text) sections.push(`<div class="dsection-label">Mechanistic</div><div class="dsection-body">${text}</div>`);
+    }
+    if (sn.functional) {
+      const f = sn.functional;
+      const text = [f.role, f.system_impact].filter(Boolean).join(' ');
+      if (text) sections.push(`<div class="dsection-label">Functional</div><div class="dsection-body">${text}</div>`);
+    }
+    if (sections.length) narrativeHtml = `<div class="dsection">${sections.join('<div style="height:6px"></div>')}</div>`;
+  } else if (sn && sn.raw) {
+    narrativeHtml = `<div class="dsection"><div class="dsection-label">Staged narrative</div><div class="dsection-body">${sn.raw}</div></div>`;
+  }
+
+  // Nav index
+  const idx = RAW.findIndex(r => r.instance_id === d.instance_id);
+  const navHtml = `<div style="font-size:10px;color:#444;margin-bottom:6px">${idx+1} / ${RAW.length} &nbsp;
+    <span style="cursor:pointer;color:#555" onclick="navigateCard(-1)">◀</span>
+    <span style="cursor:pointer;color:#555;margin-left:6px" onclick="navigateCard(1)">▶</span>
+  </div>`;
+
   document.getElementById('detail').innerHTML = `
+    ${navHtml}
     <h2>${d.instance_id}</h2>
-    <div>${modelTags}${fTag}${rTag}</div>
+    <div style="margin-bottom:4px">${modelTags}</div>
+    <div>${fTag}${rTag}</div>
     <div class="dmeta">${d.n_files} file(s) · ${d.net_lines>=0?'+':''}${d.net_lines} lines · confidence: ${d.confidence}</div>
-    ${covBar}${behInfo}${summary}${narrative}`;
+    ${covBar}${behInfo}${summary}${narrativeHtml}`;
+}
+
+function navigateCard(dir) {
+  const ids = RAW.filter(d => filteredSet.has(d.instance_id)).map(d => d.instance_id);
+  if (!ids.length) return;
+  const cur = ids.indexOf(selectedId);
+  const next = ids[(cur + dir + ids.length) % ids.length];
+  const d = RAW.find(r => r.instance_id === next);
+  if (d) { selectedId = d.instance_id; draw(); renderCard(d); renderBars(); }
 }
 
 // ── init ─────────────────────────────────────────────────
@@ -635,6 +751,11 @@ const ro = new ResizeObserver(()=>{ resizeScatter(); resizeBars(); });
 ro.observe(document.querySelector('.scatter-wrap'));
 ro.observe(document.querySelector('.bar-panel'));
 buildLegend();
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigateCard(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigateCard(-1); }
+});
 // Defer init to ensure layout is settled
 requestAnimationFrame(()=> requestAnimationFrame(initCanvases));
 </script>
