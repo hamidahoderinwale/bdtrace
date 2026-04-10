@@ -172,19 +172,19 @@ def main():
 
     baselines = [
         {"grouping": "Issue text",                  "k_label": "k=10",           "variance": 0.0073,                                          "color": GRAY,   "order": 0},
-        {"grouping": "GPT-4o: predicted fix",       "k_label": "k=10",           "variance": results["no_context"]["k10_variance"],            "color": SKY,    "order": 1},
-        {"grouping": "GPT-4o: fix from traces",     "k_label": "k=10",           "variance": results["raw_logs"]["k10_variance"],              "color": GREEN,  "order": 2},
-        {"grouping": "GPT-4o: predicted fix",       "k_label": f"k={nc_best_k}", "variance": results["no_context"]["best_k_variance"],         "color": SKY,    "order": 3},
-        {"grouping": "GPT-4o: fix from traces",     "k_label": f"k={rl_best_k}", "variance": results["raw_logs"]["best_k_variance"],           "color": GREEN,  "order": 4},
+        {"grouping": "GPT-4o predicted fix",        "k_label": "k=10",           "variance": results["no_context"]["k10_variance"],            "color": SKY,    "order": 1},
+        {"grouping": "GPT-4o fix from traces",      "k_label": "k=10",           "variance": results["raw_logs"]["k10_variance"],              "color": GREEN,  "order": 2},
+        {"grouping": "GPT-4o predicted fix",        "k_label": f"k={nc_best_k}", "variance": results["no_context"]["best_k_variance"],         "color": SKY,    "order": 3},
+        {"grouping": "GPT-4o fix from traces",      "k_label": f"k={rl_best_k}", "variance": results["raw_logs"]["best_k_variance"],           "color": GREEN,  "order": 4},
         {"grouping": "AST cert decision tree",      "k_label": "10 forms",       "variance": 0.0257,                                          "color": ORANGE, "order": 5},
         {"grouping": "FIM closed itemsets",         "k_label": "15 forms",       "variance": 0.0333,                                          "color": BLUE,   "order": 6},
     ]
 
     df = pd.DataFrame(baselines)
     max_var = df["variance"].max()
-    # Unique row key preserves order for rows with same grouping label
-    df["row_key"] = df["order"].astype(str) + " " + df["grouping"]
-    sort_order = df["row_key"].tolist()
+    # Unique row key for display — grouping + k_label
+    df["row_key"] = df["grouping"] + " (" + df["k_label"] + ")"
+    sort_order = df.sort_values("order")["row_key"].tolist()
 
     bars = alt.Chart(df).mark_bar(height=18).encode(
         x=alt.X(
@@ -198,7 +198,7 @@ def main():
             axis=alt.Axis(
                 title=None,
                 labelFontSize=9,
-                labelExpr="split(datum.label, ' ').slice(1).join(' ')",
+                labelLimit=280,
             ),
         ),
         color=alt.Color("color:N", scale=None, legend=None),
@@ -207,7 +207,7 @@ def main():
 
     # k label inside bar at right edge
     k_labels = alt.Chart(df).mark_text(
-        align="right", dx=-5, fontSize=8, color="white", fontWeight="bold"
+        align="right", dx=-5, fontSize=8, color="white", fontWeight="normal"
     ).encode(
         x=alt.X("variance:Q"),
         y=alt.Y("row_key:N", sort=sort_order),
@@ -232,7 +232,11 @@ def main():
             fontWeight="normal",
             anchor="start",
         )
-    )
+    ).configure_axis(
+        grid=False,
+        labelFontSize=9,
+        titleFontSize=10,
+    ).configure_view(strokeWidth=0)
 
     fig.save(str(OUT / "fig_variance_comparison.png"), scale_factor=2)
     print("  Saved fig_variance_comparison.png")

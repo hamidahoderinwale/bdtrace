@@ -115,7 +115,7 @@ def main():
         if not ease_vals:
             continue
         rows.append({
-            "form": f["name"],
+            "form": f["name"].replace("_", " "),
             "pattern": " + ".join(sorted(f["pattern"])),
             "n": len(instances),
             "mean_ease": float(np.mean(ease_vals)),
@@ -195,12 +195,16 @@ def main():
 
     fig1 = (boxes + mean_dots).properties(
         title=alt.TitleParams(
-            "Agent ease by FIM canonical form (n >= 5)",
+            "Agent ease by FIM canonical form, n >= 5",
             fontSize=12,
             fontWeight="normal",
             anchor="start",
         )
-    )
+    ).configure_axis(
+        grid=False,
+        labelFontSize=9,
+        titleFontSize=10,
+    ).configure_view(strokeWidth=0)
 
     fig1.save(str(OUT / "fig1_fim_ease_per_form.png"), scale_factor=2)
     print("  Saved fig1_fim_ease_per_form.png")
@@ -279,7 +283,11 @@ def main():
             fontWeight="normal",
             anchor="start",
         )
-    )
+    ).configure_axis(
+        grid=False,
+        labelFontSize=9,
+        titleFontSize=10,
+    ).configure_view(strokeWidth=0)
 
     fig2.save(str(OUT / "fig2_variance_comparison.png"), scale_factor=2)
     print("  Saved fig2_variance_comparison.png")

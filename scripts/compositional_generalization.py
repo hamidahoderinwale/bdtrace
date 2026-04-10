@@ -230,7 +230,7 @@ def fig1_failure_classification(
         total.update(agent_classes.values())
 
     grand_total = sum(total.values())
-    print(f"\n  Aggregate failure classification ({grand_total} agent-instance failures):")
+    print(f"\n  Aggregate failure classification ({grand_total} agent-instance failures)")
     for cat in ["novel_primitive", "novel_composition", "familiar"]:
         n = total.get(cat, 0)
         pct = 100 * n / grand_total if grand_total else 0
@@ -281,11 +281,19 @@ def fig1_failure_classification(
         "familiar": GREEN,
     }
     cat_order = ["novel_primitive", "novel_composition", "familiar"]
+    cat_labels = {
+        "novel_primitive": "Novel primitive",
+        "novel_composition": "Novel composition",
+        "familiar": "Familiar",
+    }
+
+    agg_df["category_label"] = agg_df["category"].map(cat_labels)
+    label_order = [cat_labels[c] for c in cat_order]
 
     bars = alt.Chart(agg_df).mark_bar().encode(
         x=alt.X(
-            "category:N",
-            sort=cat_order,
+            "category_label:N",
+            sort=label_order,
             axis=alt.Axis(title=None, labelFontSize=10),
         ),
         y=alt.Y(
@@ -298,34 +306,28 @@ def fig1_failure_classification(
             scale=alt.Scale(domain=[0, 1]),
         ),
         color=alt.Color(
-            "category:N",
+            "category_label:N",
             scale=alt.Scale(
-                domain=cat_order,
+                domain=label_order,
                 range=[color_map[c] for c in cat_order],
             ),
             legend=None,
         ),
     )
 
-    error = alt.Chart(agg_df).mark_errorbar(ticks=True).encode(
-        x=alt.X("category:N", sort=cat_order),
-        y=alt.Y("mean_fraction:Q"),
-        yError=alt.YError("std_fraction:Q"),
-    )
-
     labels = alt.Chart(agg_df).mark_text(
-        dy=-12, fontSize=11
+        dy=-8, fontSize=11
     ).encode(
-        x=alt.X("category:N", sort=cat_order),
+        x=alt.X("category_label:N", sort=label_order),
         y=alt.Y("mean_fraction:Q"),
         text=alt.Text("mean_fraction:Q", format=".1%"),
     )
 
-    fig = (bars + error + labels).properties(
+    fig = (bars + labels).properties(
         width=350,
         height=300,
         title=alt.TitleParams(
-            "Why agents fail: failure classification (mean across 84 agents)",
+            "Failure classification, mean across 84 agents",
             fontSize=12,
             fontWeight="normal",
             anchor="start",
@@ -394,7 +396,6 @@ def fig2_composition_gap_vs_ease(
         height=350,
         title=alt.TitleParams(
             "Composition gap vs instance ease",
-            subtitle="High gap + low ease = strongest composition failures",
             fontSize=12,
             fontWeight="normal",
             anchor="start",
@@ -463,10 +464,11 @@ def fig3_primitive_freq_vs_ease(
         height=350,
         title=alt.TitleParams(
             "Primitive frequency vs ease",
-            subtitle="Top-left quadrant = composition failures (common parts, hard to combine)",
+            subtitle="Top-left quadrant shows composition failures (common parts, hard to combine)",
             fontSize=12,
             fontWeight="normal",
             anchor="start",
+            subtitleFontSize=9,
         ),
     ).configure_axis(
         grid=False,
