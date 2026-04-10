@@ -231,7 +231,7 @@ def fig_b_scope_decomposition(alignment: list[dict]) -> alt.Chart:
     ).properties(
         width=400,
         height=250,
-        title="Agent pair agreement decomposed: file, scope, edit type",
+        title="Agent pair agreement decomposed by file, scope, and edit type",
     )
 
     return _configure(chart)
@@ -349,14 +349,14 @@ def fig_d_instance_anatomy(alignment: list[dict]) -> alt.Chart:
                 rows.append({
                     "instance": display_id,
                     "agent": f"{agent_short} [{file_label}]",
-                    "op": op,
+                    "op": op.replace("_", " "),
                     "alignment": "In oracle cert",
                 })
             for op in sorted(agent_only):
                 rows.append({
                     "instance": display_id,
                     "agent": f"{agent_short} [{file_label}]",
-                    "op": op,
+                    "op": op.replace("_", " "),
                     "alignment": "Agent only",
                 })
 
@@ -387,7 +387,7 @@ def fig_d_instance_anatomy(alignment: list[dict]) -> alt.Chart:
                      header=alt.Header(labelFontSize=8, labelAngle=0,
                                        labelAlign="left")),
     ).properties(
-        title="Instance anatomy: edit ops colored by oracle alignment (file match: Y/N in agent label)",
+        title="Instance anatomy, edit ops colored by oracle alignment (file match Y/N in agent label)",
     )
 
     return _configure(ops_chart)

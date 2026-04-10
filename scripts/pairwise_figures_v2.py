@@ -21,14 +21,19 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
+# Add venv site-packages
+_ROOT = Path(__file__).resolve().parent.parent
+for _sp in (_ROOT / ".venv" / "lib").glob("python*/site-packages"):
+    if str(_sp) not in sys.path:
+        sys.path.insert(0, str(_sp))
+
 import altair as alt
-import msgpack
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(_ROOT))
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = _ROOT
 PAIR_DIR = ROOT / "output" / "pairwise_agent_comparison"
 
 # Wong palette
@@ -41,35 +46,45 @@ SKY    = "#56B4E9"
 RED    = "#D55E00"
 YELLOW = "#F0E442"
 
-AGENT_COLORS = {
-    "SWE-agent GPT-4":            BLUE,
-    "SWE-agent GPT-4o":           SKY,
-    "SWE-agent Claude 3 Opus":    ORANGE,
-    "SWE-agent Claude 3.5 Sonnet": GREEN,
-    "Devin":                       PINK,
-}
+# Color cycle for any number of agents
+_PALETTE = [BLUE, ORANGE, GREEN, PINK, SKY, RED, YELLOW, GRAY,
+            "#332288", "#88CCEE", "#44AA99", "#117733", "#DDCC77",
+            "#CC6677", "#AA4499", "#882255"]
 
-# Short names for axis labels
-SHORT_NAMES = {
-    "SWE-agent GPT-4":            "GPT-4",
-    "SWE-agent GPT-4o":           "GPT-4o",
-    "SWE-agent Claude 3 Opus":    "Claude 3 Opus",
-    "SWE-agent Claude 3.5 Sonnet": "Claude 3.5 Sonnet",
-    "Devin":                       "Devin",
-}
+
+def _agent_color(agents: list[str]) -> dict[str, str]:
+    return {a: _PALETTE[i % len(_PALETTE)] for i, a in enumerate(agents)}
+
+
+def _short_name(name: str) -> str:
+    """Generate a compact label from full agent name."""
+    return name
 
 
 def load_data():
     with open(PAIR_DIR / "agent_patches.json") as f:
         patches = json.load(f)
 
-    with open(ROOT / "output" / "leaderboard" / "lite_results.msgpack", "rb") as f:
-        lb = msgpack.unpack(f, raw=False)
-    votes = {}
-    for agent_data in lb.values():
-        for iid, passed in agent_data.items():
-            votes.setdefault(iid, []).append(passed)
-    ease = {iid: float(np.mean(v)) for iid, v in votes.items()}
+    # Try loading ease from leaderboard msgpack
+    ease = {}
+    try:
+        import msgpack
+        with open(ROOT / "output" / "leaderboard" / "lite_results.msgpack", "rb") as f:
+            lb = msgpack.unpack(f, raw=False)
+        votes = {}
+        for agent_data in lb.values():
+            for iid, passed in agent_data.items():
+                votes.setdefault(iid, []).append(passed)
+        ease = {iid: float(np.mean(v)) for iid, v in votes.items()}
+    except Exception:
+        # Fallback: compute ease from the agents we have
+        all_iids = set()
+        for certs in patches.values():
+            all_iids.update(certs.keys())
+        n_agents = len(patches)
+        for iid in all_iids:
+            n_solving = sum(1 for certs in patches.values() if iid in certs)
+            ease[iid] = n_solving / n_agents
 
     return patches, ease
 
@@ -85,7 +100,7 @@ def compute_pairwise_jaccards(patches):
                 s2 = set(patches[a2][iid])
                 if s1 or s2:
                     jaccard = len(s1 & s2) / len(s1 | s2)
-                    pair_label = f"{SHORT_NAMES[a1]} vs {SHORT_NAMES[a2]}"
+                    pair_label = f"{_short_name(a1)} vs {_short_name(a2)}"
                     rows.append({
                         "agent_1": a1, "agent_2": a2,
                         "pair": pair_label,
@@ -97,11 +112,13 @@ def compute_pairwise_jaccards(patches):
 
 # ── Fig 1: Strip + boxplot per agent pair ────────────────────────────
 
-def fig1_pairwise_strip(jdf):
+def fig1_pairwise_strip(jdf, max_pairs=20):
     """Jaccard distribution per agent pair, strip marks + box."""
-    # Add n to pair label
+    # Keep top pairs by co-solved count for readability
     pair_counts = jdf.groupby("pair").size().to_dict()
-    jdf = jdf.copy()
+    top_pairs = sorted(pair_counts, key=pair_counts.get, reverse=True)[:max_pairs]
+    jdf = jdf[jdf["pair"].isin(top_pairs)].copy()
+    pair_counts = {p: pair_counts[p] for p in top_pairs}
     jdf["pair_label"] = jdf["pair"].map(lambda p: f"{p}  (n={pair_counts[p]})")
 
     pair_order = (
@@ -138,7 +155,11 @@ def fig1_pairwise_strip(jdf):
             "Structural similarity of fixes on co-solved instances",
             fontSize=12, fontWeight="normal", anchor="start",
         )
-    )
+    ).configure_axis(
+        grid=False,
+        labelFontSize=9,
+        titleFontSize=10,
+    ).configure_view(strokeWidth=0)
 
     fig.save(str(PAIR_DIR / "fig1_pairwise_strip.png"), scale_factor=2)
     print("Saved fig1_pairwise_strip.png")
@@ -198,7 +219,7 @@ def fig2_divergence_scatter(patches, ease):
     r = df[["ease", "mean_jaccard"]].corr().iloc[0, 1]
     r_text = alt.Chart(pd.DataFrame({
         "x": [0.05], "y": [0.05], "text": [f"r = {r:.2f}"]
-    })).mark_text(fontSize=11, color=ORANGE, fontWeight="bold", align="left").encode(
+    })).mark_text(fontSize=11, color=ORANGE, fontWeight="normal", align="left").encode(
         x=alt.X("x:Q"), y=alt.Y("y:Q"), text="text:N"
     )
 
@@ -208,7 +229,11 @@ def fig2_divergence_scatter(patches, ease):
             "Do easy instances have more structural agreement?",
             fontSize=12, fontWeight="normal", anchor="start",
         )
-    )
+    ).configure_axis(
+        grid=False,
+        labelFontSize=9,
+        titleFontSize=10,
+    ).configure_view(strokeWidth=0)
 
     fig.save(str(PAIR_DIR / "fig2_divergence_scatter.png"), scale_factor=2)
     print(f"Saved fig2_divergence_scatter.png  (r={r:.3f}, n={len(df)})")
@@ -217,9 +242,14 @@ def fig2_divergence_scatter(patches, ease):
 
 # ── Fig 3: Agent vocabulary ridgeline ────────────────────────────────
 
-def fig3_agent_vocabulary(patches):
+def fig3_agent_vocabulary(patches, max_agents=8):
     """Edit operation frequency per agent, shown as dot/bar chart."""
-    agents = list(patches.keys())
+    # Limit to top agents by number of certs for readability
+    all_agents = sorted(patches.keys(),
+                        key=lambda a: sum(1 for v in patches[a].values() if v),
+                        reverse=True)
+    agents = all_agents[:max_agents]
+    colors = _agent_color(agents)
 
     # Count edit ops per agent
     agent_op_counts = {}
@@ -243,11 +273,12 @@ def fig3_agent_vocabulary(patches):
     for agent in agents:
         for op in top_ops:
             rows.append({
-                "agent": SHORT_NAMES[agent],
-                "operation": op,
+                "agent": _short_name(agent),
+                "operation": op.replace("_", " "),
                 "frequency": agent_op_counts[agent].get(op, 0),
-                "color": AGENT_COLORS[agent],
+                "color": colors[agent],
             })
+    top_ops = [op.replace("_", " ") for op in top_ops]
 
     df = pd.DataFrame(rows)
 
@@ -259,8 +290,8 @@ def fig3_agent_vocabulary(patches):
                  axis=alt.Axis(title="Frequency per solved instance", titleFontSize=9)),
         color=alt.Color("agent:N",
                          scale=alt.Scale(
-                             domain=[SHORT_NAMES[a] for a in agents],
-                             range=[AGENT_COLORS[a] for a in agents]),
+                             domain=[_short_name(a) for a in agents],
+                             range=[colors[a] for a in agents]),
                          legend=alt.Legend(title=None, orient="top")),
         tooltip=["agent:N", "operation:N", "frequency:Q"],
     )
@@ -271,18 +302,22 @@ def fig3_agent_vocabulary(patches):
         y=alt.Y("frequency:Q"),
         color=alt.Color("agent:N",
                          scale=alt.Scale(
-                             domain=[SHORT_NAMES[a] for a in agents],
-                             range=[AGENT_COLORS[a] for a in agents]),
+                             domain=[_short_name(a) for a in agents],
+                             range=[colors[a] for a in agents]),
                          legend=None),
     )
 
     fig = (lines + chart).properties(
         width=550, height=280,
         title=alt.TitleParams(
-            "Edit operation vocabulary per agent (top 15 operations)",
+            "Edit operation vocabulary per agent, top 15 operations",
             fontSize=12, fontWeight="normal", anchor="start",
         )
-    )
+    ).configure_axis(
+        grid=False,
+        labelFontSize=9,
+        titleFontSize=10,
+    ).configure_view(strokeWidth=0)
 
     fig.save(str(PAIR_DIR / "fig3_agent_vocabulary.png"), scale_factor=2)
     print("Saved fig3_agent_vocabulary.png")
@@ -290,12 +325,17 @@ def fig3_agent_vocabulary(patches):
 
 # ── Fig 4: Instance-level history flow ───────────────────────────────
 
-def fig4_instance_flow(patches, ease):
+def fig4_instance_flow(patches, ease, max_agents=8):
     """
     For a selection of interesting instances, show each agent's edit certificate
     as a row of colored blocks. Shared operations align vertically.
     """
-    agents = list(patches.keys())
+    # Limit to top agents for readability
+    all_agents = sorted(patches.keys(),
+                        key=lambda a: sum(1 for v in patches[a].values() if v),
+                        reverse=True)
+    agents = all_agents[:max_agents]
+    colors = _agent_color(agents)
 
     # Find instances solved by the most agents
     instance_agent_count = {}
@@ -334,18 +374,19 @@ def fig4_instance_flow(patches, ease):
                 for op in op_order:
                     rows.append({
                         "instance": f"{iid_short} (ease={e:.0%})",
-                        "agent": SHORT_NAMES[agent],
-                        "operation": op,
+                        "agent": _short_name(agent),
+                        "operation": op.replace("_", " "),
                         "present": 1 if op in patches[agent][iid] else 0,
                         "ease": e,
                     })
+    op_order = [op.replace("_", " ") for op in op_order]
 
     df = pd.DataFrame(rows)
     df = df[df["present"] == 1]
 
     instance_order = [f"{iid.split('__')[1] if '__' in iid else iid} (ease={ease.get(iid, 0):.0%})"
                       for iid in selected]
-    agent_order = [SHORT_NAMES[a] for a in agents]
+    agent_order = [_short_name(a) for a in agents]
 
     chart = alt.Chart(df).mark_rect(stroke="white", strokeWidth=0.5).encode(
         x=alt.X("operation:N", sort=op_order,
@@ -355,7 +396,7 @@ def fig4_instance_flow(patches, ease):
         color=alt.Color("agent:N",
                          scale=alt.Scale(
                              domain=agent_order,
-                             range=[AGENT_COLORS[a] for a in agents]),
+                             range=[colors[a] for a in agents]),
                          legend=None),
         tooltip=["instance:N", "agent:N", "operation:N"],
     ).properties(
@@ -368,7 +409,7 @@ def fig4_instance_flow(patches, ease):
         x="shared",
     ).properties(
         title=alt.TitleParams(
-            "Which edit operations did each agent use? (8 co-solved instances)",
+            "Edit operations per agent across 8 co-solved instances",
             fontSize=12, fontWeight="normal", anchor="start",
         )
     )

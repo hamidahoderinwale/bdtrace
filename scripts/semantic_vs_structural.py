@@ -252,13 +252,13 @@ def fig_nn_scatter(df: pd.DataFrame, nn_results: dict, output_dir: Path):
         width=420, height=280,
         title=alt.TitleParams(
             "Semantic problem space is blind to structural difficulty",
-            subtitle="Each point is one SWE-bench Lite instance. "
-                     "Flat slope means hard instances have easy semantic neighbors.",
+            subtitle="Flat slope means hard instances have easy semantic neighbors",
             fontSize=11, subtitleFontSize=9,
+            fontWeight="normal",
         ),
     ).configure_axis(
         grid=False, labelFontSize=9, titleFontSize=9,
-    ).configure_view(stroke=None)
+    ).configure_view(strokeWidth=0)
 
     out = output_dir / "fig1_nn_scatter.png"
     chart.save(str(out), scale_factor=2)
@@ -311,12 +311,12 @@ def fig_umap_comparison(
     ).properties(
         width=280, height=260,
         title=alt.TitleParams(
-            "Same instances — hard cases (dark) scatter in semantic space, cluster in structural space",
-            fontSize=10, subtitleFontSize=8,
+            "Hard cases scatter in semantic space but cluster in structural space",
+            fontSize=10, fontWeight="normal",
         ),
     ).configure_axis(
         grid=False,
-    ).configure_view(stroke=GRAY, strokeWidth=0.5)
+    ).configure_view(strokeWidth=0)
 
     out = output_dir / "fig2_umap_comparison.png"
     chart.save(str(out), scale_factor=2)
@@ -415,7 +415,8 @@ def fig_ease_distributions(
         return boxes.properties(
             width=360, height=220,
             title=alt.TitleParams(title, subtitle=subtitle,
-                                  fontSize=10, subtitleFontSize=8),
+                                  fontSize=10, subtitleFontSize=8,
+                                  fontWeight="normal"),
         )
 
     sem_var = dist_results["semantic_variance"]
@@ -426,18 +427,18 @@ def fig_ease_distributions(
         df_sem, "cluster_label", sem_label_order,
         color=GRAY,
         title=f"Semantic clusters (k={dist_results['semantic_k']})",
-        subtitle=f"Ease variance = {sem_var:.4f}  — clusters mix all difficulty levels",
+        subtitle=f"Ease variance = {sem_var:.4f}, clusters mix all difficulty levels",
     )
     panel_struct = strip_box(
         df_struct, "cluster", struct_label_order_short,
         color=BLUE,
         title=f"Structural forms (n={dist_results['structural_n_forms']})",
-        subtitle=f"Ease variance = {struct_var:.4f}  — {ratio:.1f}x more stratified",
+        subtitle=f"Ease variance = {struct_var:.4f}, {ratio:.1f}x more stratified",
     )
 
     chart = alt.hconcat(panel_sem, panel_struct, spacing=40).configure_axis(
         grid=False,
-    ).configure_view(stroke=None)
+    ).configure_view(strokeWidth=0)
 
     out = output_dir / "fig3_ease_distributions.png"
     chart.save(str(out), scale_factor=2)
