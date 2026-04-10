@@ -48,7 +48,7 @@ def main() -> None:
     parser.add_argument("--resume", action="store_true", help="Skip already-labeled instances")
     parser.add_argument(
         "--dataset", type=str, default="swe_bench_lite",
-        choices=["swe_bench_lite", "swe_smith"],
+        choices=["swe_bench_lite", "swe_smith", "swe_bench_verified"],
         help="Which dataset to label (default: swe_bench_lite)",
     )
     args = parser.parse_args()
@@ -62,6 +62,7 @@ def main() -> None:
     HF_CONFIGS = {
         "swe_bench_lite": ("princeton-nlp/SWE-bench_Lite", "test",  "output/datasets/swe_bench_lite_resolved/fix_types.json"),
         "swe_smith":      ("SWE-bench/SWE-smith",           "train", "output/datasets/swe_smith_resolved/fix_types.json"),
+        "swe_bench_verified": ("princeton-nlp/SWE-bench_Verified", "test", "output/datasets/swe_bench_verified_resolved_full/fix_types.json"),
     }
     hf_repo, hf_split, default_out = HF_CONFIGS[args.dataset]
 
