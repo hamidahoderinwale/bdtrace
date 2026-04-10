@@ -14,6 +14,13 @@ dependencies = [
     "sentence-transformers>=2.2",
     "umap-learn[notebooks]>=0.5.11",
     "matplotlib>=3.10.8",
+    "tree-sitter>=0.25.2",
+    "tree-sitter-python>=0.25.0",
+    "evalplus>=0.3.1",
+    "mlxtend>=0.24.0",
+    "msgpack>=1.1.2",
+    "hdbscan>=0.8.42",
+    "boto3>=1.28",
 ]
 
 [project.optional-dependencies]

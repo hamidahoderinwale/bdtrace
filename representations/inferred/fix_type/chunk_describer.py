@@ -77,3 +77,34 @@ class ChunkDescriber(dspy.Module):
         Skips empty chunks.
         """
         return [self(chunk) for chunk in chunks if not chunk.is_empty]
+
+    def describe_trace(self, trace: dict) -> list[str]:
+        """
+        Extract free-form hunk descriptions from a resolved trace record.
+        Returns one sentence per non-empty hunk across all .py file changes.
+        Mirrors ChunkIntentModule.label_trace.
+        """
+        import difflib
+        from analysis.procedures.ast_edit_sequences import patch_to_chunks
+
+        descriptions = []
+        for ev in trace["events"]:
+            if ev["type"] != "code_change":
+                continue
+            d = ev["details"]
+            if not d["file_path"].endswith(".py"):
+                continue
+            before = (d["before_content"] or "").splitlines(keepends=True)
+            after = (d["after_content"] or "").splitlines(keepends=True)
+            if before == after:
+                continue
+            raw = "".join(difflib.unified_diff(
+                before, after,
+                fromfile=d["file_path"], tofile=d["file_path"],
+            ))
+            if not raw:
+                continue
+            patch = f"diff --git a/{d['file_path']} b/{d['file_path']}\n" + raw
+            chunks = patch_to_chunks(patch)
+            descriptions.extend(self(chunk) for chunk in chunks if not chunk.is_empty)
+        return descriptions

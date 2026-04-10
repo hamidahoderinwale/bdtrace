@@ -34,6 +34,26 @@ fix_type_vocabulary:
   other:              "does not fit any category above"
 
 
+## Fix-mechanism vocabulary: classifies HOW a fix was implemented (per diff hunk),
+## not what kind of bug it was. Used by ChunkIntentModule to label each hunk,
+## producing a sequence of mechanism tokens per patch (analogous to motif sequences).
+## Add, remove, or rename entries here; the module reads this at runtime.
+fix_mechanism_vocabulary:
+  add_iteration:       "introduces a new for or while loop as the primary fix"
+  refactor_iteration:  "converts a comprehension to an explicit loop or vice versa"
+  add_guard:           "adds a defensive conditional check for an edge case"
+  add_error_handling:  "adds try/except block, raise statement, or assertion"
+  refactor_access:     "changes how an object attribute or subscript is accessed"
+  api_change:          "replaces one function or method call with a different one"
+  algorithm_replace:   "replaces the entire algorithmic approach with a different strategy"
+  extend_logic:        "adds boolean operators or conditions to an existing expression"
+  constant_fix:        "changes a literal value, string constant, or numeric constant"
+  add_import:          "adds a new import statement for a previously unused module"
+  signature_change:    "adds, removes, or renames a function parameter or return value"
+  remove_redundancy:   "removes unnecessary code without introducing new logic"
+  other:               "does not fit any category above"
+
+
 benchmarks:
   swe_bench_verified:
     dataset: swe_bench_verified_resolved_multifile
