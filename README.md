@@ -1,133 +1,80 @@
-# Representations for Learning from Developer-Agent Workflows
+# Procedural Clio: Structural Analysis of LLM Agent Fix Strategies
 
-Multi-level representation extractors for transforming raw developer workflow traces into privacy-preserving abstractions. Uses SWE-bench Lite.
+Behavioral observation of fix procedures from LLM agent traces on SWE-bench, without relying on agent self-report.
 
----
+## Core findings
 
-## Quick Start
+1. **Structural patterns predict difficulty, semantics don't.** FIM on edit certificates separates difficulty 4.6x better than any semantic grouping (issue text, predicted fix descriptions, or fix descriptions from agent traces).
 
-### Baseline Extraction (SWE-bench Lite)
+2. **Agents can't describe their own fix strategies.** Self-reported edit operations match actual patch structure at F1=0.20. Observe behavior, don't ask.
 
-```bash
-# Extract: patch → trace → edits/modules/motifs/tokens certificates
-python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --output-dir output
+3. **Agents use different structural approaches to the same problem.** On co-solved instances, agents produce identical edit certificates only 24% of the time (median Jaccard 0.56). The LLM backbone drives strategy, not the scaffold.
 
-# Build distance matrices (token, set-diff, tree, graph)
-python scripts/build_distance_matrices.py --input output/datasets/swe_bench_lite/test.parquet --reprs tokens edits_set_diff edits_tree modules_graph
+4. **The hard part is composition, not primitives.** 43.8% of agent failures are composition failures: the agent has individually demonstrated every required edit operation but can't combine them. For the hardest instances, it's 50.4%.
 
-# Diversity analysis (includes per-instance representation correlation)
-python scripts/run_diversity_analysis.py --matrices output/datasets/swe_bench_lite/distances.parquet --labels output/datasets/swe_bench_lite/labels.parquet
+5. **More benchmark instances don't help.** Strategy coverage saturates early. SWE-smith over-samples easy patterns (52.7% return-value changes) while under-representing hard ones.
 
-# Push to midah/procedural-info-theory (uses HF_TOKEN or huggingface_hub login)
-python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --push
-```
+See [findings.md](findings.md) for the full record with methodology, decision traces, and literature anchors.
 
-### Legacy Script
+## Setup
 
 ```bash
-python scripts/run_swe_bench.py --split dev --limit 10 --output traces.jsonl
-python scripts/run_swe_bench.py --split test --rung tokens --output tokens.jsonl
+uv sync
+source .venv/bin/activate
 ```
 
----
+Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.venv/.env` for LLM-based analyses.
 
-## The 6-Level Representation System
+## Representation pipeline
 
-Each level trades privacy for expressiveness:
+| Level | What it captures | Coverage |
+|-------|-----------------|----------|
+| Edit certificates | Set of (direction, AST-node-type) pairs from the patch | 289/300 (96%) |
+| Scoped certificates | Edit type + file path + function/class scope + patch size | 300/300 |
+| Contextual edit ops | Edit type + parent AST node (e.g. `ADD_For@FunctionDef`) | 203/300 (68%) |
+| Fix intent labels | 12-category semantic taxonomy per hunk | 289/300 |
 
-| **Level** | **Compression** | **Description** | **Use Case** |
-|-----------|-----------------|-----------------|--------------|
-| **Raw** | 1× | Complete event logs | Ground truth |
-| **Tokens** | 10× | Token-type sequences | Research datasets |
-| **Edits** | 11× | Edit operations (ADD/MODIFY/REMOVE) | Workflow analysis |
-| **Functions** | 39× | Function-level changes & signatures | API tracking |
-| **Modules** | 100× | Import + co-edit dependencies across files | Team collaboration |
-| **Motifs** | 240× | Abstract workflow patterns | Public sharing |
+## Key scripts
 
-### Distance Approaches
+**Analysis:**
+- `scripts/compositional_generalization.py` -- classify failures as novel primitive vs novel composition across 84 agents
+- `scripts/fim_difficulty_analysis.py` -- connect FIM patterns to 84-agent ease data
+- `scripts/semantic_vs_structural.py` -- nearest-neighbor, UMAP, and variance comparison
+- `scripts/validate_grounding.py` -- measure self-report accuracy (grounding failure)
+- `scripts/compare_representations.py` -- kNN prediction across representation types
 
-| Approach | Edits | Modules | Tokens |
-|----------|-------|---------|--------|
-| **jaccard** (default) | Jaccard on op types | Jaccard on tokens | — |
-| **structural** | Tree edit (AST) when available | Graph distance (edge diff) | Levenshtein |
+**Pipeline:**
+- `scripts/build_canonical_forms.py` -- FIM closed itemsets from edit certificates
+- `scripts/build_scoped_certificates.py` -- oracle scoped certificates with file/scope/size
+- `scripts/build_agent_scoped_certs.py` -- agent scoped certificates + oracle alignment
 
-Use `--approach structural` or `--approach both` when building distance matrices.
+**Figures:**
+- `scripts/pairwise_figures_v2.py` -- agent comparison: strip plots, divergence scatter, vocabulary, instance flow
+- `scripts/scoped_figures.py` -- file navigation, scope decomposition, minimality, instance anatomy
+- `scripts/cluster_fix_descriptions.py` -- variance comparison across all groupings
+- `scripts/build_figures.py` -- paper-level conceptual figures
 
-### Per-Instance Representation Variance
+## Data
 
-Diversity analysis outputs `per_instance_rep_correlation.parquet`: for each instance, mean Spearman ρ between its distance profile across representation pairs. Low mean_rho = instance expressed differently across representations (e.g. different neighbors in edits vs modules vs motifs).
-
-### Inferred Representations (DSPy)
-
-Behavioral, mechanistic, and functional are LLM-generated summaries grounded in structural evidence. They answer: *what do edits/modules support?* Behavioral = caller view (what changed); mechanistic = internal how; functional = system role (needs module graph). Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` and run `eval/run_eval.py`. See `docs/EXPERIMENTS.md` for the structural-vs-inferred framing.
-
----
+- `output/leaderboard/lite_results.msgpack` -- 84 agents, pass/fail per instance
+- `output/resolved_traces_lite_full.jsonl` -- 300 oracle traces with file paths and content
+- `output/canonical_forms/` -- FIM patterns and instance assignments
+- `output/compositional_generalization/` -- failure classification and composition gap data
+- `output/pairwise_agent_comparison/` -- agent edit certificates and pairwise Jaccard
+- `output/scoped_certificates/` -- enriched certificates with file/scope information
 
 ## Structure
 
 ```
-representations/           # Transformation (Python)
-├── computed/             # edits, modules, motifs (structure from code/traces)
-├── inferred/             # behavioral, mechanistic, functional (LLM-derived)
-├── encoders/             # raw, tokens, functions
-└── core/                 # intent, utils
-
-data/
-├── swe_bench.py          # SWE-bench Lite loader
-└── agent_trajectories.py # (optional) Agent trajectories
-
-configs/
-└── datasets.py           # Dataset configs for extraction pipeline
-
-pipeline/
-└── utils.py              # Extraction, serialization, HF token
-
-scripts/
-├── run_extraction_pipeline.py  # Main pipeline: datasets → parquet + HF export
-├── run_swe_bench.py            # Legacy SWE-bench Lite pipeline
-├── run_agent_trajectories.py  # Agent trajectories only
-├── extract_cursor_data.sh
-├── parse_to_traces.py
-└── convert_format.py
+analysis/          -- core analysis modules (AST edits, scoped ops, procedures)
+representations/   -- computed and inferred representations
+scripts/           -- all runnable scripts
+configs/           -- benchmark configs, DSPy config
+data/              -- data loaders
+eval/              -- evaluation pipeline
+output/            -- all generated data and figures
+findings.md        -- full research record
 ```
-
----
-
-## Procedural-Info-Theory Dataset
-
-Outputs are published to [midah/procedural-info-theory](https://huggingface.co/datasets/midah/procedural-info-theory) on Hugging Face.
-
-**Baseline scope:** SWE-bench Lite only. Three computed representations: edits (structural certificate), modules (co-edit subgraph), motifs (event subsequences + soft membership). No inferred representations; enrich later.
-
----
-
-## Python API
-
-```python
-from representations import (
-    raw_repr, tokens_repr, semantic_edits_repr,
-    functions_repr, file_edit_graph_repr, motifs_repr
-)
-
-trace = {"events": [...]}
-raw = raw_repr(trace)
-tokens = tokens_repr(trace)
-edits = semantic_edits_repr(trace)
-functions = functions_repr(trace)
-modules = file_edit_graph_repr(trace)
-motifs = motifs_repr(trace)
-```
-
----
-
-## Graduated Disclosure
-
-- **Public**: Motifs (~240× compression)
-- **Team**: Module graphs (~100×)
-- **Research**: Tokens (~10×)
-- **Internal**: Raw events
-
----
 
 ## License
 
