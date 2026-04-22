@@ -107,9 +107,11 @@ def run_vmeasure_battery(
     predicted: Sequence,
     references: dict[str, Sequence],
 ) -> pd.DataFrame:
-    """Compute external-validity metrics against multiple reference partitions.
+    """Full introspection table: all six metrics per reference.
 
-    Returns a DataFrame with one row per reference, sorted by V-measure desc.
+    Use `headline_table` for paper-facing output; this returns the full
+    record (V-measure, homogeneity, completeness, ARI, NMI, AMI) for
+    ablation discussion and internal sanity checks. Sorted by V-measure desc.
     """
     rows = []
     for name, ref in references.items():
@@ -128,6 +130,33 @@ def run_vmeasure_battery(
         })
     df = pd.DataFrame(rows)
     return df.sort_values("v_measure", ascending=False).reset_index(drop=True)
+
+
+def headline_table(
+    predicted: Sequence,
+    references: dict[str, Sequence],
+) -> pd.DataFrame:
+    """PRISM-style headline: one clear metric per slice.
+
+    Returns a DataFrame with columns: reference, n, n_clusters, ari, v_measure.
+    ARI is the headline (chance-corrected, interpretable in [-0.5, 1] where
+    0 = chance); V-measure is the complementary info-theoretic companion.
+    Both increase with alignment, so the interpretation is consistent.
+
+    Sorted by ARI desc so the strongest alignment appears first.
+    """
+    rows = []
+    for name, ref in references.items():
+        m = compute_metrics(predicted, ref, reference_name=name)
+        rows.append({
+            "reference": m.reference_name,
+            "n": m.n,
+            "n_clusters": m.n_predicted_clusters,
+            "ari": m.ari,
+            "v_measure": m.v_measure,
+        })
+    df = pd.DataFrame(rows)
+    return df.sort_values("ari", ascending=False).reset_index(drop=True)
 
 
 def bootstrap_stability(

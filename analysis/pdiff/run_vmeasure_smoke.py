@@ -18,6 +18,7 @@ from analysis.pdiff import view_from_trace
 from analysis.pdiff.vmeasure import (
     bootstrap_stability,
     cluster_edits_by_vocab,
+    headline_table,
     run_vmeasure_battery,
 )
 
@@ -86,11 +87,17 @@ def main() -> int:
         "first_edit_op": [_first_edit_op(v) for v in v_list],
     }
 
-    print(f"=== V-measure battery ===\nn usable traces: {len(usable)}\n")
+    print("=== pdiff V-measure smoke ===")
+    print("ARI near 0 means predicted clustering is no more aligned with reference")
+    print("than chance; ARI near 1 means identical partitions.\n")
+    print(f"n usable traces: {len(usable)}\n")
 
-    table = run_vmeasure_battery(predicted, references)
-    print(table.to_string(index=False))
+    headline = headline_table(predicted, references)
+    print("Headline (ARI + V-measure):")
+    print(headline.to_string(index=False))
     print()
+
+    full = run_vmeasure_battery(predicted, references)
 
     boot = bootstrap_stability(predicted, references["repo"], n_bootstrap=50)
     print(f"Bootstrap ARI vs repo: mean={boot['mean_ari']:.4f} "
@@ -99,7 +106,8 @@ def main() -> int:
     results = {
         "n_traces": len(usable),
         "k": K,
-        "table": table.to_dict(orient="records"),
+        "headline": headline.to_dict(orient="records"),
+        "table": full.to_dict(orient="records"),
         "bootstrap_repo": boot,
     }
     (OUT_DIR / "vmeasure.json").write_text(json.dumps(results, indent=2, default=str))
