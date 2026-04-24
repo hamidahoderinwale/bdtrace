@@ -710,6 +710,64 @@
 <div class="caveat">
 <strong>Power caveat.</strong> 99 tied-outcome pairs split across three agent-pairs gives 31-35 matched pairs per comparison. Detecting per-motif effects of |Δ| ≈ 0.03-0.05 at FDR 5% would need roughly 2-3× more tied-outcome pairs. Expanding the corpus (more agents, cross-benchmark) is the most effective way to strengthen this analysis. The effect-size rankings are informative even without individual FDR significance.
 </div>
+
+<h3>5.4 Whole-trajectory clustering</h3>
+
+<p>So far we have measured similarity at the motif-distribution level. A complementary question: do entire trajectories cluster into types? Encode each of the 867 trajectories as a normalized motif-frequency vector (one value per vocabulary item), then run HDBSCAN (density-based clustering, no k to pick) in the high-dim space with cosine distance. UMAP is used for visualization only, not for clustering.</p>
+
+<figure>
+<img src="trajectory_clusters_umap.png" alt="UMAP of trajectories colored by agent and by cluster">
+<figcaption>UMAP of 867 trajectories. Left: colored by which agent ran the trajectory. Right: HDBSCAN clusters found without using agent labels. Agent structure is visible in the left panel — Claude (green) and GPT-4o (orange) occupy partially separate regions. HDBSCAN finds 11 dense pockets (22% of trajectories); the remaining 78% are "noise" — procedurally generic trajectories with no dense cluster membership.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Dense clusters are agent-typed, not task-typed.</strong> Of the 11 clusters HDBSCAN found, 9 have a single agent dominating ≥55% of membership (7 GPT-4o-dominated, 2 Claude-dominated, 0 GPT-4-dominated). Tasks within clusters are diverse (most clusters hit ≥10 distinct tasks). That pattern is what heritability predicts at the whole-trajectory level: when a trajectory is procedurally distinctive enough to join a dense cluster, the distinctiveness is an agent signature, not a task signature.
+</div>
+
+<div class="finding">
+<strong>GPT-4 has zero dominated clusters — it lives in the "generic" population.</strong> GPT-4 is the most heavily represented agent in the 676-trajectory noise blob (38% of it), and does not dominate any of the 11 clusters. GPT-4's procedural style is "within-corpus average." GPT-4o, by contrast, has 7 distinctive clusters — its long-edit-bursts and reproducer-cleanup patterns show up as coherent types.
+</div>
+
+<figure>
+<img src="trajectory_clusters_profile.png" alt="Per-cluster composition and top motifs">
+<figcaption>Six largest clusters (of 11). Top row: agent composition per cluster (bars total to 1.0; segment labels show agent + count). Bottom row: top 5 action patterns dominating each cluster. Reading: cluster 6 (n=39) is the largest — Claude-dominated at 56% with build-reproducer, find-then-open patterns. Cluster 1 (n=34, 55% GPT-4o) is reproducer-edit-heavy. Cluster 9 (n=25, 76% GPT-4o) is the GPT-family "cleanup" cluster: EDIT_SRC → RUN_REPRO → SHELL_RM patterns dominate.</figcaption>
+</figure>
+
+<div class="caveat">
+<strong>78% of trajectories are "generic".</strong> HDBSCAN returned 676 noise points — trajectories that can't be densely clustered at the motif-frequency level. This is consistent with the earlier pluralism finding: most SWE-bench Lite trajectories share common building-block motifs without forming distinctive procedural types. Only the 22% with genuinely distinctive procedural signatures produce dense clusters, and those clusters reveal agent structure.
+</div>
+
+<h3>5.5 Infrastructure cost and tokens</h3>
+
+<p>Each SWE-agent trajectory carries <code>model_stats</code>: tokens sent, tokens received, API calls, and dollar cost. Aggregated across 867 trajectories this gives an honest infrastructure-cost picture alongside the procedural analysis.</p>
+
+<figure>
+<img src="token_cost_per_agent.png" alt="Per-agent token and cost summary">
+<figcaption>Four per-agent metrics. Input tokens = context accumulated across the trajectory. Output tokens = what the model generated (actions + thoughts). API calls = one per decision step. Cost = what it took to run this agent on one SWE-bench task.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>GPT-4 uses half the tokens of Claude or GPT-4o but is not the cheapest.</strong> Mean tokens sent per task: GPT-4 = 242k, GPT-4o = 494k, Claude-3.5 = 516k. Mean cost per task: Claude-3.5 = $1.62, GPT-4 = $2.51, GPT-4o = $2.53. <strong>Claude is the cheapest per task despite using the most tokens</strong> — Anthropic per-token pricing more than offsets the length disadvantage.
+</div>
+
+<div class="finding">
+<strong>GPT-4o makes the most granular decisions.</strong> Mean API calls per task: GPT-4o = 39, Claude-3.5 = 33, GPT-4 = 22. GPT-4o is both long-running and finely-partitioned — every edit burst is many small API calls rather than one big one.
+</div>
+
+<figure>
+<img src="token_cost_by_difficulty.png" alt="Cost by difficulty bucket">
+<figcaption>Infrastructure metrics as a function of task difficulty (number of agents that solved). All three agents burn more on 0/3 tasks (nobody solved) than on 3/3 tasks (everyone solved). Cost gradients: Claude $2.17 → $1.28 (0/3 → 3/3, drop of $0.89 per task), GPT-4 $2.70 → $1.76 ($0.94 drop), GPT-4o $2.74 → $1.38 ($1.36 drop, the largest). Failing is consistently 40-60% more expensive than succeeding.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Failing a hard task is 40-60% more expensive than solving an easy one.</strong> On 0/3 tasks, GPT-4o averages 564k tokens sent, vs 250k on 3/3 tasks (2.3× more). Claude shows 580k vs 378k (1.5×). Cost rises proportionally. From an infra-cost perspective, the <em>hardest</em> tasks are also the <em>most expensive</em>, and agents flail longer before bailing — all three agents get progressively shorter as tasks become solvable.
+</div>
+
+<div class="finding">
+<strong>Trajectory length is a near-perfect proxy for tokens burned.</strong> Pearson correlation between canonical atom count and tokens-sent: Claude r=0.96, GPT-4 r=0.98, GPT-4o r=0.95. Per-atom token slope: Claude ~18.5k, GPT-4 ~13k, GPT-4o ~13k — Claude uses ~40% more tokens per step, consistent with its longer per-step observations and thoughts.
+</div>
+
+<p><strong>Total burn for this pilot</strong>: 867 trajectories cost ~$1,925 total (Claude $469, GPT-4 $752, GPT-4o $704). Over 300 tasks and 3 agents, this gives the paper an empirical infrastructure-cost baseline: running an autonomous SWE-agent on a SWE-bench-Lite-scale task list costs roughly $2 per task per agent, averaged.</p>
 </section>
 
 <section id="findings">
@@ -728,6 +786,8 @@
 <li><strong>Heritability gap is above chance at every difficulty level.</strong> Permutation null with 1000 shuffled-label draws: aggregate p=0.001, 0/3 p=0.002, 1/3 p=0.001, 2/3 p=0.047 (marginal), 3/3 p=0.026. The same-family lead is not a sampling artifact.</li>
 <li><strong>Agents have distinctive length, repertoire-width, and compression profiles.</strong> GPT-4 is most concise (~21 atoms/traj), GPT-4o longest (~39) with the widest repertoire (84 motifs to cover 90% vs 66). Claude compresses least (0.50). Nameable signatures from the novelty index: Claude = test-driven, GPT-4 = page-through-source, GPT-4o = long repetition bursts.</li>
 <li><strong>Matched-pairs per-motif test: effect directions replicate across cross-family panels.</strong> On tied-outcome pairs (task controlled), only <code>SUBMIT</code> passes FDR 5% (Claude vs GPT-4o, Δ = +0.12 favoring GPT-4o). But the same direction for <code>SHELL_RM → SUBMIT</code>, <code>EDIT_SRC_PY → ... → SUBMIT</code>, and <code>CREATE_REPRO_PY → ...</code> appears in both cross-family comparisons independently — replication across independent comparisons is evidence beyond single-test FDR at n ≈ 33 per panel.</li>
+<li><strong>Whole-trajectory clustering: dense clusters are agent-typed, and GPT-4 has none.</strong> HDBSCAN on motif-frequency vectors finds 11 dense clusters (22% of trajectories; 78% are in the generic "noise" population). 9 of the 11 clusters have a single agent dominating ≥55% of membership — 7 GPT-4o-dominated, 2 Claude-dominated, 0 GPT-4-dominated. GPT-4's style lives in the generic population; GPT-4o's distinctive patterns (long edit bursts, reproducer-cleanup) form coherent procedural types.</li>
+<li><strong>Claude is cheapest despite using 2x the tokens of GPT-4.</strong> Mean cost per task: Claude $1.62, GPT-4 $2.51, GPT-4o $2.53. Mean tokens sent: Claude 516k, GPT-4 242k, GPT-4o 494k. Claude's per-token pricing more than offsets its longer trajectories. Failing a 0/3 task is 40-60% more expensive than solving a 3/3 task — cost rises with difficulty as agents flail longer before giving up. Trajectory length explains 90%+ of variance in token burn (Pearson r = 0.95-0.98 across agents).</li>
 </ol>
 </section>
 

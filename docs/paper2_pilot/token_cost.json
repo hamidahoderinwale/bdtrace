@@ -1,0 +1,139 @@
+{
+  "per_agent": {
+    "GPT-4": {
+      "n_trajectories": 300,
+      "tokens_sent_mean": 242154.44666666666,
+      "tokens_sent_median": 220884.0,
+      "tokens_received_mean": 2853.6966666666667,
+      "api_calls_mean": 21.523333333333333,
+      "api_calls_median": 20.0,
+      "cost_mean_usd": 2.5071553666666673,
+      "cost_median_usd": 2.2920000000000003,
+      "cost_total_usd": 752.1466100000001
+    },
+    "Claude-3.5": {
+      "n_trajectories": 289,
+      "tokens_sent_mean": 516261.82006920414,
+      "tokens_sent_median": 356482.0,
+      "tokens_received_mean": 4947.01384083045,
+      "api_calls_mean": 32.73010380622837,
+      "api_calls_median": 25.0,
+      "cost_mean_usd": 1.6229906678200692,
+      "cost_median_usd": 1.1276700000000002,
+      "cost_total_usd": 469.044303
+    },
+    "GPT-4o": {
+      "n_trajectories": 278,
+      "tokens_sent_mean": 494230.38848920865,
+      "tokens_sent_median": 736141.0,
+      "tokens_received_mean": 4116.035971223022,
+      "api_calls_mean": 39.16187050359712,
+      "api_calls_median": 40.0,
+      "cost_mean_usd": 2.5328924820143888,
+      "cost_median_usd": 3.7519100000000005,
+      "cost_total_usd": 704.1441100000001
+    }
+  },
+  "by_difficulty": {
+    "0": {
+      "GPT-4": {
+        "n": 199,
+        "tokens_sent_mean": 259085.43718592965,
+        "api_calls_mean": 22.78894472361809,
+        "cost_mean_usd": 2.6847988442211053
+      },
+      "Claude-3.5": {
+        "n": 191,
+        "tokens_sent_mean": 580008.0104712042,
+        "api_calls_mean": 36.18848167539267,
+        "cost_mean_usd": 1.8224229581151832
+      },
+      "GPT-4o": {
+        "n": 183,
+        "tokens_sent_mean": 564175.7267759563,
+        "api_calls_mean": 43.9344262295082,
+        "cost_mean_usd": 2.89000781420765
+      }
+    },
+    "1": {
+      "GPT-4": {
+        "n": 46,
+        "tokens_sent_mean": 242056.4347826087,
+        "api_calls_mean": 21.26086956521739,
+        "cost_mean_usd": 2.5025204347826095
+      },
+      "Claude-3.5": {
+        "n": 43,
+        "tokens_sent_mean": 433711.37209302327,
+        "api_calls_mean": 29.41860465116279,
+        "cost_mean_usd": 1.366376790697674
+      },
+      "GPT-4o": {
+        "n": 42,
+        "tokens_sent_mean": 378059.1904761905,
+        "api_calls_mean": 31.88095238095238,
+        "cost_mean_usd": 1.9316427380952381
+      }
+    },
+    "2": {
+      "GPT-4": {
+        "n": 33,
+        "tokens_sent_mean": 195493.15151515152,
+        "api_calls_mean": 18.484848484848484,
+        "cost_mean_usd": 2.0170651515151516
+      },
+      "Claude-3.5": {
+        "n": 33,
+        "tokens_sent_mean": 347017.9090909091,
+        "api_calls_mean": 22.363636363636363,
+        "cost_mean_usd": 1.0878628181818184
+      },
+      "GPT-4o": {
+        "n": 31,
+        "tokens_sent_mean": 412103.0967741936,
+        "api_calls_mean": 33.12903225806452,
+        "cost_mean_usd": 2.1201869354838707
+      }
+    },
+    "3": {
+      "GPT-4": {
+        "n": 22,
+        "tokens_sent_mean": 159202.81818181818,
+        "api_calls_mean": 15.181818181818182,
+        "cost_mean_usd": 1.6451159090909093
+      },
+      "Claude-3.5": {
+        "n": 22,
+        "tokens_sent_mean": 378043.45454545453,
+        "api_calls_mean": 24.727272727272727,
+        "cost_mean_usd": 1.1958110454545456
+      },
+      "GPT-4o": {
+        "n": 22,
+        "tokens_sent_mean": 249918.54545454544,
+        "api_calls_mean": 21.863636363636363,
+        "cost_mean_usd": 1.291722272727273
+      }
+    }
+  },
+  "length_correlation": {
+    "Claude-3.5": {
+      "n": 289,
+      "pearson_r": 0.9555903270235823,
+      "slope_tokens_per_atom": 18568.751064722237,
+      "intercept": -90017.53995404484
+    },
+    "GPT-4": {
+      "n": 300,
+      "pearson_r": 0.9830774085848714,
+      "slope_tokens_per_atom": 12954.305009101037,
+      "intercept": -35283.58561158055
+    },
+    "GPT-4o": {
+      "n": 278,
+      "pearson_r": 0.9471797268868417,
+      "slope_tokens_per_atom": 13201.434555886915,
+      "intercept": -21907.71290624039
+    }
+  }
+}
