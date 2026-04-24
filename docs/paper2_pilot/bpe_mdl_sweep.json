@@ -1,0 +1,223 @@
+{
+  "V_sweep": [
+    100,
+    125,
+    150,
+    175,
+    200,
+    225,
+    250,
+    300,
+    500
+  ],
+  "mdl_optimal_V": 500,
+  "results": [
+    {
+      "V": 100,
+      "n_merges": 24,
+      "actual_vocab": 100,
+      "compression_ratio": 0.590048634493079,
+      "mdl": {
+        "n_tokens": 15772,
+        "entropy_bits_per_token": 5.723341114781248,
+        "corpus_bits": 90268.53606232985,
+        "vocab_bits": 310.2320633222442,
+        "total_bits": 90578.76812565209
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.16077800763043926,
+        "Claude-3.5__GPT-4o": 0.1560200663860301,
+        "GPT-4__GPT-4o": 0.15082470740653037
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.15878395646824853,
+        "Claude-3.5__GPT-4o": 0.187332393206651,
+        "GPT-4__GPT-4o": 0.12301932568861484
+      }
+    },
+    {
+      "V": 125,
+      "n_merges": 49,
+      "actual_vocab": 125,
+      "compression_ratio": 0.5043771043771044,
+      "mdl": {
+        "n_tokens": 13482,
+        "entropy_bits_per_token": 6.231402889090645,
+        "corpus_bits": 84011.77375072008,
+        "vocab_bits": 651.0935916888244,
+        "total_bits": 84662.8673424089
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.17880608395694955,
+        "Claude-3.5__GPT-4o": 0.16284193366926408,
+        "GPT-4__GPT-4o": 0.16268471755722183
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.1625850173482385,
+        "Claude-3.5__GPT-4o": 0.1989816643283788,
+        "GPT-4__GPT-4o": 0.12926995383940817
+      }
+    },
+    {
+      "V": 150,
+      "n_merges": 74,
+      "actual_vocab": 150,
+      "compression_ratio": 0.46509539842873177,
+      "mdl": {
+        "n_tokens": 12432,
+        "entropy_bits_per_token": 6.570715534378092,
+        "corpus_bits": 81687.13552338844,
+        "vocab_bits": 1006.4210894362832,
+        "total_bits": 82693.55661282472
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.18791810154325023,
+        "Claude-3.5__GPT-4o": 0.19162579044295888,
+        "GPT-4__GPT-4o": 0.18330724852864702
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.17356174173148384,
+        "Claude-3.5__GPT-4o": 0.2211461747958744,
+        "GPT-4__GPT-4o": 0.15161061820024396
+      }
+    },
+    {
+      "V": 175,
+      "n_merges": 99,
+      "actual_vocab": 175,
+      "compression_ratio": 0.4373363262252151,
+      "mdl": {
+        "n_tokens": 11690,
+        "entropy_bits_per_token": 6.778769919586831,
+        "corpus_bits": 79243.82035997005,
+        "vocab_bits": 1373.7867828073884,
+        "total_bits": 80617.60714277744
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.19522230180162495,
+        "Claude-3.5__GPT-4o": 0.19922676219428995,
+        "GPT-4__GPT-4o": 0.1877645187571717
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.1971104024057963,
+        "Claude-3.5__GPT-4o": 0.22943325634606637,
+        "GPT-4__GPT-4o": 0.16554611182823337
+      }
+    },
+    {
+      "V": 200,
+      "n_merges": 124,
+      "actual_vocab": 200,
+      "compression_ratio": 0.41414141414141414,
+      "mdl": {
+        "n_tokens": 11070,
+        "entropy_bits_per_token": 7.0049368172362945,
+        "corpus_bits": 77544.65056680578,
+        "vocab_bits": 1751.4630908605413,
+        "total_bits": 79296.11365766633
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.2169091210513044,
+        "Claude-3.5__GPT-4o": 0.21597636644134197,
+        "GPT-4__GPT-4o": 0.20088513760846485
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.21640341632251123,
+        "Claude-3.5__GPT-4o": 0.24716103695085068,
+        "GPT-4__GPT-4o": 0.18014499763160358
+      }
+    },
+    {
+      "V": 225,
+      "n_merges": 149,
+      "actual_vocab": 225,
+      "compression_ratio": 0.3977553310886644,
+      "mdl": {
+        "n_tokens": 10632,
+        "entropy_bits_per_token": 7.156781748776277,
+        "corpus_bits": 76090.90355298937,
+        "vocab_bits": 2138.1571903727363,
+        "total_bits": 78229.0607433621
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.23154290281935058,
+        "Claude-3.5__GPT-4o": 0.22321781309377603,
+        "GPT-4__GPT-4o": 0.21001507101328531
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.23910490266207562,
+        "Claude-3.5__GPT-4o": 0.2537975683132863,
+        "GPT-4__GPT-4o": 0.18946416121308957
+      }
+    },
+    {
+      "V": 250,
+      "n_merges": 174,
+      "actual_vocab": 250,
+      "compression_ratio": 0.3840254395809951,
+      "mdl": {
+        "n_tokens": 10265,
+        "entropy_bits_per_token": 7.305853589172486,
+        "corpus_bits": 74994.58709285557,
+        "vocab_bits": 2532.8649408390006,
+        "total_bits": 77527.45203369457
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.2383408495316369,
+        "Claude-3.5__GPT-4o": 0.23204772325675116,
+        "GPT-4__GPT-4o": 0.21348754829354044
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.247426876085958,
+        "Claude-3.5__GPT-4o": 0.26581344989751554,
+        "GPT-4__GPT-4o": 0.19770537988858464
+      }
+    },
+    {
+      "V": 300,
+      "n_merges": 224,
+      "actual_vocab": 300,
+      "compression_ratio": 0.36266367377478487,
+      "mdl": {
+        "n_tokens": 9694,
+        "entropy_bits_per_token": 7.562302036884889,
+        "corpus_bits": 73308.9559455621,
+        "vocab_bits": 3343.2573828231903,
+        "total_bits": 76652.21332838529
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.2631832926716131,
+        "Claude-3.5__GPT-4o": 0.2500236660635036,
+        "GPT-4__GPT-4o": 0.23208961812830692
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.274936963856934,
+        "Claude-3.5__GPT-4o": 0.28378872604200506,
+        "GPT-4__GPT-4o": 0.21747915402698875
+      }
+    },
+    {
+      "V": 500,
+      "n_merges": 424,
+      "actual_vocab": 500,
+      "compression_ratio": 0.31156004489337824,
+      "mdl": {
+        "n_tokens": 8328,
+        "entropy_bits_per_token": 8.271487644338293,
+        "corpus_bits": 68884.9491020493,
+        "vocab_bits": 6795.4090818276645,
+        "total_bits": 75680.35818387696
+      },
+      "jsd_full": {
+        "Claude-3.5__GPT-4": 0.31130648376120107,
+        "Claude-3.5__GPT-4o": 0.3028185305377309,
+        "GPT-4__GPT-4o": 0.2853327114954425
+      },
+      "jsd_motifs": {
+        "Claude-3.5__GPT-4": 0.33439575235607305,
+        "Claude-3.5__GPT-4o": 0.341214435070157,
+        "GPT-4__GPT-4o": 0.29141568406921287
+      }
+    }
+  ]
+}

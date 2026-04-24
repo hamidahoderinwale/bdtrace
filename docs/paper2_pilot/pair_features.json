@@ -1,0 +1,100 @@
+{
+  "n_pairs_total": 99,
+  "pair_counts_per_agent_pair": [
+    {
+      "agent_a": "Claude 3.5 Sonnet (SWE-agent)",
+      "agent_b": "GPT-4 (SWE-agent)",
+      "n_pairs": 33
+    },
+    {
+      "agent_a": "Claude 3.5 Sonnet (SWE-agent)",
+      "agent_b": "GPT-4o (SWE-agent)",
+      "n_pairs": 35
+    },
+    {
+      "agent_a": "GPT-4 (SWE-agent)",
+      "agent_b": "GPT-4o (SWE-agent)",
+      "n_pairs": 31
+    }
+  ],
+  "feature_summary": [
+    {
+      "agent_a": "Claude 3.5 Sonnet (SWE-agent)",
+      "agent_b": "GPT-4 (SWE-agent)",
+      "n_pairs": 33,
+      "mean_absdiff_n_steps": 12.9697,
+      "mean_diff_n_steps": 7.8182,
+      "mean_absdiff_n_edits": 5.5758,
+      "mean_diff_n_edits": 1.0909,
+      "mean_absdiff_n_searches": 1.3939,
+      "mean_diff_n_searches": 0.4242,
+      "mean_absdiff_n_opens": 1.303,
+      "mean_diff_n_opens": 0.9394,
+      "mean_absdiff_n_runs": 3.697,
+      "mean_diff_n_runs": 2.1212,
+      "mean_absdiff_n_nav": 1.2727,
+      "mean_diff_n_nav": 0.3636,
+      "mean_absdiff_edit_retries": 3.6061,
+      "mean_diff_edit_retries": -0.3939,
+      "mean_absdiff_edit_retry_rate": 0.3069,
+      "mean_diff_edit_retry_rate": -0.042,
+      "mean_absdiff_n_files_opened": 0.697,
+      "mean_diff_n_files_opened": 0.4545,
+      "mean_absdiff_n_files_edited": 0.3636,
+      "mean_diff_n_files_edited": 0.2424,
+      "mean_action_levenshtein": 0.5219
+    },
+    {
+      "agent_a": "Claude 3.5 Sonnet (SWE-agent)",
+      "agent_b": "GPT-4o (SWE-agent)",
+      "n_pairs": 35,
+      "mean_absdiff_n_steps": 20.6857,
+      "mean_diff_n_steps": -3.5429,
+      "mean_absdiff_n_edits": 11.0286,
+      "mean_diff_n_edits": -5.2571,
+      "mean_absdiff_n_searches": 1.3143,
+      "mean_diff_n_searches": 0.5143,
+      "mean_absdiff_n_opens": 1.8,
+      "mean_diff_n_opens": 0.5429,
+      "mean_absdiff_n_runs": 4.2286,
+      "mean_diff_n_runs": -0.2286,
+      "mean_absdiff_n_nav": 1.1143,
+      "mean_diff_n_nav": 0.7714,
+      "mean_absdiff_edit_retries": 7.2571,
+      "mean_diff_edit_retries": -4.5143,
+      "mean_absdiff_edit_retry_rate": 0.2687,
+      "mean_diff_edit_retry_rate": -0.0472,
+      "mean_absdiff_n_files_opened": 0.9143,
+      "mean_diff_n_files_opened": 0.1143,
+      "mean_absdiff_n_files_edited": 0.3429,
+      "mean_diff_n_files_edited": 0.2857,
+      "mean_action_levenshtein": 0.5121
+    },
+    {
+      "agent_a": "GPT-4 (SWE-agent)",
+      "agent_b": "GPT-4o (SWE-agent)",
+      "n_pairs": 31,
+      "mean_absdiff_n_steps": 14.3226,
+      "mean_diff_n_steps": -9.871,
+      "mean_absdiff_n_edits": 7.2903,
+      "mean_diff_n_edits": -4.8387,
+      "mean_absdiff_n_searches": 0.7097,
+      "mean_diff_n_searches": 0.129,
+      "mean_absdiff_n_opens": 1.0323,
+      "mean_diff_n_opens": -0.4516,
+      "mean_absdiff_n_runs": 2.5484,
+      "mean_diff_n_runs": -1.9032,
+      "mean_absdiff_n_nav": 0.8387,
+      "mean_diff_n_nav": 0.8387,
+      "mean_absdiff_edit_retries": 5.6452,
+      "mean_diff_edit_retries": -3.0,
+      "mean_absdiff_edit_retry_rate": 0.2137,
+      "mean_diff_edit_retry_rate": 0.0185,
+      "mean_absdiff_n_files_opened": 0.6129,
+      "mean_diff_n_files_opened": -0.2903,
+      "mean_absdiff_n_files_edited": 0.0645,
+      "mean_diff_n_files_edited": 0.0,
+      "mean_action_levenshtein": 0.3674
+    }
+  ]
+}

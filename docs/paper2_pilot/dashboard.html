@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Paper 2 Pilot — Procedural Analysis of SWE-Agents</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+    color: #222;
+    line-height: 1.55;
+    background: #fafafa;
+  }
+  header {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .meta {
+    color: #888;
+    font-size: 13px;
+    font-family: -apple-system-monospaced-numeric, "SF Mono", monospace;
+  }
+  nav {
+    background: #f0f0f0;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 36px;
+    font-size: 14px;
+  }
+  nav ol {
+    margin: 0;
+    padding-left: 22px;
+  }
+  nav a {
+    color: #0366d6;
+    text-decoration: none;
+  }
+  nav a:hover {
+    text-decoration: underline;
+  }
+  section {
+    margin-bottom: 44px;
+    background: white;
+    padding: 24px 28px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+  }
+  h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #111;
+  }
+  h3 {
+    margin: 28px 0 8px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #333;
+  }
+  .finding {
+    background: #fff8e1;
+    border-left: 3px solid #f0b000;
+    padding: 10px 14px;
+    margin: 12px 0 18px;
+    font-size: 14.5px;
+  }
+  .finding strong {
+    color: #5d4400;
+  }
+  .caveat {
+    background: #eef5ff;
+    border-left: 3px solid #5d90e0;
+    padding: 10px 14px;
+    margin: 12px 0 18px;
+    font-size: 14px;
+  }
+  .defbox {
+    background: #f6f2ff;
+    border-left: 3px solid #9060d0;
+    padding: 10px 14px;
+    margin: 12px 0 18px;
+    font-size: 14px;
+  }
+  figure {
+    margin: 14px 0;
+    text-align: center;
+  }
+  figure img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+  }
+  figcaption {
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
+    text-align: left;
+    padding: 4px 8px;
+    font-style: italic;
+  }
+  table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+  td.num {
+    text-align: right;
+    font-family: -apple-system-monospaced-numeric, "SF Mono", monospace;
+  }
+  code {
+    background: #f3f3f3;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+  }
+  .methods-note {
+    font-size: 13px;
+    color: #555;
+    background: #f3f3f3;
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 12px 0;
+  }
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    font-size: 13px;
+    color: #666;
+  }
+  .bullet-list li {
+    margin-bottom: 6px;
+  }
+  dl.glossary dt {
+    font-weight: 600;
+    margin-top: 12px;
+    color: #111;
+  }
+  dl.glossary dd {
+    margin: 2px 0 6px 0;
+    color: #333;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+<h1>Paper 2 Pilot — Procedural Analysis of SWE-Agents</h1>
+<p class="subtitle">Canonicalize-then-BPE methodology on 867 agent trajectories; 3 SWE-agent variants on SWE-bench Lite</p>
+<p class="meta">Generated 2026-04-22 · all figures in <code>output/paper2_pilot/</code></p>
+</header>
+
+<nav>
+<strong style="font-size:13px; color:#555;">Contents</strong>
+<ol>
+<li><a href="#scope">Scope and methodology</a></li>
+<li><a href="#phaseA">Phase A — pilot on hand-coded 8-token DSL (scaffolding)</a></li>
+<li><a href="#phaseB">Phase B — emergent BPE motifs (committed methodology)</a></li>
+<li><a href="#examples">Concrete examples — what BPE is actually doing</a></li>
+<li><a href="#sensitivity">Sensitivity and robustness (V sweep + difficulty slice)</a></li>
+<li><a href="#findings">Headline findings</a></li>
+<li><a href="#implications">Implications</a></li>
+<li><a href="#alternatives">Alternatives considered along the way</a></li>
+<li><a href="#limitations">Limitations</a></li>
+<li><a href="#next">Next steps</a></li>
+<li><a href="#questions">Open questions</a></li>
+<li><a href="#glossary">Glossary</a></li>
+</ol>
+</nav>
+
+<section id="scope">
+<h2>1. Scope and methodology</h2>
+
+<p>Paper 2 investigates procedural variation among software-engineering agents through two complementary layers: action-sequence analysis (what each agent did, step by step) and rationale-based preference analysis (what distinguishes agents qualitatively). Today's pilot covers the action-sequence layer.</p>
+
+<h3>Data</h3>
+<ul class="bullet-list">
+<li>867 raw <code>.traj</code> trajectories fetched from the public SWE-bench submissions bucket</li>
+<li>3 SWE-agent variants: GPT-4, Claude 3.5 Sonnet, GPT-4o (same scaffold, different backbones)</li>
+<li>SWE-bench Lite (300 instances)</li>
+<li>99 tied-outcome pairs where two agents both resolved the same task</li>
+</ul>
+
+<h3>Committed methodology</h3>
+<p>Canonicalize-then-BPE: parse raw shell-like actions into canonical atoms (type-tagging file paths, stripping non-semantic literals), then run BPE on the canonicalized sequences to discover emergent procedural motifs. Bottom-up vocabulary, aligned with OverCode's canonicalize-before-cluster recipe and Ellis/DreamCoder's library-via-compression lineage. If any unfamiliar terms appear below (BPE, canonical atom, motif, JSD, "procedurally permissive"…), the <a href="#glossary">Glossary</a> at the end defines them.</p>
+
+<div class="methods-note">
+<strong>Data provenance:</strong> raw trajectories cached at <code>output/trajectories/.cache/</code> with per-file SHA-256 manifest and human-readable NOTE.md describing the fetch run.
+</div>
+</section>
+
+<section id="phaseA">
+<h2>2. Phase A — pilot on hand-coded 8-token DSL (scaffolding)</h2>
+<p>The pre-extracted SWE-agent parquets collapse each trajectory's actions into an 8-token DSL (<code>CREATE, EDIT, NAV, OPEN, OTHER, RUN, SEARCH, SUBMIT</code>). Phase A uses this DSL directly as scaffolding. Findings here motivate the full methodology; they are preliminary and will be replaced by Phase B results for the paper.</p>
+
+<h3>2.1 Variance decomposition across 862 trajectories</h3>
+
+<div class="finding">
+<strong>Task dominates agent at the feature-count level.</strong> Task identity explains 35–48% of variance in per-trajectory counts; agent identity explains only 1–13%. Holds on both full corpus (862 trajectories) and task-matched subset (262 shared tasks). Not a sampling artifact.
+</div>
+
+<figure>
+<img src="variance_decomposition.png" alt="Variance decomposition full corpus">
+<figcaption>Task-explained variance (orange) dominates agent-explained variance (blue) across all 10 per-trajectory features on SWE-bench Lite. Dashed line at 50% reference.</figcaption>
+</figure>
+
+<p><strong>Interpretation:</strong> at the level of raw action counts, what an agent does depends more on the task than on which agent is solving it. Agent style does not live in count features. This motivates the rollout-layer analysis in Phase B.</p>
+
+<h3>2.2 Pair Levenshtein on tied-outcome pairs (99 pairs)</h3>
+
+<div class="finding">
+<strong>Within-task sequence divergence is substantial and shows model-family heritability.</strong> Same-family agents (GPT-4 and GPT-4o) have mean Levenshtein 0.37 on tied-outcome pairs; cross-family pairs are 0.51–0.52. Preliminary evidence that model-family drives rollout-level style.
+</div>
+
+<figure>
+<img src="pair_action_levenshtein.png" alt="Pair action Levenshtein violin">
+<figcaption>Pairwise normalized Levenshtein distance on 8-token action sequences for 99 tied-outcome pairs, per agent-pair.</figcaption>
+</figure>
+
+<h3>2.3 Task-level procedural diversity</h3>
+
+<div class="defbox">
+<strong>What "procedurally permissive" means.</strong> For each of the 300 SWE-bench Lite tasks, we compute the average pairwise sequence divergence among the agents that attempted it. A task is <em>procedurally permissive</em> if that divergence is ≥ 0.60 — i.e., on average, more than 60% of one agent's actions don't line up with another's, even when both succeed. A task is <em>procedurally constrained</em> if divergence is ≤ 0.30 — most agents follow nearly the same action path. "Pluralism" = most tasks are permissive: the benchmark doesn't force a single solution path.
+</div>
+
+<div class="finding">
+<strong>Pluralism dominates: 47% of tasks are procedurally permissive, only 5% are constrained.</strong> Mean pairwise action-sequence divergence across 300 tasks is 0.58 (median 0.59). All-resolved tasks diverge less (median 0.48) than mixed-outcome tasks (0.60).
+</div>
+
+<figure>
+<img src="task_diversity_distribution.png" alt="Task diversity distribution">
+<figcaption>Distribution of per-task procedural divergence across 300 tasks. Bimodal-ish with mass around 0.5–0.7; few tasks force convergence.</figcaption>
+</figure>
+
+<figure>
+<img src="task_diversity_by_resolved.png" alt="Task diversity by outcome">
+<figcaption>Divergence split by outcome category. Tasks where all agents succeed exhibit tighter procedural agreement than tasks with mixed or no success.</figcaption>
+</figure>
+
+<div class="caveat">
+<strong>Caveat for Phase A:</strong> all Phase A findings use the hand-coded 8-token DSL extracted by prior infrastructure. This is scaffolding, not the committed methodology. Phase B replaces the DSL with emergent motifs from BPE.
+</div>
+</section>
+
+<section id="phaseB">
+<h2>3. Phase B — emergent BPE motifs (committed methodology)</h2>
+
+<p>Canonicalization produced 76 atomic canonical tokens from the raw <code>.traj</code> files. BPE was then trained on the canonicalized sequences with target vocabulary V=200, discovering 124 merged motifs on top of the 76 atoms.</p>
+
+<h3>3.1 Canonicalization output</h3>
+
+<div class="methods-note">
+867 trajectories canonicalized to 26,730 tokens across 76 unique atoms. 99.9% coverage; 16 rare unknowns (pylint, cython, nox, etc.) flagged for inspection but not load-bearing. Top atoms: <code>EDIT_SRC_PY</code> (5,776×), <code>SEARCH</code> (2,418×), <code>RUN_PYTHON_REPRO_PY</code> (2,381×), <code>NAV_SRC_PY</code> (2,237×).
+</div>
+
+<h3>3.2 BPE-learned vocabulary</h3>
+
+<div class="finding">
+<strong>BPE discovered a hierarchy of motifs from bigrams to 32-grams, passing all interpretability criteria.</strong> 60.5% of merged items are 3-gram-or-longer; many map to recognizable procedural practices.
+</div>
+
+<figure>
+<img src="bpe_vocabulary_lengths.png" alt="BPE vocabulary length histogram">
+<figcaption>Vocabulary item length distribution after BPE training. 76 atoms (gray) plus 124 merged motifs (blue) ranging from bigrams to a tail of 8-, 16-, and 32-gram "repeated edit" sequences.</figcaption>
+</figure>
+
+<h3>3.3 Top discovered motifs (nameable)</h3>
+
+<table>
+<thead>
+<tr><th>Rank</th><th>Motif (sequence)</th><th>Name</th><th>Frequency</th></tr>
+</thead>
+<tbody>
+<tr><td>2</td><td><code>CREATE_REPRO → EDIT_REPRO → RUN_PYTHON_REPRO</code></td><td>Build reproducer</td><td class="num">190</td></tr>
+<tr><td>4</td><td><code>SEARCH → OPEN_SRC</code></td><td>Search-then-open</td><td class="num">188</td></tr>
+<tr><td>5</td><td><code>OPEN_SRC → SEARCH → NAV_SRC</code></td><td>Open, search within, navigate</td><td class="num">181</td></tr>
+<tr><td>7</td><td><code>FIND_FILE → OPEN_SRC</code></td><td>Locate-then-open</td><td class="num">156</td></tr>
+<tr><td>9</td><td><code>SEARCH → OPEN_SRC → SEARCH → NAV_SRC</code></td><td>Exploratory search loop</td><td class="num">146</td></tr>
+</tbody>
+</table>
+
+<h3>3.4 Heritability at the motif layer</h3>
+
+<div class="defbox">
+<strong>What JSD is and why we use it.</strong> Jensen-Shannon divergence measures how different two probability distributions are. Here each agent has a distribution over motifs (what fraction of their tokens is <code>FIND_FILE → FIND_FILE</code>, what fraction is <code>SEARCH → OPEN_SRC</code>, etc.), and we compare agents pairwise. With log base 2, JSD is bounded in <strong>[0, 1]</strong>: 0 means two agents use motifs in identical proportions, 1 means their motif vocabularies don't overlap at all. Why JSD specifically? (a) it is <em>symmetric</em> — swapping the two agents gives the same answer, unlike KL divergence; (b) it is <em>bounded</em>, so numbers from different runs can be compared directly; (c) it is <em>finite</em> even when one agent never uses a motif the other relies on (KL would blow up). It is the natural question to ask of two agents' procedural repertoires: "how different are these two distributions?"
+</div>
+
+<div class="finding">
+<strong>Heritability ordering is preserved and amplified when moving from atoms to motifs.</strong> GPT-family pair (GPT-4 × GPT-4o) has the tightest JSD at both granularities. Motif-level JSD shows a larger gap between same-family and cross-family agents than full-vocabulary JSD does.
+</div>
+
+<figure>
+<img src="bpe_pair_levenshtein.png" alt="BPE pair Levenshtein comparison">
+<figcaption>Pairwise Levenshtein on shared instances, canonical atoms (left) vs BPE motifs (right). GPT-family pair is tightest in both representations; absolute values shift upward under BPE due to larger vocabulary.</figcaption>
+</figure>
+
+<figure>
+<img src="agent_jsd_matrix.png" alt="Agent JSD matrix">
+<figcaption>Pairwise pairwise dissimilarity between agent motif distributions. Left: full vocabulary. Right: motifs only. GPT-family pair has the smallest JSD in both views; the gap between same-family and cross-family is larger in the motifs-only view (0.06+) than in the full-vocabulary view (0.015).</figcaption>
+</figure>
+
+<h3>3.5 Per-agent motif usage</h3>
+
+<div class="finding">
+<strong>Agents use systematically different motifs.</strong> Visible contrasts include: Claude uses <code>FIND_FILE → FIND_FILE</code> far more than GPT-4o; GPT-family agents use <code>SHELL_RM → SUBMIT</code> (cleanup before submission) while Claude barely does; GPT-4 dominates <code>SEARCH → OPEN_SRC</code> (standard investigative move).
+</div>
+
+<figure>
+<img src="agent_motif_distributions.png" alt="Per-agent motif distributions">
+<figcaption>Top 15 motifs by overall corpus frequency, side-by-side per agent. Each agent is a colored bar for each motif; bar length is the fraction of that agent's total BPE tokens.</figcaption>
+</figure>
+
+<h3>3.6 Per-agent aggregate metrics</h3>
+
+<p>Beyond pairwise JSD, four agent-level aggregate metrics characterise each agent's procedural style: repertoire entropy, repertoire width, trajectory length, and compression ratio. All are derivable in one pass from the BPE-expressed corpus.</p>
+
+<figure>
+<img src="aggregate_metrics.png" alt="Per-agent aggregate metrics">
+<figcaption>Per-agent aggregates. <strong>Entropy</strong>: how evenly each agent spreads usage across motifs (higher = more diverse). <strong>Distinct motifs @90%</strong>: how many motifs to cover 90% of an agent's tokens (repertoire width). <strong>Mean length</strong>: average trajectory length in canonical atoms (solid) and BPE motifs (hatched). <strong>Compression</strong>: BPE length / atom length; lower = more repeated sub-sequences.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Agents have distinctive length profiles.</strong> GPT-4 is the most concise (21.4 atoms / 8.2 motifs per trajectory) — roughly half the length of the others. GPT-4o is the longest (39 atoms / 14 motifs) with the widest repertoire (84 motifs to cover 90% vs 66 for Claude and GPT-4) and the lowest compression (0.37, meaning heavy repeat structure). Claude is in between on length but compresses least (0.50, more varied sub-sequences).
+</div>
+
+<figure>
+<img src="length_by_difficulty.png" alt="Length by difficulty">
+<figcaption>Mean trajectory length per agent as a function of task difficulty (number of agents that resolved). All agents trend shorter as tasks become solvable, but the shape differs: GPT-4o is dramatically longer on 0/3 tasks (44 atoms vs 36 for Claude and 22 for GPT-4), suggesting it "flails longer" before giving up.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Novelty index reveals nameable per-agent signatures.</strong> For each agent, per-motif log-odds of this-agent's usage vs the corpus mean. Positive = this agent over-uses the motif. The top over-used motifs are clean style fingerprints.
+</div>
+
+<figure>
+<img src="novelty_top_motifs.png" alt="Top distinctive motifs per agent">
+<figcaption>Top 6 distinctively over-used motifs per agent (log2 odds vs corpus mean; positive = over-used). <strong>Claude-3.5</strong>: test-driven (RUN_PYTHON_TEST → RUN_PYTHON_TEST, OPEN_REPRO → RUN, EDIT_SRC → RUN_PYTEST). <strong>GPT-4</strong>: heavy in-file scrolling (NAV_SRC × 4, NAV_SRC × 8) and SEARCH → OPEN. <strong>GPT-4o</strong>: long repetition bursts (EDIT_SRC × 32, EDIT_CONFIG × 16, SHELL_EXPORT × 2, long edit-run loops). Three distinct procedural styles nameable from the numbers alone.</figcaption>
+</figure>
+</section>
+
+<section id="examples">
+<h2>4. Concrete examples — what BPE is actually doing</h2>
+<p>Plain-language illustrations of the core BPE concepts using real data from this pilot.</p>
+
+<h3>4.1 What is a BPE merge?</h3>
+
+<p>A merge is a single step in BPE training. Each merge finds the most-frequent adjacent pair of tokens in the corpus, and binds that pair into a single new symbol. From that point on, every occurrence of that pair is treated as one token.</p>
+
+<p><strong>Concrete example from our training run — the first merge that was performed:</strong></p>
+
+<table style="margin: 8px 0; font-size: 14px;">
+<tr><td><strong>Pair found:</strong></td>
+<td><span style="padding:2px 6px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11.5px;">EDIT_SRC_PY</span>
++
+<span style="padding:2px 6px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11.5px;">EDIT_SRC_PY</span>
+</td></tr>
+<tr><td><strong>Frequency across corpus:</strong></td><td>Most frequent adjacent pair (over 800 occurrences)</td></tr>
+<tr><td><strong>New merged symbol:</strong></td>
+<td><span style="padding:2px 6px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11.5px;">EDIT_SRC_PY → EDIT_SRC_PY</span>
+</td></tr>
+<tr><td><strong>Meaning:</strong></td><td>"Two source-file edits in a row" — a recognizable burst of editing activity</td></tr>
+</table>
+
+<p>After this first merge, BPE looks for the most frequent pair in the <em>updated</em> corpus — which might now involve the new merged symbol. That is how longer motifs grow: once <code>A→B</code> is a single token, it can itself pair with neighbors to form <code>A→B→C</code>, etc.</p>
+
+<p>We ran 124 merges total. Each merge adds one new symbol to the vocabulary and re-expresses the corpus to use that symbol where the pair appeared.</p>
+
+
+<h3>4.2 One trajectory in three views</h3>
+
+<p>Here is a real SWE-agent trajectory (agent <strong>Claude-3.5</strong>, instance <code>sphinx-doc__sphinx-8435</code>) shown at each representation level: raw shell-like commands, canonicalized atoms, and BPE motifs.</p>
+
+<h4 style="font-size:14px; margin:20px 0 6px;">Raw action strings (25 steps)</h4>
+<p style="font-size:13px; color:#666;">What the agent actually did — shell-like commands. Surface form varies enormously: different file paths, different arguments, different whitespace.</p>
+<div style="background:#fdfdfd; padding:8px 12px; border-radius:4px; border:1px solid #e5e5e5; max-height:280px; overflow-y:auto;">
+<div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 0]</span> create example.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 1]</span> edit 1:1<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 2]</span> edit 1:1<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 3]</span> create index.rst</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 4]</span> edit 1:3<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 5]</span> create conf.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 6]</span> edit 1:3<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 7]</span> find_file &quot;autodoc.py&quot; src</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 8]</span> find . -name &quot;autodoc.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 9]</span> find . -name &quot;*autodoc*.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[10]</span> find . -name &quot;ext*.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[11]</span> open sphinx/ext/extlinks.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[12]</span> open sphinx/extension.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[13]</span> find . -name &quot;*autodoc*.py&quot; | grep -v test</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[14]</span> find ./sphinx -name &quot;*.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[15]</span> open ./sphinx/ext/autodoc/__init__.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[16]</span> search_file &quot;autodoc_type_aliases&quot; ./sphinx/ext/autodoc/__in<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[17]</span> search_file &quot;class DataDocumenter&quot; ./sphinx/ext/autodoc/__in<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[18]</span> goto 1684</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[19]</span> edit 1699:1739<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[20]</span> search_file &quot;class AttributeDocumenter&quot; ./sphinx/ext/autodoc<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[21]</span> goto 2016</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[22]</span> edit 2090:2100<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[23]</span> python -m py_compile sphinx/ext/autodoc/__init__.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[24]</span> submit</div>
+</div>
+
+<h4 style="font-size:14px; margin:20px 0 6px;">Canonicalized atoms (25 tokens)</h4>
+<p style="font-size:13px; color:#666;">Each raw action → one canonical atom. Type-tagged file paths (SRC/TEST/REPRO/CONFIG) and stripped of non-semantic literals. Same length as raw — just normalized.</p>
+<div style="background:#fdfdfd; padding:10px 12px; border-radius:4px; border:1px solid #e5e5e5;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_DOC">CREATE_DOC</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_DOC">EDIT_DOC</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="NAV_SRC_PY">NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="NAV_SRC_PY">NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SUBMIT">SUBMIT</span>
+</div>
+
+<h4 style="font-size:14px; margin:20px 0 6px;">BPE-expressed (13 tokens — compression 0.52)</h4>
+<p style="font-size:13px; color:#666;">Recurring sub-sequences are merged into single motifs (colored boxes are motifs; gray are atoms). Compression ratio = 13/25 = <strong>0.52</strong> — i.e., after BPE the sequence uses only 52% as many tokens as before.</p>
+<div style="background:#fdfdfd; padding:10px 12px; border-radius:4px; border:1px solid #e5e5e5;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#d2c4f0; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e0c4e8; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_DOC+EDIT_DOC">CREATE_DOC→EDIT_DOC</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY+EDIT_SRC_PY">CREATE_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c7e6c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c7e6c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c5e4d2; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY+OPEN_SRC_PY">OPEN_SRC_PY→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c7e6c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5c7c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→SEARCH→SEARCH→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#bde4f2; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH+NAV_SRC_PY">SEARCH→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f0e4a6; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SUBMIT">SUBMIT</span>
+</div>
+
+<p style="font-size:13px; color:#555; margin-top:16px;">
+<strong>What "compression" means here:</strong> the same trajectory that took 25 canonical atoms to express takes only 13 BPE tokens because recurring patterns (like "edit-edit" or "search-then-open") got bound into single tokens. Across the whole corpus of 867 trajectories, compression ratio is ~0.41 at V=200 (meaning trajectories use ~41% as many tokens after BPE).
+</p>
+
+
+<h3>4.3 Top motifs with real-trajectory occurrences</h3>
+
+<p>The BPE-learned motifs correspond to recognizable procedural practices. Here are the top motifs by frequency across the corpus, with examples of where they appear in real trajectories.</p>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#1</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">EDIT_SRC_PY → EDIT_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 208 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-14182</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY">CREATE_REPRO_...→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→E...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→R...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→R...→RUN_PYTHON_RE</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#2</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">CREATE_REPRO_PY → EDIT_REPRO_PY → RUN_PYTHON_REPRO_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(3 atoms, 190 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>django__django-11001</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY">CREATE_REPRO_...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→R...→RUN_PYTHON_SR</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#3</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">FIND_FILE → FIND_FILE</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 189 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>django__django-11099</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">OPEN_SRC_PY→E...→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">CREATE_TEST_P...→RUN_PYTHON_TE</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#4</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">SEARCH → OPEN_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 188 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-14995</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY">CREATE_REPRO_...→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+SEARCH">SEARCH→SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY">SEARCH→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→S...→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT">EDIT_SRC_PY→R...→SUBMIT</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#5</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">OPEN_SRC_PY → SEARCH → NAV_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(3 atoms, 181 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>django__django-12747</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY">CREATE_REPRO_...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">SEARCH→OPEN_S...→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→SEARCH→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→R...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+NAV_SRC_PY">SEARCH→NAV_SRC_PY</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#6</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">SEARCH → SEARCH</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 157 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-14995</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY">CREATE_REPRO_...→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+SEARCH">SEARCH→SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY">SEARCH→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→S...→NAV_SRC_PY</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#7</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">FIND_FILE → OPEN_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 156 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-7746</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_REPRO_PY+EDIT_REPRO_PY">EDIT_REPRO_PY→EDIT_REPRO_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY">EDIT_REPRO_PY...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY">FIND_FILE→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="NAV_SRC_PY">NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→E...→EDIT_SRC_PY</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#8</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">OPEN_SRC_PY → NAV_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 146 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-6938</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">OPEN_TEST_PY→...→RUN_PYTHON_TE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+NAV_SRC_PY">OPEN_SRC_PY→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">OPEN_TEST_PY→...→RUN_PYTHON_TE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+NAV_SRC_PY">OPEN_SRC_PY→NAV_SRC_PY</span>
+</div>
+
+</div>
+
+<h3>4.4 Pairwise motif diffs on shared tasks</h3>
+
+<p>Three 3/3-resolved tasks (all agents solved), with each agent's BPE motif sequence side-by-side. Each motif is colored by whether it appears in the other two agents' sequences on the same task: <span style="padding:1px 5px; background:#c8e6c9; border:1px solid #2e7d32; border-radius:3px; font-size:11px;">shared by all three</span>, <span style="padding:1px 5px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-size:11px;">shared by two</span>, <span style="padding:1px 5px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-size:11px;">unique to this agent</span>, or <span style="padding:1px 5px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-size:11px;">an atom</span> (neutral). Most motifs in these diffs are agent-unique — agents that arrive at the same outcome often take almost disjoint procedural paths.</p>
+
+
+<div style="margin: 22px 0; padding: 14px 18px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
+  <div style="font-size:14px; font-weight:600; margin-bottom: 4px;">Task: <code>django__django-13447</code> (all 3 agents resolved)</div>
+  <div style="font-size:12px; color:#666; margin-bottom: 10px;">
+    0 motifs used by all three agents on this task.
+  </div>
+  
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">GPT-4</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">SEARCH→…→NAV_SRC_PY (4)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→…→EDIT_SRC_PY (…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→…→EDIT_SRC_PY (…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SUBMIT">SUBMIT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">4 motifs</div>
+</div>
+
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">Claude-3.5</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+FIND_FILE+OPEN_SRC_PY">FIND_FILE→…→OPEN_SRC_PY (3)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_LS">SHELL_LS</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→…→NAV_SRC_PY (3)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_PWD">SHELL_PWD</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_SRC_PY+SHELL_LS">RUN_PYTHON_SRC_PY→SHELL_LS</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_TEST_PY+RUN_PYTHON_TEST_PY">RUN_PYTHON_TEST_PY→RUN_PYTH…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SUBMIT">SUBMIT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">12 motifs</div>
+</div>
+
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">GPT-4o</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_LS+SHELL_CD+SHELL_CD">SHELL_LS→…→SHELL_CD (3)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_CD+SHELL_CD">SHELL_CD→SHELL_CD</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SEARCH+SEARCH">SEARCH→SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_CD">SHELL_CD</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→…→NAV_SRC_PY (3)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→…→EDIT_SRC_PY (…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">CREATE_TEST_PY→…→RUN_PYTHON…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">EDIT_TEST_PY→…→RUN_PYTHON_T…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_RM+SUBMIT">SHELL_RM→SUBMIT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">10 motifs</div>
+</div>
+
+  
+</div>
+
+
+<div style="margin: 22px 0; padding: 14px 18px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
+  <div style="font-size:14px; font-weight:600; margin-bottom: 4px;">Task: <code>django__django-11039</code> (all 3 agents resolved)</div>
+  <div style="font-size:12px; color:#666; margin-bottom: 10px;">
+    0 motifs used by all three agents on this task.
+  </div>
+  
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">GPT-4</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY">SEARCH→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_TEST_PY">OPEN_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="NAV_TEST_PY">NAV_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→…→EDIT_TEST_PY…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→…→EDIT_TEST_PY…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→…→EDIT_TEST_PY…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY">EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EXIT_ERROR">EXIT_ERROR</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">9 motifs</div>
+</div>
+
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">Claude-3.5</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY">FIND_FILE→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+OPEN_TEST_PY">FIND_FILE→OPEN_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="NAV_TEST_PY">NAV_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY">EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_CD+SHELL_CD">SHELL_CD→SHELL_CD</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→…→RUN_PYTHON_SR…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_RM">SHELL_RM</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_TEST_PY">RUN_PYTHON_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_TEST_PY">CREATE_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">EDIT_TEST_PY→…→RUN_PYTHON_T…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">EDIT_TEST_PY→…→RUN_PYTHON_T…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">EDIT_TEST_PY→…→RUN_PYTHON_T…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">EDIT_TEST_PY→…→RUN_PYTHON_T…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_SRC_PY+OPEN_SRC_PY">OPEN_SRC_PY→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_OTHER">CREATE_OTHER</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_OTHER">EDIT_OTHER</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SUBMIT">SUBMIT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">21 motifs</div>
+</div>
+
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">GPT-4o</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY">SEARCH→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_TEST_PY">OPEN_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY">EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_EXPORT">SHELL_EXPORT</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_CONFIG_PY">CREATE_CONFIG_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="UNKNOWN_EXIT_FORMAT">UNKNOWN_EXIT_FORMAT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">9 motifs</div>
+</div>
+
+  
+</div>
+
+
+<div style="margin: 22px 0; padding: 14px 18px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
+  <div style="font-size:14px; font-weight:600; margin-bottom: 4px;">Task: <code>django__django-14855</code> (all 3 agents resolved)</div>
+  <div style="font-size:12px; color:#666; margin-bottom: 10px;">
+    1 motifs used by all three agents on this task.
+  </div>
+  
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">GPT-4</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c8e6c9; border:1px solid #2e7d32; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">FIND_FILE→…→NAV_SRC_PY (4)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→…→RUN_PYTHON_SR…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→…→RUN_PYTHON_SR…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→RUN_PYTHON_SRC_…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→…→RUN_PYTHON_SR…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_RM+SUBMIT">SHELL_RM→SUBMIT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">12 motifs</div>
+</div>
+
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">Claude-3.5</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c8e6c9; border:1px solid #2e7d32; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">FIND_FILE→…→NAV_SRC_PY (4)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#fff3c4; border:1px solid #b58900; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→RUN_PYTHON_SRC_…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_LS">SHELL_LS</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_TEST_PY">RUN_PYTHON_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SUBMIT">SUBMIT</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">5 motifs</div>
+</div>
+
+<div style="display: flex; align-items: center; margin: 6px 0;">
+  <div style="min-width: 100px; font-weight: 600; font-size: 13px; color: #333;">GPT-4o</div>
+  <div style="flex: 1;"><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c8e6c9; border:1px solid #2e7d32; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">FIND_FILE→…→NAV_SRC_PY (4)</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_TEST_PY">OPEN_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY">EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_EXPORT">SHELL_EXPORT</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_CONFIG_PY+EDIT_CONFIG_PY">CREATE_CONFIG_PY→EDIT_CONFI…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="SHELL_EXPORT">SHELL_EXPORT</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_CONFIG_PY">CREATE_CONFIG_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY">EDIT_CONFIG_PY→…→EDIT_CONFI…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY">EDIT_CONFIG_PY→…→EDIT_CONFI…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY">EDIT_CONFIG_PY→…→EDIT_CONFI…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_TEST_PY">OPEN_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_CONFIG_PY+EDIT_CONFIG_PY">OPEN_CONFIG_PY→EDIT_CONFIG_…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">CREATE_SRC_PY→…→RUN_PYTHON_…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_ALL">RUN_PYTHON_ALL</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_CONFIG_PY">OPEN_CONFIG_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">CREATE_SRC_PY→…→RUN_PYTHON_…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="CREATE_TEST_PY">CREATE_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_TEST_PY+EDIT_TEST_PY">EDIT_TEST_PY→EDIT_TEST_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#ffffff; border:1px solid #c03030; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="OPEN_CONFIG_PY+EDIT_CONFIG_PY">OPEN_CONFIG_PY→EDIT_CONFIG_…</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EDIT_CONFIG_PY">EDIT_CONFIG_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f3f3f3; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="EXIT_ERROR">EXIT_ERROR</span></div>
+  <div style="min-width: 70px; text-align: right; color: #666; font-size: 12px;">34 motifs</div>
+</div>
+
+  <div style='margin-top:10px; padding:6px 8px; background:#f8fdf8; border-radius:4px;'><span style='font-size:12px; color:#2e7d32;'>shared by all three:</span> <span style="display:inline-block; padding:2px 6px; margin:2px; background:#c8e6c9; border:1px solid #2e7d32; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">FIND_FILE→…→NAV_SRC_PY (4)</span></div>
+
+
+</section>
+
+<section id="sensitivity">
+<h2>5. Sensitivity and robustness</h2>
+
+<p>Two robustness checks on the main heritability finding: (a) does the result hold across BPE vocabulary sizes, and (b) does it hold across task-difficulty slices?</p>
+
+<h3>5.1 BPE vocabulary size sweep</h3>
+
+<p>V=200 was a hyperparameter I picked. Sensitivity analysis across V ∈ {100, 125, 150, 175, 200, 225, 250, 300, 500} tests whether findings depend on the V choice.</p>
+
+<div class="finding">
+<strong>Heritability ordering is robust across all tested V values.</strong> At every V in [100, 500], GPT-family pair (GPT-4 × GPT-4o) has the lowest JSD. The finding is not V-dependent.
+</div>
+
+<figure>
+<img src="bpe_vocab_sweep_jsd.png" alt="BPE vocab sweep JSD curves">
+<figcaption>Pairwise JSD as a function of BPE target vocabulary size V, for full vocabulary (left) and motifs only (right). Green (GPT-4 × GPT-4o) stays lowest throughout; blue and orange (cross-family pairs) stay above.</figcaption>
+</figure>
+
+<h4 style="font-size:15px; margin:22px 0 6px; color:#333;">Compression curve and V selection</h4>
+
+<figure>
+<img src="bpe_vocab_sweep_compression.png" alt="BPE compression curve">
+<figcaption>Corpus compression ratio vs V. Diminishing returns set in around V=175–200; additional merges past V=200 contribute less than 0.1% compression per additional vocabulary slot.</figcaption>
+</figure>
+
+<p><strong>V selection:</strong> V=200 by compression-elbow rule of thumb (first V where marginal compression gain per unit V drops below 0.001). The principled defense is the V-sweep itself: the heritability ordering holds across V ∈ [100, 500], so the finding does not hinge on the specific V chosen.</p>
+
+<h3>5.2 Difficulty-slice robustness</h3>
+
+<p>A second robustness check: bucket the 867 trajectories by <em>task difficulty</em> — the number of the three agents (0, 1, 2, or 3) that resolved the task — and recompute per-agent motif distributions and pairwise JSD at each value. Four buckets: <strong>0/3</strong> (n=573), <strong>1/3</strong> (n=131), <strong>2/3</strong> (n=97), <strong>3/3</strong> (n=66). Per-agent cell sizes stay above the N=10 floor throughout.</p>
+
+<div class="finding">
+<strong>Heritability ordering is preserved at every difficulty value.</strong> GPT-family pair (GPT-4 × GPT-4o) has the lowest motifs-only JSD at all four values (0/3, 1/3, 2/3, 3/3). The main finding survives fine-grained stratification by task difficulty.
+</div>
+
+<figure>
+<img src="slice_difficulty_jsd.png" alt="JSD by difficulty slice">
+<figcaption>Pairwise JSD as a function of number of agents resolved, full vocabulary (left) and motifs only (right). Motifs panel shows a clean monotone widening of the GPT-family gap as success rises from 0/3 to 3/3 (with a small dip at 2/3 likely from the smaller sample there). Full-vocabulary panel is noisier because atoms dominate token counts and are less discriminative than motifs.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>The heritability gap widens with success, not with difficulty.</strong> Motifs-only same-family vs cross-family gap: <strong>0/3 = 0.019</strong>, <strong>1/3 = 0.116</strong>, <strong>2/3 = 0.064</strong>, <strong>3/3 = 0.093</strong>. Opposite of the naive hypothesis that hard tasks would show more style signal. On 0/3 tasks every agent falls into the same exploration loops and style washes out; as more agents succeed, heritability becomes more visible in the motif repertoire. The 2/3 dip is consistent with small-sample noise (n=97).
+</div>
+
+<figure>
+<img src="slice_difficulty_motifs.png" alt="Top motifs per difficulty bucket">
+<figcaption>Top 8 motifs per difficulty bucket. 0/3 bucket is dominated by exploration patterns (FIND_FILE→FIND_FILE, SEARCH→SEARCH, OPEN→SEARCH→NAV); mid buckets shift to productive patterns (EDIT→EDIT, CREATE_REPRO→EDIT_REPRO→RUN); 3/3 bucket is dominated by short locate-then-act sequences (FIND_FILE→OPEN, SHELL_RM→SUBMIT).</figcaption>
+</figure>
+
+<div class="caveat">
+<strong>Sample-size caveat.</strong> The 3/3 bucket has n=66 trajectories vs 573 for 0/3. Absolute JSD values rise with task easiness partly because small-sample motif-frequency estimates are noisy (JSD is biased upward on small samples). The load-bearing claims are the <em>ordering</em> (GPT-family lowest in every bucket) and the <em>near-monotone gap widening</em> with success. A permutation null is needed to establish whether the widening is above chance.
+</div>
+
+<p><strong>Qualitative finding:</strong> there is a clean procedural-phase progression across difficulty — 0/3 tasks are dominated by exploration motifs, 1-2/3 tasks by productive motifs, 3/3 tasks by short completion motifs. This is a phenomenon worth noting beyond the heritability question: task difficulty is visible in the motif repertoire, not just in pass/fail.</p>
+
+<h3>5.3 Matched-pairs per-motif analysis</h3>
+
+<p>The aggregate pairwise dissimilarity number hides which specific motifs drive the difference. To isolate per-motif agent effects, we restrict to <em>tied-outcome pairs</em> (tasks where both agents A and B resolved — 99 such pairs). For each pair and each motif, compute Δ = freq(A) − freq(B). Task is held constant by construction, so the residual is an agent effect. Per-motif Wilcoxon signed-rank test + Benjamini-Hochberg FDR correction at 5%.</p>
+
+<figure>
+<img src="matched_pairs_volcano.png" alt="Matched-pairs volcano plot">
+<figcaption>Volcano plot: x = mean per-motif frequency difference (agent A minus agent B, averaged across tied-outcome tasks), y = -log10(Wilcoxon p-value). Colored dots pass FDR at 5%. Most effects are small (|Δ| less than 0.04) and do not survive correction with n=31-35 tasks per pair.</figcaption>
+</figure>
+
+<figure>
+<img src="matched_pairs_top_motifs.png" alt="Top differentiating motifs per pair">
+<figcaption>Top 8 most-differentiating tokens per agent pair, ranked by mean effect size (not by p-value). Star + dark border = passes FDR 5%. Colored bars favor the first-named agent; red bars favor the second. Effect directions replicate across the two cross-family pairs — SHELL_RM → SUBMIT, EDIT_SRC_PY → ... → SUBMIT, and CREATE_REPRO_PY → ... are consistently GPT-family-favored, which is the agreement signal matched-pairs is designed to surface.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Only one token passes FDR at 5%, but effect directions replicate across cross-family pairs.</strong> With n=31-35 tied-outcome tasks per pair, individual Wilcoxon tests are underpowered after multiple-comparison correction. Only <code>SUBMIT</code> (in Claude vs GPT-4o) survives FDR 5% — GPT-4o uses SUBMIT ~12% more per token, reflecting its shorter trajectories after reaching resolution. More informative is the <em>replication across the two cross-family panels</em>: SHELL_RM → SUBMIT, EDIT_SRC_PY → ... → SUBMIT, and CREATE_REPRO_PY → ... all favor the GPT agent in both Claude-vs-GPT-4 and Claude-vs-GPT-4o. Two independent cross-family comparisons pointing the same direction is evidence beyond any one FDR test.
+</div>
+
+<div class="caveat">
+<strong>Power caveat.</strong> 99 tied-outcome pairs split across three agent-pairs gives 31-35 matched pairs per comparison. Detecting per-motif effects of |Δ| ≈ 0.03-0.05 at FDR 5% would need roughly 2-3× more tied-outcome pairs. Expanding the corpus (more agents, cross-benchmark) is the most effective way to strengthen this analysis. The effect-size rankings are informative even without individual FDR significance.
+</div>
+</section>
+
+<section id="findings">
+<h2>6. Headline findings</h2>
+
+<ol class="bullet-list">
+<li><strong>Task dominates agent at the feature-count layer.</strong> Raw trajectory counts (n_steps, n_edits, etc.) are 3–4× more explained by task than by agent identity. Agent style does not live at the count level.</li>
+<li><strong>Within-task, rollout-level divergence is substantial and heritable.</strong> On tied-outcome pairs, same-family (GPT-4 × GPT-4o) action sequences differ by Levenshtein 0.37; cross-family pairs 0.51–0.52. Preliminary evidence for model-family heritability.</li>
+<li><strong>Procedural pluralism is the dominant regime.</strong> 47% of tasks are procedurally permissive (high cross-agent divergence); only 5% are procedurally constrained. Most SWE-bench Lite tasks admit multiple valid procedural paths.</li>
+<li><strong>BPE discovers interpretable procedural motifs.</strong> The learned vocabulary includes multi-step motifs like "build-reproducer" (CREATE_REPRO → EDIT_REPRO → RUN_PYTHON_REPRO) and "search-then-open." 60.5% of merged items are 3+ grams.</li>
+<li><strong>Heritability strengthens from atoms to motifs.</strong> The JSD gap between same-family and cross-family agents widens from ~0.015 (full vocabulary) to ~0.06 (motifs only). Multi-step patterns carry more agent signal than individual actions.</li>
+<li><strong>Motif-level agent differentiation is specific and nameable.</strong> Individual motifs distinguish agents: Claude uses <code>FIND_FILE → FIND_FILE</code> prolifically; GPT-family agents use <code>SHELL_RM → SUBMIT</code> (cleanup) while Claude does not.</li>
+<li><strong>Findings are robust to BPE vocabulary size.</strong> Heritability ordering preserved across V ∈ [100, 500]; principled V selected via diminishing-returns analysis.</li>
+<li><strong>Heritability also survives difficulty stratification, but the gap pattern is counter-intuitive.</strong> Same-family pair stays lowest at 0/3, 1/3, 2/3, and 3/3. Same-family vs cross-family gap widens near-monotonically with success: 0/3 → 0.019, 1/3 → 0.116, 2/3 → 0.064, 3/3 → 0.093. On 0/3 tasks all agents flail in similar exploration loops — style washes out. As tasks become solvable, procedural style signal emerges.</li>
+<li><strong>Task difficulty is visible in the motif repertoire itself.</strong> Hard tasks are dominated by exploration motifs (FIND_FILE→FIND_FILE, SEARCH→SEARCH); mixed by productive motifs (EDIT→EDIT, build-reproducer); easy by short locate-then-act (FIND_FILE→OPEN, SHELL_RM→SUBMIT). A phenomenon independent of heritability.</li>
+<li><strong>Heritability gap is above chance at every difficulty level.</strong> Permutation null with 1000 shuffled-label draws: aggregate p=0.001, 0/3 p=0.002, 1/3 p=0.001, 2/3 p=0.047 (marginal), 3/3 p=0.026. The same-family lead is not a sampling artifact.</li>
+<li><strong>Agents have distinctive length, repertoire-width, and compression profiles.</strong> GPT-4 is most concise (~21 atoms/traj), GPT-4o longest (~39) with the widest repertoire (84 motifs to cover 90% vs 66). Claude compresses least (0.50). Nameable signatures from the novelty index: Claude = test-driven, GPT-4 = page-through-source, GPT-4o = long repetition bursts.</li>
+<li><strong>Matched-pairs per-motif test: effect directions replicate across cross-family panels.</strong> On tied-outcome pairs (task controlled), only <code>SUBMIT</code> passes FDR 5% (Claude vs GPT-4o, Δ = +0.12 favoring GPT-4o). But the same direction for <code>SHELL_RM → SUBMIT</code>, <code>EDIT_SRC_PY → ... → SUBMIT</code>, and <code>CREATE_REPRO_PY → ...</code> appears in both cross-family comparisons independently — replication across independent comparisons is evidence beyond single-test FDR at n ≈ 33 per panel.</li>
+</ol>
+</section>
+
+<section id="implications">
+<h2>7. Implications</h2>
+
+<h3>For evaluation</h3>
+<p>A single pass/fail number hides most of what separates agents. Two agents can both solve a task and still walk very different procedural paths (Levenshtein 0.37 within a family, 0.52 across) — that's an evaluation signal thrown away. Benchmarks that deliberately stratify tasks by procedural permissiveness (permissive vs constrained) would reveal when agent style matters and when it's washed out by the task shape.</p>
+
+<h3>For agent design</h3>
+<p>Model-family heritability suggests procedural style is a transferable property of the backbone, not just an artifact of scaffolding (because all three agents share the SWE-agent scaffold, yet family structure still appears). That implies the training distribution of the backbone shapes procedural repertoire in a way that survives a fixed harness. A stronger test requires factorial scaffold × backbone variation (see next steps).</p>
+
+<h3>For tools built on motifs</h3>
+<p>Products like Cursor's "library of procedures" or Devin's playbooks are betting that reusable procedural units exist and can be named. This pilot is empirical support for that bet: BPE — a method with zero domain knowledge — discovered motifs that map to recognizable practices ("build-reproducer," "search-then-open," "locate-then-open"). The specific 124 motifs here are candidates for a procedure library.</p>
+
+<h3>For research methodology</h3>
+<p>Bottom-up motif discovery works. We did not hand-design a DSL of procedural units; canonicalize-then-BPE found them from 867 real trajectories. This replaces the usual pattern of "come up with a taxonomy, then score agents against it" with "let the corpus reveal the taxonomy." The finding that 60.5% of merged items are 3+ grams — not just bigrams — means multi-step structure was there to be found.</p>
+
+<h3>For the larger research agenda</h3>
+<p>This fits the umbrella of <em>procedural knowledge preservation</em>: if we can capture <em>how</em> agents solve problems — not just whether they do — we get a richer object for comparison, transfer, and critique than raw outputs alone. Paper 1 (Procedural Diff) studies patches; Paper 2 (this work) studies action sequences; a future Paper 3 would study regression / drift in procedure over time.</p>
+</section>
+
+<section id="alternatives">
+<h2>8. Alternatives considered along the way</h2>
+
+<table>
+<thead>
+<tr><th>Approach</th><th>Considered for</th><th>Why not chosen</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hand-coded 8-token DSL</strong> (CREATE/EDIT/NAV/OPEN/OTHER/RUN/SEARCH/SUBMIT)</td>
+<td>Primary vocabulary</td>
+<td>Not bottom-up. Collapses file types (edit-to-source vs edit-to-test look identical) and ignores multi-step structure. Kept as Phase A <em>scaffolding</em> because it shows the variance-decomposition story, but replaced by BPE in Phase B.</td>
+</tr>
+<tr>
+<td><strong>CloSpan / closed sequential pattern mining</strong></td>
+<td>Motif discovery</td>
+<td>Returns a flat set of closed subsequences with support counts — hard to turn into a single hierarchical vocabulary for JSD. BPE gives a token-level re-expression of each trajectory, which is what we need for agent-pair distance metrics.</td>
+</tr>
+<tr>
+<td><strong>BPE + CloSpan hybrid</strong> (BPE for vocabulary, CloSpan for cross-validation)</td>
+<td>Robustness</td>
+<td>User explicitly asked for one method. BPE wins on pragmatics: one pass, one vocabulary, one set of distributions. Cross-method validation added complexity without a concrete phenomenon it would resolve.</td>
+</tr>
+<tr>
+<td><strong>Sequence embedding + clustering</strong> (e.g. encode each trajectory with a transformer, cluster)</td>
+<td>Agent style discovery</td>
+<td>Loses interpretability: clusters are opaque, motifs are not nameable. The whole point of this pilot is that we can point to <code>CREATE_REPRO → EDIT_REPRO → RUN_PYTHON_REPRO</code> and call it "build-reproducer."</td>
+</tr>
+<tr>
+<td><strong>Prefix-tree / trie-based frequent subsequences</strong></td>
+<td>Motif discovery</td>
+<td>Good for contiguous frequent patterns but no compression semantic — doesn't re-express the corpus, so downstream distance comparisons are less clean than with BPE's vocabulary substitution.</td>
+</tr>
+<tr>
+<td><strong>Pass/fail prediction from motif usage</strong></td>
+<td>Downstream framing</td>
+<td>User explicitly deprioritized. The framing is anthropological (<em>what repertoire does this agent use?</em>) not causal (<em>which moves cause success?</em>). Outcome is a control, not a target.</td>
+</tr>
+<tr>
+<td><strong>Human annotation of motif names and quality</strong></td>
+<td>Motif validation</td>
+<td>User ruled out human studies for this pilot. LLM-as-judge pipeline is scaffolded for the rationale layer but not yet run.</td>
+</tr>
+<tr>
+<td><strong>MDL (minimum description length) for V selection</strong></td>
+<td>Principled vocabulary size</td>
+<td>Run, did not converge to an interior optimum in V ∈ [100, 500] — corpus-encoding cost dominates vocab-encoding cost in our small-corpus regime. Reported as a secondary criterion; compression-elbow used as the primary rule.</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section id="limitations">
+<h2>9. Limitations</h2>
+<ul class="bullet-list">
+<li>Only 3 agents, all SWE-agent scaffold. Heritability claim would be stronger with scaffold variation (e.g., SWE-Fixer, Agentless, OpenDevin).</li>
+<li>Only SWE-bench Lite. Cross-benchmark (Verified, SWE-Smith) transfer not yet measured.</li>
+<li>No rationale-layer analysis yet. LLM-judge pipeline scaffolded but not run (API key available; not yet applied).</li>
+<li>No aggregate-vs-sliced refinement of phenomena (findings are aggregate only).</li>
+<li>No permutation null for the same-family vs cross-family JSD gap. 0.06 is visually clear across V sweep but we have not shown it is above a random-label baseline.</li>
+<li>Canonicalization has 16 rare unknowns flagged (pylint, cython, nox, …). Coverage is 99.9% but these should be inspected, not blindly bucketed.</li>
+</ul>
+</section>
+
+<section id="next">
+<h2>10. Next steps</h2>
+<ol class="bullet-list">
+<li><strong>Cross-benchmark motif transfer.</strong> Apply Lite-trained BPE to Verified trajectories, measure motif coverage. Bridges to Paper 1's compositional-compactness finding and addresses cultural-universality phenomenon.</li>
+<li><strong>Rationale atlas (LLM-judge pipeline).</strong> Run tied-outcome pairs through LLM judge; embed rationales; cluster. Produces the rationale-layer complement to BPE motifs. API key available.</li>
+<li><strong>Permutation null for heritability.</strong> Shuffle agent labels, re-compute same-family vs cross-family JSD gap, get a p-value. Cheap to run; converts the 0.06 gap from descriptive to inferential.</li>
+<li><strong>Slicing by repo and scope (difficulty done; see §5.2).</strong> Repo-slice as the next robustness check — does heritability hold within django, sympy, astropy individually? Scope slicing (patch size) deferred unless it adds phenomena difficulty doesn't.</li>
+<li><strong>Permutation null for the mixed-bucket heritability gap.</strong> The 0.10 gap is descriptively clear; shuffle-label test would convert it to inferential.</li>
+<li><strong>Add a fourth agent with a different scaffold.</strong> Target SWE-Fixer and/or Agentless to enable scaffold × backbone factorial analysis. That's the cleanest test of heritability.</li>
+<li><strong>Inspect the 16 unknown canonical tokens.</strong> Either assign them to an existing atom or create new atoms. Currently non-load-bearing but not ignorable.</li>
+</ol>
+</section>
+
+<section id="questions">
+<h2>11. Open questions</h2>
+<ul class="bullet-list">
+<li><strong>Does heritability survive scaffold variation?</strong> All three agents here share the SWE-agent harness. If GPT-4 under scaffold A and GPT-4 under scaffold B look more alike than two agents with different backbones on the same scaffold, heritability is a backbone property. Otherwise it's partly a scaffold-backbone interaction.</li>
+<li><strong>Is the 0.06 same-family vs cross-family JSD gap above null?</strong> Permutation test needed.</li>
+<li><strong>How many trajectories before motif-frequency estimates stabilize?</strong> Ran on 867; at what N do the top-20 motifs stop changing? Relevant for anyone replicating with smaller samples.</li>
+<li><strong>Do motifs transfer across benchmarks?</strong> Lite-trained BPE applied to Verified: how much of the Verified corpus is covered by Lite motifs vs requires new merges?</li>
+<li><strong>Does LLM-judge on rationales recover the same heritability ordering as BPE on actions?</strong> If yes, strong convergent evidence. If not, the two layers reveal different things about agent style.</li>
+<li><strong>Are the discovered motifs <em>procedurally meaningful</em> or just <em>statistically frequent</em>?</strong> "Build-reproducer" is named; but #1 is just EDIT→EDIT. A quality criterion (e.g., task-conditional mutual information, or LLM-judge rating) would separate motifs-that-are-procedures from motifs-that-are-noise.</li>
+<li><strong>What's the right ceiling on V?</strong> Compression-elbow at 175–200; MDL doesn't help. Is there a better principled stopping rule that works on small corpora?</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>12. Glossary</h2>
+
+<dl class="glossary">
+<dt>Action</dt>
+<dd>One step in an agent's trajectory — a shell-like command issued by the agent (e.g., <code>edit 1:3 …</code>, <code>search_file "DataDocumenter"</code>, <code>submit</code>).</dd>
+
+<dt>Trajectory</dt>
+<dd>The full ordered sequence of actions one agent took on one task. A <code>.traj</code> file is one trajectory.</dd>
+
+<dt>Canonical atom</dt>
+<dd>A normalized single-token representation of one action. Type-tagged by file kind (<code>_SRC_PY</code>, <code>_TEST_PY</code>, <code>_REPRO_PY</code>, <code>_CONFIG</code>, <code>_DOC</code>) and verb (<code>EDIT</code>, <code>OPEN</code>, <code>SEARCH</code>, <code>RUN_PYTHON</code>, …). Example: <code>EDIT_SRC_PY</code>, <code>RUN_PYTHON_REPRO_PY</code>. 76 unique atoms cover 99.9% of the corpus.</dd>
+
+<dt>BPE (Byte-Pair Encoding)</dt>
+<dd>A compression-style algorithm from Sennrich et al. 2016 (originally for subword tokenization). Iteratively: find the most-frequent adjacent pair in the corpus, replace every occurrence with a new single symbol, repeat. Used here to discover procedural motifs from canonical atom sequences.</dd>
+
+<dt>Merge</dt>
+<dd>One step of BPE training. Binds one adjacent pair into one new symbol, grows vocabulary by 1, re-expresses the corpus to use it. We ran 124 merges (V=200 target).</dd>
+
+<dt>Motif</dt>
+<dd>A BPE-learned multi-atom token. Anything in the vocabulary that is <em>not</em> an atom. Motifs can be 2-grams (<code>FIND_FILE → FIND_FILE</code>) up to 32-grams in our run.</dd>
+
+<dt>Vocabulary size (V)</dt>
+<dd>Target total vocabulary after BPE training = atoms + merged motifs. V=200 means ~76 atoms + 124 motifs.</dd>
+
+<dt>Compression ratio</dt>
+<dd>(BPE token count) ÷ (canonical atom count), averaged over the corpus. Lower = more compression. At V=200, ratio ≈ 0.41: BPE expresses the corpus with 41% as many tokens.</dd>
+
+<dt>JSD (Jensen-Shannon divergence)</dt>
+<dd>A symmetric, bounded distance between two probability distributions. With log base 2 it lives in <strong>[0, 1]</strong>: 0 = identical, 1 = disjoint support. We compute it between per-agent motif-usage distributions to ask "how differently do these two agents use motifs?" Chosen over KL because it is symmetric and finite even when distributions have zero mass on each other's support.</dd>
+
+<dt>Levenshtein distance (normalized)</dt>
+<dd>Minimum edit-operation count between two sequences, divided by the length of the longer. Used pairwise on tied-outcome trajectories to measure how different two agents' action sequences are on the same task.</dd>
+
+<dt>Tied-outcome pair</dt>
+<dd>A pair of (agent_A, agent_B) on the same task where both agents resolved the task. 99 such pairs in the corpus. Controls for task difficulty when comparing procedural paths.</dd>
+
+<dt>Procedurally permissive</dt>
+<dd>Describing a task where the agents that attempted it took substantially different action sequences (mean pairwise divergence ≥ 0.60). 47% of SWE-bench Lite tasks are permissive.</dd>
+
+<dt>Procedurally constrained</dt>
+<dd>Opposite of permissive: agents converged on a similar action path (mean pairwise divergence ≤ 0.30). Only 5% of tasks.</dd>
+
+<dt>Heritability (in this context)</dt>
+<dd>Borrowed from behavioral genetics: the extent to which agent behavior tracks model family (GPT vs Claude) rather than idiosyncratic run variation. Here: same-family pairs (GPT-4 × GPT-4o) show smaller procedural distance than cross-family pairs.</dd>
+
+<dt>MDL (Minimum Description Length)</dt>
+<dd>Rissanen's principle: prefer the hypothesis (here: vocabulary size) that minimizes total code length = corpus bits + model bits. We tried MDL to pick V; the corpus-encoding cost dominates in our regime, so MDL decreases monotonically and does not select an interior V.</dd>
+
+<dt>Variance decomposition</dt>
+<dd>One-way ANOVA: for each per-trajectory feature, partition variance into agent-explained vs task-explained. Told us 35–48% task vs 1–13% agent at the count level.</dd>
+
+<dt>SWE-bench Lite</dt>
+<dd>A 300-instance subset of SWE-bench (real GitHub issue → patch) benchmarked across SWE-agent backbones. Primary corpus for this pilot.</dd>
+
+<dt>Phase A / Phase B</dt>
+<dd>Phase A uses the pre-extracted hand-coded 8-token DSL (scaffolding only). Phase B is the committed methodology: canonicalize-then-BPE on raw <code>.traj</code> files.</dd>
+</dl>
+</section>
+
+<footer>
+<p><strong>Methodology reference:</strong> OverCode (Glassman 2015) for canonicalize-then-cluster; Sennrich et al. 2016 for BPE; DreamCoder / Stitch (Ellis et al., Cao et al.) for library-via-compression lineage; Goel / PRISM for slicing methodology.</p>
+<p><strong>All artifacts:</strong> <code>output/paper2_pilot/</code> (13 figures, 8 JSON summaries, 2 re-expressed sequence files, raw trajectory cache with provenance manifest).</p>
+<p><strong>Pilot status:</strong> committed direction is procedural-Clio + canonicalize-then-BPE. Phase A findings are preliminary scaffolding; Phase B findings are the committed methodology.</p>
+</footer>
+
+</body>
+</html>

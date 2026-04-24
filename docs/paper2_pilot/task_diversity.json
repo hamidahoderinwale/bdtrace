@@ -1,0 +1,24 @@
+{
+  "n_tasks": 300,
+  "n_permissive": 141,
+  "n_constrained": 16,
+  "n_middle": 143,
+  "permissive_threshold": 0.6,
+  "constrained_threshold": 0.3,
+  "mean_pairwise_levenshtein": 0.5767622668360186,
+  "median_pairwise_levenshtein": 0.588531566472743,
+  "by_outcome": {
+    "count": {
+      "false": 275,
+      "true": 25
+    },
+    "mean": {
+      "false": 0.585,
+      "true": 0.483
+    },
+    "median": {
+      "false": 0.591,
+      "true": 0.5
+    }
+  }
+}

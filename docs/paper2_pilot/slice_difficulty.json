@@ -1,0 +1,306 @@
+[
+  {
+    "bucket": "0/3",
+    "n_trajectories": 573,
+    "per_agent_trajectories": {
+      "GPT-4": 199,
+      "Claude-3.5": 191,
+      "GPT-4o": 183
+    },
+    "per_agent_total_tokens": {
+      "GPT-4": 1773,
+      "Claude-3.5": 3391,
+      "GPT-4o": 2937
+    },
+    "jsd_full": {
+      "Claude-3.5__GPT-4": 0.21775053069835024,
+      "Claude-3.5__GPT-4o": 0.2212958275068369,
+      "GPT-4__GPT-4o": 0.21003586722852832
+    },
+    "jsd_motifs": {
+      "Claude-3.5__GPT-4": 0.21378517580911768,
+      "Claude-3.5__GPT-4o": 0.2586077774590721,
+      "GPT-4__GPT-4o": 0.1945385406300158
+    },
+    "top_motifs": [
+      {
+        "motif": "FIND_FILE+FIND_FILE",
+        "count": 144,
+        "n_atoms": 2
+      },
+      {
+        "motif": "SEARCH+SEARCH",
+        "count": 137,
+        "n_atoms": 2
+      },
+      {
+        "motif": "OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        "count": 137,
+        "n_atoms": 3
+      },
+      {
+        "motif": "SEARCH+OPEN_SRC_PY",
+        "count": 136,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY",
+        "count": 132,
+        "n_atoms": 2
+      },
+      {
+        "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        "count": 127,
+        "n_atoms": 3
+      },
+      {
+        "motif": "SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        "count": 111,
+        "n_atoms": 4
+      },
+      {
+        "motif": "OPEN_SRC_PY+NAV_SRC_PY",
+        "count": 109,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+        "count": 107,
+        "n_atoms": 2
+      },
+      {
+        "motif": "SEARCH+NAV_SRC_PY",
+        "count": 100,
+        "n_atoms": 2
+      }
+    ]
+  },
+  {
+    "bucket": "1/3",
+    "n_trajectories": 131,
+    "per_agent_trajectories": {
+      "GPT-4": 46,
+      "Claude-3.5": 43,
+      "GPT-4o": 42
+    },
+    "per_agent_total_tokens": {
+      "GPT-4": 325,
+      "Claude-3.5": 565,
+      "GPT-4o": 477
+    },
+    "jsd_full": {
+      "Claude-3.5__GPT-4": 0.4144103189960165,
+      "Claude-3.5__GPT-4o": 0.38164013201937097,
+      "GPT-4__GPT-4o": 0.32739464180324723
+    },
+    "jsd_motifs": {
+      "Claude-3.5__GPT-4": 0.39228808457456676,
+      "Claude-3.5__GPT-4o": 0.39312123348420336,
+      "GPT-4__GPT-4o": 0.27633429373813617
+    },
+    "top_motifs": [
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY",
+        "count": 36,
+        "n_atoms": 2
+      },
+      {
+        "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        "count": 29,
+        "n_atoms": 3
+      },
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+        "count": 27,
+        "n_atoms": 3
+      },
+      {
+        "motif": "FIND_FILE+OPEN_SRC_PY",
+        "count": 24,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+        "count": 24,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        "count": 24,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT",
+        "count": 24,
+        "n_atoms": 4
+      },
+      {
+        "motif": "OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        "count": 24,
+        "n_atoms": 3
+      },
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+        "count": 23,
+        "n_atoms": 4
+      },
+      {
+        "motif": "SEARCH+OPEN_SRC_PY",
+        "count": 22,
+        "n_atoms": 2
+      }
+    ]
+  },
+  {
+    "bucket": "2/3",
+    "n_trajectories": 97,
+    "per_agent_trajectories": {
+      "GPT-4": 33,
+      "Claude-3.5": 33,
+      "GPT-4o": 31
+    },
+    "per_agent_total_tokens": {
+      "GPT-4": 229,
+      "Claude-3.5": 370,
+      "GPT-4o": 370
+    },
+    "jsd_full": {
+      "Claude-3.5__GPT-4": 0.3988128071622103,
+      "Claude-3.5__GPT-4o": 0.40747172375954704,
+      "GPT-4__GPT-4o": 0.42411582016599736
+    },
+    "jsd_motifs": {
+      "Claude-3.5__GPT-4": 0.4593338596172304,
+      "Claude-3.5__GPT-4o": 0.4811401384188647,
+      "GPT-4__GPT-4o": 0.39575778850726634
+    },
+    "top_motifs": [
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY",
+        "count": 24,
+        "n_atoms": 2
+      },
+      {
+        "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        "count": 21,
+        "n_atoms": 3
+      },
+      {
+        "motif": "SHELL_EXPORT+SHELL_EXPORT",
+        "count": 21,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+        "count": 18,
+        "n_atoms": 3
+      },
+      {
+        "motif": "FIND_FILE+OPEN_SRC_PY",
+        "count": 18,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT",
+        "count": 17,
+        "n_atoms": 4
+      },
+      {
+        "motif": "FIND_FILE+FIND_FILE",
+        "count": 17,
+        "n_atoms": 2
+      },
+      {
+        "motif": "SEARCH+OPEN_SRC_PY",
+        "count": 17,
+        "n_atoms": 2
+      },
+      {
+        "motif": "SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        "count": 15,
+        "n_atoms": 4
+      },
+      {
+        "motif": "SEARCH+NAV_SRC_PY",
+        "count": 14,
+        "n_atoms": 2
+      }
+    ]
+  },
+  {
+    "bucket": "3/3",
+    "n_trajectories": 66,
+    "per_agent_trajectories": {
+      "GPT-4": 22,
+      "Claude-3.5": 22,
+      "GPT-4o": 22
+    },
+    "per_agent_total_tokens": {
+      "GPT-4": 122,
+      "Claude-3.5": 298,
+      "GPT-4o": 213
+    },
+    "jsd_full": {
+      "Claude-3.5__GPT-4": 0.49351520615362254,
+      "Claude-3.5__GPT-4o": 0.510603707852783,
+      "GPT-4__GPT-4o": 0.43804718054781455
+    },
+    "jsd_motifs": {
+      "Claude-3.5__GPT-4": 0.48800777192428485,
+      "Claude-3.5__GPT-4o": 0.4871141157368197,
+      "GPT-4__GPT-4o": 0.3940970875487752
+    },
+    "top_motifs": [
+      {
+        "motif": "SHELL_RM+SUBMIT",
+        "count": 19,
+        "n_atoms": 2
+      },
+      {
+        "motif": "FIND_FILE+OPEN_SRC_PY",
+        "count": 18,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+EDIT_SRC_PY",
+        "count": 16,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_TEST_PY+EDIT_TEST_PY",
+        "count": 14,
+        "n_atoms": 2
+      },
+      {
+        "motif": "SEARCH+OPEN_SRC_PY",
+        "count": 13,
+        "n_atoms": 2
+      },
+      {
+        "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT",
+        "count": 13,
+        "n_atoms": 4
+      },
+      {
+        "motif": "FIND_FILE+FIND_FILE",
+        "count": 13,
+        "n_atoms": 2
+      },
+      {
+        "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        "count": 13,
+        "n_atoms": 3
+      },
+      {
+        "motif": "FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        "count": 10,
+        "n_atoms": 4
+      },
+      {
+        "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY",
+        "count": 9,
+        "n_atoms": 5
+      }
+    ]
+  }
+]

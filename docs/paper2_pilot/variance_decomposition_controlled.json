@@ -1,0 +1,195 @@
+{
+  "n_shared_tasks": 262,
+  "n_trajectories_in_subset": 786,
+  "agents": [
+    "Claude 3.5 Sonnet (SWE-agent)",
+    "GPT-4 (SWE-agent)",
+    "GPT-4o (SWE-agent)"
+  ],
+  "features": [
+    "n_steps",
+    "n_edits",
+    "n_searches",
+    "n_opens",
+    "n_runs",
+    "n_nav",
+    "edit_retries",
+    "edit_retry_rate",
+    "n_files_opened",
+    "n_files_edited"
+  ],
+  "results_full_corpus": [
+    {
+      "feature": "n_steps",
+      "agent_fraction": 0.134015,
+      "task_fraction": 0.401762,
+      "residual_fraction": 0.464223,
+      "total_variance": 391.979696,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_edits",
+      "agent_fraction": 0.133913,
+      "task_fraction": 0.360617,
+      "residual_fraction": 0.50547,
+      "total_variance": 146.860661,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_searches",
+      "agent_fraction": 0.008962,
+      "task_fraction": 0.477509,
+      "residual_fraction": 0.513529,
+      "total_variance": 22.199041,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_opens",
+      "agent_fraction": 0.047352,
+      "task_fraction": 0.378692,
+      "residual_fraction": 0.573957,
+      "total_variance": 16.367052,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_runs",
+      "agent_fraction": 0.089796,
+      "task_fraction": 0.427479,
+      "residual_fraction": 0.482725,
+      "total_variance": 27.471414,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_nav",
+      "agent_fraction": 0.036817,
+      "task_fraction": 0.489565,
+      "residual_fraction": 0.473617,
+      "total_variance": 15.452835,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "edit_retries",
+      "agent_fraction": 0.104684,
+      "task_fraction": 0.349075,
+      "residual_fraction": 0.546241,
+      "total_variance": 103.603221,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "edit_retry_rate",
+      "agent_fraction": 0.015748,
+      "task_fraction": 0.457503,
+      "residual_fraction": 0.526749,
+      "total_variance": 0.083497,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_files_opened",
+      "agent_fraction": 0.037432,
+      "task_fraction": 0.416821,
+      "residual_fraction": 0.545747,
+      "total_variance": 2.482593,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    },
+    {
+      "feature": "n_files_edited",
+      "agent_fraction": 0.082195,
+      "task_fraction": 0.389896,
+      "residual_fraction": 0.52791,
+      "total_variance": 0.478536,
+      "n_trajectories": 862,
+      "n_agents": 3,
+      "n_tasks": 300
+    }
+  ],
+  "results_matched_subset": [
+    {
+      "feature": "n_steps",
+      "agent_full": 0.134015,
+      "task_full": 0.401762,
+      "agent_matched": 0.12826,
+      "task_matched": 0.393892
+    },
+    {
+      "feature": "n_edits",
+      "agent_full": 0.133913,
+      "task_full": 0.360617,
+      "agent_matched": 0.127494,
+      "task_matched": 0.344018
+    },
+    {
+      "feature": "edit_retries",
+      "agent_full": 0.104684,
+      "task_full": 0.349075,
+      "agent_matched": 0.102485,
+      "task_matched": 0.324906
+    },
+    {
+      "feature": "n_runs",
+      "agent_full": 0.089796,
+      "task_full": 0.427479,
+      "agent_matched": 0.085643,
+      "task_matched": 0.423847
+    },
+    {
+      "feature": "n_files_edited",
+      "agent_full": 0.082195,
+      "task_full": 0.389896,
+      "agent_matched": 0.082112,
+      "task_matched": 0.313382
+    },
+    {
+      "feature": "n_opens",
+      "agent_full": 0.047352,
+      "task_full": 0.378692,
+      "agent_matched": 0.054763,
+      "task_matched": 0.366951
+    },
+    {
+      "feature": "n_files_opened",
+      "agent_full": 0.037432,
+      "task_full": 0.416821,
+      "agent_matched": 0.044308,
+      "task_matched": 0.402545
+    },
+    {
+      "feature": "n_nav",
+      "agent_full": 0.036817,
+      "task_full": 0.489565,
+      "agent_matched": 0.031446,
+      "task_matched": 0.480629
+    },
+    {
+      "feature": "edit_retry_rate",
+      "agent_full": 0.015748,
+      "task_full": 0.457503,
+      "agent_matched": 0.01598,
+      "task_matched": 0.436962
+    },
+    {
+      "feature": "n_searches",
+      "agent_full": 0.008962,
+      "task_full": 0.477509,
+      "agent_matched": 0.007887,
+      "task_matched": 0.470981
+    }
+  ]
+}
