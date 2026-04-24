@@ -689,6 +689,13 @@
 
 <p><strong>Qualitative finding:</strong> there is a clean procedural-phase progression across difficulty — 0/3 tasks are dominated by exploration motifs, 1-2/3 tasks by productive motifs, 3/3 tasks by short completion motifs. This is a phenomenon worth noting beyond the heritability question: task difficulty is visible in the motif repertoire, not just in pass/fail.</p>
 
+<p><strong>Permutation null (same-family advantage above chance):</strong> shuffle agent labels 1000 times, recompute the same-family vs cross-family dissimilarity gap each time, see where the observed gap falls in the null distribution.</p>
+
+<figure>
+<img src="permutation_null.png" alt="Permutation null per difficulty bucket">
+<figcaption>Null distributions of the same-family advantage under shuffled agent labels (grey), vs observed (red) at each difficulty bucket. Aggregate p=0.001, 0/3 p=0.002, 1/3 p=0.001, 2/3 p=0.047, 3/3 p=0.026. The same-family lead is above chance at every bucket.</figcaption>
+</figure>
+
 <h3>5.3 Matched-pairs per-motif analysis</h3>
 
 <p>The aggregate pairwise dissimilarity number hides which specific motifs drive the difference. To isolate per-motif agent effects, we restrict to <em>tied-outcome pairs</em> (tasks where both agents A and B resolved — 99 such pairs). For each pair and each motif, compute Δ = freq(A) − freq(B). Task is held constant by construction, so the residual is an agent effect. Per-motif Wilcoxon signed-rank test + Benjamini-Hochberg FDR correction at 5%.</p>
@@ -911,6 +918,25 @@
 
   <div style='margin:12px 0 4px; font-size:12px; color:#666; font-weight:600;'>agent-unique motifs</div><table style='border-collapse:collapse; width:100%;'><tr><td style="padding:4px 8px; font-size:12px;"><strong>GPT-4</strong></td><td style="padding:4px 8px; font-size:12px;">3 unique motifs</td><td style="padding:4px 8px; font-size:11px; font-family:SF Mono,monospace; color:#555;">EDIT_SRC_PY+CREATE_TEST_PY+EDIT_TEST_PY+, EDIT_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TES, EDIT_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TES</td></tr><tr><td style="padding:4px 8px; font-size:12px;"><strong>Claude-3.5</strong></td><td style="padding:4px 8px; font-size:12px;">4 unique motifs</td><td style="padding:4px 8px; font-size:11px; font-family:SF Mono,monospace; color:#555;">EDIT_SRC_PY+RUN_PYTHON_SRC_PY, EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TES, FIND_FILE+FIND_FILE, FIND_FILE+FIND_FILE</td></tr><tr><td style="padding:4px 8px; font-size:12px;"><strong>GPT-4o</strong></td><td style="padding:4px 8px; font-size:12px;">6 unique motifs</td><td style="padding:4px 8px; font-size:11px; font-family:SF Mono,monospace; color:#555;">FIND_FILE+SHELL_LS, OPEN_TEST_PY+EDIT_TEST_PY, CREATE_CONFIG_PY+EDIT_CONFIG_PY, CREATE_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC</td></tr></table>
 </div>
+
+<h3>5.8 Semantic grouping: fix type × motif</h3>
+
+<p>Each of the 300 SWE-bench Lite tasks has a human-authored fix-type label (logic_fix, api_change, guard_clause, config_fix, and ten more; from <code>output/datasets/swe_bench_lite_resolved/fix_types.json</code>). Using fix type instead of instance-id as the grouping axis asks a sharper question: <em>are procedural patterns universal across kinds-of-fix, or specialized?</em></p>
+
+<figure>
+<img src="fixtype_motif.png" alt="Fix type by motif usage ratio">
+<figcaption>Usage ratio of each motif within each fix type, relative to the corpus mean. Red cells (ratio > 1) mean the motif is used more often on that fix type; blue (ratio < 1) means less often. 1.0 is corpus average. Motifs are sorted by how much their usage varies across fix types.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Config fixes have a distinctively sparse procedural profile.</strong> The <code>config_fix</code> column is mostly blue: build-reproducer patterns are rare (ratio 0.38×), edit-run-reproducer patterns rarer still (0.17×), and cleanup-then-submit is under-used (0.73×). Agents handling a config change don't need runtime verification or iterative reproduction — they navigate, edit, submit. Procedural minimalism as a property of the task kind, not the agent.
+</div>
+
+<div class="finding">
+<strong>Test-authoring patterns are fix-type-specific.</strong> <code>CREATE_TEST_PY → EDIT_TEST_PY → RUN_PYTHON_TEST_PY</code> peaks on the <code>other</code> bucket (3.07×) and on <code>refactor</code>; rare on <code>guard_clause</code> (0.39×) and <code>string_fix</code> (0.31×). Test-adding vs test-using is a procedural divide the fix-type axis surfaces cleanly; the instance-id axis blurs it.
+</div>
+
+<p><strong>Methodological note on the grouping axis:</strong> the earlier variance decomposition used <code>instance_id</code> (300 bins of ~3 trajectories each) and showed a strong "task dominates agent" pattern. The simpler fix-type grouping (13 bins of ~65 trajectories each) dampens that pattern substantially — most count features have ratios near 1.0 under fix_type. That means the original 300-bin effect was partly a sample-size artifact of small bins producing noisier means. The real semantic signal is in <code>n_searches</code> (2.1× by fix type) and <code>edit_retry_rate</code> (3.0×) — those features reflect what the task is about, not just which instance it was.</p>
 
 </section>
 
