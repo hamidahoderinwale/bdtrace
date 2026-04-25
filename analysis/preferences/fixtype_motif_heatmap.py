@@ -104,18 +104,18 @@ def main() -> int:
 
     # Plot — diverging colormap centered at 1.0, so "average" is the neutral color
     from matplotlib.colors import TwoSlopeNorm
-    fig, ax = plt.subplots(figsize=(1.0 + 0.6 * len(kept_fts), 0.38 * len(top_motifs) + 1.8))
+    fig, ax = plt.subplots(figsize=(1.8 + 0.95 * len(kept_fts), 0.44 * len(top_motifs) + 2.6))
     span = float(max(abs(matrix.min() - 1), abs(matrix.max() - 1)))
     span = max(span, 0.5)  # keep colormap from collapsing on near-uniform data
     norm = TwoSlopeNorm(vmin=1.0 - span, vcenter=1.0, vmax=1.0 + span)
     im = ax.imshow(matrix, cmap="RdBu_r", norm=norm, aspect="auto")
     ax.set_xticks(range(len(kept_fts)))
     ax.set_xticklabels(
-        [f"{ft}\nn={per_ft_n_trajectories[ft]}" for ft in kept_fts],
-        fontsize=9, rotation=0,
+        [f"{ft}\n(n={per_ft_n_trajectories[ft]})" for ft in kept_fts],
+        fontsize=10, rotation=35, ha="right",
     )
     ax.set_yticks(range(len(top_motifs)))
-    ax.set_yticklabels([abbrev(m) for m in top_motifs], fontsize=8)
+    ax.set_yticklabels([abbrev(m) for m in top_motifs], fontsize=9)
 
     # Annotate cells that deviate from average by more than ~25%
     for i in range(len(top_motifs)):
@@ -125,17 +125,17 @@ def main() -> int:
                 extreme = abs(v - 1.0) > span * 0.6
                 color = "white" if extreme else "#111"
                 ax.text(j, i, f"{v:.1f}x", ha="center", va="center",
-                        fontsize=7, color=color)
+                        fontsize=8, color=color)
 
     ax.set_title(
         "Which action patterns are fix-type specific?\n"
         "Cells show how often a motif is used in a fix type relative to the corpus average. "
         "2x = twice as common; 0.5x = half; 1x = average.",
-        fontsize=11,
+        fontsize=11, pad=14,
     )
     cbar = fig.colorbar(im, ax=ax, shrink=0.7)
     cbar.set_label("usage ratio (fix type / corpus average)")
-    ax.set_xlabel("fix type")
+    ax.set_xlabel("fix type", labelpad=8)
     fig.tight_layout()
     fig.savefig(OUT / "fixtype_motif.png", dpi=180, bbox_inches="tight")
     plt.close(fig)

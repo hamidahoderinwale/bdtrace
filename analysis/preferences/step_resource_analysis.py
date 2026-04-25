@@ -265,10 +265,10 @@ def plot_motif_quadrant(motifs: dict, out_path: Path) -> None:
 
     fig, ax = plt.subplots(figsize=(11, 6.5))
     ax.scatter(xs, ys, s=sizes, color="#5d90e0", edgecolor="white", alpha=0.75)
-    ax.axhline(base_rate, color="#888", lw=1, ls="--", alpha=0.7, label=f"base resolve rate = {base_rate:.2f}")
+    ax.axhline(base_rate, color="#bbb", lw=1, alpha=0.8, label=f"base resolve rate = {base_rate:.2f}")
 
     median_cost = float(np.median(xs))
-    ax.axvline(median_cost, color="#888", lw=1, ls=":", alpha=0.7, label=f"median motif cost = {median_cost:.0f} tokens")
+    ax.axvline(median_cost, color="#bbb", lw=1, alpha=0.8, label=f"median motif cost = {median_cost:.0f} tokens")
 
     ax.set_xlabel("estimated mean tokens per use of this motif")
     ax.set_ylabel("fraction of trajectories using this motif that resolved the task")
@@ -354,11 +354,11 @@ def plot_wasteful(motifs: dict, out_path: Path, top_n: int = 12) -> None:
     ax1.spines[["top", "right"]].set_visible(False)
 
     ax2 = ax1.twiny()
-    ax2.plot(success, y, "o-", color="#c03030", lw=2, markersize=6, label="resolve-rate when used")
-    ax2.axvline(base_rate, color="#888", lw=1, ls="--", alpha=0.7)
+    ax2.plot(success, y, "o-", color="#333333", lw=2, markersize=6, label="resolve-rate when used")
+    ax2.axvline(base_rate, color="#bbb", lw=1, alpha=0.8)
     ax2.set_xlim(0, max(0.8, max(success) + 0.05))
-    ax2.set_xlabel(f"resolve rate when motif is used  (dashed = base rate {base_rate:.2f})", color="#c03030")
-    ax2.tick_params(axis="x", labelcolor="#c03030")
+    ax2.set_xlabel(f"resolve rate when motif is used  (thin line = base rate {base_rate:.2f})", color="#333333")
+    ax2.tick_params(axis="x", labelcolor="#333333")
     ax2.spines[["top", "right"]].set_visible(False)
 
     fig.suptitle(
