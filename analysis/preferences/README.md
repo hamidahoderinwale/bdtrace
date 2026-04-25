@@ -22,9 +22,9 @@ Each produces a figure + JSON + sometimes CSV. All output paths in
 
 | script | figure | finding |
 |---|---|---|
-| `variance_decomp.py` | `variance_decomposition.png` | sd(group_means)/sd(agent_means) per feature across three groupings (task-id, fix-type, repo). |
-| `pair_features.py` | `pair_action_levenshtein.png` | Pairwise Levenshtein on tied-outcome action sequences, per agent pair. |
-| `task_diversity.py` | `task_diversity_distribution.png`, `task_diversity_by_resolved.png` | Per-task procedural divergence across agents. |
+| `variance_decomp.py` | `variance_decomposition.png` (archived) | sd(group_means)/sd(agent_means) per feature across three groupings (task-id, fix-type, repo). Phase A 8-token DSL; superseded at the BPE layer. |
+| `pair_features.py` | `pair_action_levenshtein.png` (archived) | Pairwise Levenshtein on tied-outcome action sequences, per agent pair. Phase A 8-token DSL; superseded by `bpe_pair_levenshtein.png`. |
+| `task_diversity.py` | `task_diversity_distribution.png`, `task_diversity_by_resolved.png` (both archived) | Per-task procedural divergence across agents. Phase A 8-token DSL; reclaim candidate in cross-corpus form. |
 | `motif_distributions.py` | `agent_motif_distributions.png`, `agent_jsd_matrix.png` | Per-agent motif distributions + pairwise dissimilarity matrix. |
 | `bpe_vocab_sweep.py` | `bpe_vocab_sweep_jsd.png`, `bpe_vocab_sweep_compression.png` | Robustness of heritability ordering across V ∈ [100, 500]. |
 | `bpe_mdl.py` | `bpe_mdl_curve.png` (archived) | MDL-based V selection. Did not converge; archived. |
