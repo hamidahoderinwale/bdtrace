@@ -143,8 +143,8 @@ def plot_null(results: dict, out_path: Path) -> None:
         null = np.array(r["null_distribution"])
         obs = r["observed_gap"]
         ax.hist(null, bins=30, color="#cccccc", edgecolor="white", alpha=0.9)
-        ax.axvline(obs, color="#d14444", lw=2, label=f"observed = {obs:.3f}")
-        ax.axvline(r["null_q95"], color="#555", lw=1, ls="--", alpha=0.7,
+        ax.axvline(obs, color="#111111", lw=2, label=f"observed = {obs:.3f}")
+        ax.axvline(r["null_q95"], color="#888", lw=1, alpha=0.8,
                    label=f"chance 95th pct = {r['null_q95']:.3f}")
         ax.set_xlabel("same-family similarity advantage")
         ax.set_title(f"{key}  (n={r['n_records']})\np = {r['p_value']:.4f}", fontsize=10)
