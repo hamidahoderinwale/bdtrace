@@ -1,6 +1,6 @@
 """Per-agent aggregate metrics.
 
-For each of the three agents, compute:
+For each of the four agents, compute:
     - Motif-distribution entropy (spread of usage)
     - Distinct motifs to cover 90% of the agent's tokens (repertoire width)
     - Mean canonical trajectory length (atoms)
@@ -15,7 +15,11 @@ of agents that resolve the task?).
 
 Outputs:
     output/paper2_pilot/aggregate_metrics.json
-    output/paper2_pilot/aggregate_metrics.png          (4-panel summary)
+    output/paper2_pilot/aggregate_metrics.png          (4-panel combined)
+    output/figures/fig_agg_entropy.png                 (individual)
+    output/figures/fig_agg_repertoire.png              (individual)
+    output/figures/fig_agg_length.png                  (individual)
+    output/figures/fig_agg_compression.png             (individual)
     output/paper2_pilot/length_by_difficulty.png       (length cross-cut)
     output/paper2_pilot/novelty_top_motifs.png         (distinctive motifs per agent)
 
@@ -31,18 +35,21 @@ import math
 from collections import Counter
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
+import sys
+import altair as alt
+import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY, AGENT_COLORS, AGENT_ORDER
+register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
+FIG_OUT = PROJECT_ROOT / "output" / "figures"
 SEQ_PATH = OUT / "bpe_sequences.jsonl"
 DIVERSITY_PATH = OUT / "task_diversity.csv"
 
-AGENTS = ["Claude-3.5", "GPT-4", "GPT-4o"]
-AGENT_COLORS = {"Claude-3.5": "#009E73", "GPT-4": "#0072B2", "GPT-4o": "#E69F00"}
+AGENTS = AGENT_ORDER  # ["Claude-3", "Claude-3.5", "GPT-4", "GPT-4o"]
 
 
 def load_records() -> list[dict]:
@@ -164,115 +171,207 @@ def per_agent_metrics(records: list[dict]) -> dict:
 
 def plot_metrics_summary(metrics: dict, out_path: Path) -> None:
     agents = [a for a in AGENTS if a in metrics]
-    x = np.arange(len(agents))
-    colors = [AGENT_COLORS[a] for a in agents]
+    FIG_OUT.mkdir(parents=True, exist_ok=True)
 
-    fig, axes = plt.subplots(1, 4, figsize=(14.5, 3.8))
-
-    ax = axes[0]
-    vals = [metrics[a]["entropy_motifs_bits"] for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("variety score (bits)")
-    ax.set_title("How varied is each agent's action mix?\nhigher = spreads usage across more patterns", fontsize=10)
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + 0.02, f"{v:.2f}", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
-
-    ax = axes[1]
-    vals = [metrics[a]["distinct_motifs_at_90pct"] for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("number of action patterns")
-    ax.set_title("How many patterns does each agent use?\n(number needed to cover 90% of its actions)", fontsize=10)
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + 0.5, f"{v}", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
-
-    ax = axes[2]
-    vals = [metrics[a]["mean_canonical_length"] for a in agents]
-    bpe_vals = [metrics[a]["mean_bpe_length"] for a in agents]
-    w = 0.4
-    ax.bar(x - w / 2, vals, w, color=colors, label="individual actions", edgecolor="white")
-    ax.bar(
-        x + w / 2, bpe_vals, w,
-        color=colors, alpha=0.55, label="learned patterns",
-        edgecolor="white", hatch="//",
+    color_scale = alt.Scale(
+        domain=list(AGENT_COLORS.keys()),
+        range=list(AGENT_COLORS.values()),
     )
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("mean steps per task")
-    ax.set_title("How long is each agent's typical run?\n(individual actions vs grouped patterns)", fontsize=10)
-    ax.legend(fontsize=8, frameon=False, loc="best")
-    ax.spines[["top", "right"]].set_visible(False)
 
-    ax = axes[3]
-    vals = [metrics[a]["mean_compression"] for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("fraction left after grouping")
-    ax.set_ylim(0, 1.0)
-    ax.set_title(
-        "How much do agents repeat themselves?\n(fraction of steps after grouping repeats;\nlower = more repetition)",
-        fontsize=10,
-    )
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + 0.02, f"{v:.2f}", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
+    def _bar_panel(df_panel, title, y_title, width=180, height=200, y_domain=None):
+        y_enc = alt.Y(
+            "value:Q",
+            axis=alt.Axis(title=y_title, domain=False, ticks=False, labelFontSize=10),
+            **({"scale": alt.Scale(domain=y_domain)} if y_domain else {}),
+        )
+        base = alt.Chart(df_panel).encode(
+            x=alt.X("agent:N", sort=AGENT_ORDER,
+                    axis=alt.Axis(title=None, domain=False, ticks=False,
+                                  labelFontSize=10, labelAngle=-30)),
+            y=y_enc,
+            color=alt.Color("agent:N", scale=color_scale,
+                            legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
+        )
+        bars = base.mark_bar(size=28)
+        text = base.mark_text(dy=-8, fontSize=9).encode(
+            text=alt.Text("value:Q", format=".2g"),
+        )
+        return (
+            alt.layer(bars, text)
+            .properties(
+                width=width, height=height,
+                title=alt.TitleParams(text=title, fontSize=11),
+            )
+        )
 
-    fig.suptitle(
-        "Four ways the three agents differ (867 trajectories total)",
-        fontsize=11,
+    # Panel 1: entropy
+    df1 = pd.DataFrame([
+        {"agent": a, "value": metrics[a]["entropy_motifs_bits"]} for a in agents
+    ])
+    panel1 = _bar_panel(
+        df1,
+        title="Motif entropy by agent (bits)",
+        y_title="Entropy (bits)",
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    # Panel 2: distinct motifs at 90%
+    df2 = pd.DataFrame([
+        {"agent": a, "value": metrics[a]["distinct_motifs_at_90pct"]} for a in agents
+    ])
+    panel2 = _bar_panel(
+        df2,
+        title="Distinct motifs at 90% coverage",
+        y_title="Number of motifs",
+    )
+
+    # Panel 3: grouped bar - canonical vs bpe
+    rows3 = []
+    for a in agents:
+        rows3.append({"agent": a, "group": "Individual actions",
+                      "value": metrics[a]["mean_canonical_length"]})
+        rows3.append({"agent": a, "group": "Grouped patterns",
+                      "value": metrics[a]["mean_bpe_length"]})
+    df3 = pd.DataFrame(rows3)
+    group_order = ["Individual actions", "Grouped patterns"]
+    base3 = alt.Chart(df3).encode(
+        x=alt.X("agent:N", sort=AGENT_ORDER,
+                axis=alt.Axis(title=None, domain=False, ticks=False,
+                              labelFontSize=10, labelAngle=-30)),
+        xOffset=alt.XOffset("group:N", sort=group_order),
+        y=alt.Y("value:Q",
+                axis=alt.Axis(title="Mean steps per task",
+                              domain=False, ticks=False, labelFontSize=10)),
+        color=alt.Color("agent:N", scale=color_scale,
+                        legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
+        opacity=alt.Opacity("group:N",
+                            scale=alt.Scale(domain=group_order, range=[1.0, 0.55]),
+                            legend=None),
+    )
+    bars3 = base3.mark_bar(size=14)
+    text3 = base3.mark_text(dy=-8, fontSize=9).encode(
+        text=alt.Text("value:Q", format=".0f"),
+    )
+    panel3 = (
+        alt.layer(bars3, text3)
+        .properties(
+            width=220, height=200,
+            title=alt.TitleParams(
+                text="Trajectory lengths",
+                fontSize=11, color="#111111", anchor="start",
+            ),
+        )
+    )
+
+    # Panel 4: compression
+    df4 = pd.DataFrame([
+        {"agent": a, "value": metrics[a]["mean_compression"]} for a in agents
+    ])
+    panel4 = _bar_panel(
+        df4,
+        title="Mean compression ratio",
+        y_title="BPE length / atom length",
+        y_domain=[0, 1],
+    )
+
+    cfg = dict(strokeWidth=0)
+
+    # Individual PNGs
+    (panel1.configure_view(**cfg).configure_axis(grid=False)
+     .save(str(FIG_OUT / "fig_agg_entropy.png"), scale_factor=2))
+    (panel2.configure_view(**cfg).configure_axis(grid=False)
+     .save(str(FIG_OUT / "fig_agg_repertoire.png"), scale_factor=2))
+    (panel3.configure_view(**cfg).configure_axis(grid=False)
+     .save(str(FIG_OUT / "fig_agg_length.png"), scale_factor=2))
+    (panel4.configure_view(**cfg).configure_axis(grid=False)
+     .save(str(FIG_OUT / "fig_agg_compression.png"), scale_factor=2))
+
+    # Combined figure
+    chart = (
+        alt.hconcat(panel1, panel2, panel3, panel4, spacing=48)
+        .properties(
+            title=alt.TitleParams(
+                text="Agent summary statistics (n = 1,162)",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .configure_view(**cfg)
+        .configure_axis(grid=False)
+    )
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_length_by_difficulty(
     records: list[dict], difficulty: dict[str, int], out_path: Path
 ) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharex=True)
+    diff_label = {0: "0/4", 1: "1/4", 2: "2/4", 3: "3/4"}
+    panel_specs = [
+        ("canonical_length", "Individual actions"),
+        ("bpe_length", "Grouped action patterns"),
+    ]
 
-    for ax, key, title, ylab in [
-        (axes[0], "canonical_length", "Individual actions", "mean number of actions"),
-        (axes[1], "bpe_length", "Grouped action patterns", "mean number of patterns"),
-    ]:
+    rows = []
+    for key, panel in panel_specs:
         for a in AGENTS:
-            points_x, points_y = [], []
             for d in [0, 1, 2, 3]:
                 vals = [
                     r[key] for r in records
                     if r["agent"] == a and difficulty.get(r["instance_id"]) == d
                 ]
                 if vals:
-                    points_x.append(d)
-                    points_y.append(float(np.mean(vals)))
-            ax.plot(
-                points_x, points_y,
-                marker="o", color=AGENT_COLORS[a],
-                label=a, linewidth=2, markersize=7,
-            )
-        ax.set_xlabel("number of agents that solved the task")
-        ax.set_ylabel(f"{ylab} per task")
-        ax.set_title(title, fontsize=10)
-        ax.set_xticks([0, 1, 2, 3])
-        ax.set_xticklabels(["0 (nobody)", "1", "2", "3 (everyone)"])
-        ax.legend(fontsize=8, frameon=False, loc="best")
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.grid(True, alpha=0.25)
+                    rows.append({
+                        "difficulty": d,
+                        "difficulty_label": diff_label[d],
+                        "agent": a,
+                        "panel": panel,
+                        "value": float(np.mean(vals)),
+                    })
+    df = pd.DataFrame(rows)
 
-    fig.suptitle(
-        "How long is each agent's run, and does task difficulty change it?\n"
-        "All three shorten as tasks get easier; GPT-4o runs longest when nobody solves.",
-        fontsize=11,
+    color_scale = alt.Scale(
+        domain=list(AGENT_COLORS.keys()),
+        range=list(AGENT_COLORS.values()),
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    diff_order = ["0/4", "1/4", "2/4", "3/4"]
+    panel_order = ["Individual actions", "Grouped action patterns"]
+
+    base = alt.Chart(df).encode(
+        x=alt.X("difficulty_label:O", sort=diff_order,
+                axis=alt.Axis(title="Number of agents that solved the task",
+                              domain=False, ticks=False, labelFontSize=10)),
+        y=alt.Y("value:Q", axis=alt.Axis(title=None, domain=False, ticks=False,
+                                         labelFontSize=10)),
+        color=alt.Color("agent:N", scale=color_scale,
+                        legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
+        detail="agent:N",
+    )
+
+    lines = base.mark_line(strokeWidth=2)
+    points = base.mark_point(size=60)
+
+    chart = (
+        alt.layer(lines, points)
+        .properties(width=200, height=200)
+        .facet(
+            column=alt.Column(
+                "panel:N",
+                sort=panel_order,
+                title=None,
+                header=alt.Header(titleFontSize=11, labelFontSize=11,
+                                  labelOrient="bottom"),
+            )
+        )
+        .properties(
+            title=alt.TitleParams(
+                text="Trajectory length by task difficulty",
+                fontSize=13, subtitleFontSize=11,
+                color="#111111", subtitleColor="#888888", anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(grid=False)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_novelty_top(metrics: dict, out_path: Path, top_n: int = 6) -> None:
@@ -280,35 +379,64 @@ def plot_novelty_top(metrics: dict, out_path: Path, top_n: int = 6) -> None:
 
     def abbrev(m: str) -> str:
         parts = m.split("+")
+        if len(parts) == 1:
+            return parts[0]
+        if len(set(parts)) == 1:
+            return f"{parts[0]} x{len(parts)}"
         if len(parts) <= 2:
-            return m.replace("+", " -> ")
-        return f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} atoms)"
+            return " -> ".join(parts)
+        return f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} steps)"
 
-    fig, axes = plt.subplots(1, len(agents), figsize=(4.5 * len(agents), 4.5), sharex=True)
-    if len(agents) == 1:
-        axes = [axes]
-
-    for ax, a in zip(axes, agents):
-        over = metrics[a]["top_over_used_motifs"][:top_n]
-        motifs, logodds = zip(*over)
-        y = np.arange(len(motifs))
-        ax.barh(y, logodds, color=AGENT_COLORS[a], edgecolor="white")
-        ax.set_yticks(y)
-        ax.set_yticklabels([abbrev(m) for m in motifs], fontsize=8)
-        ax.invert_yaxis()
-        ax.set_xlabel("log2 odds vs corpus")
-        ax.set_title(a, fontsize=10)
-        ax.axvline(0, color="#888", lw=0.8)
-        ax.spines[["top", "right"]].set_visible(False)
-
-    fig.suptitle(
-        f"Top {top_n} distinctively over-used motifs per agent\n"
-        "(positive log-odds = this agent uses the motif more than the corpus mean)",
-        fontsize=11,
+    color_scale = alt.Scale(
+        domain=list(AGENT_COLORS.keys()),
+        range=list(AGENT_COLORS.values()),
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    panels = []
+    for a in agents:
+        over = metrics[a]["top_over_used_motifs"][:top_n]
+        if not over:
+            continue
+        rows = [
+            {"motif": abbrev(m), "logodds": lo, "agent": a, "rank": i}
+            for i, (m, lo) in enumerate(over)
+        ]
+        df = pd.DataFrame(rows)
+        motif_order = [r["motif"] for r in rows]
+
+        bars = alt.Chart(df).mark_bar().encode(
+            y=alt.Y("motif:N", sort=motif_order,
+                    axis=alt.Axis(title=None, domain=False, ticks=False,
+                                  labelFontSize=9)),
+            x=alt.X("logodds:Q",
+                    axis=alt.Axis(title="log2 odds vs corpus",
+                                  domain=False, ticks=False, labelFontSize=10)),
+            color=alt.Color("agent:N", scale=color_scale, legend=None),
+        )
+
+        panel = (
+            bars
+            .properties(
+                width=220, height=top_n * 24,
+                title=alt.TitleParams(text=a, fontSize=11,
+                                      color="#111111", anchor="start"),
+            )
+        )
+        panels.append(panel)
+
+    chart = (
+        alt.hconcat(*panels, spacing=36)
+        .properties(
+            title=alt.TitleParams(
+                text="Signature action patterns by agent",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(grid=False)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:
@@ -329,7 +457,8 @@ def main() -> int:
         print(f"  mean canonical length    = {m['mean_canonical_length']:.1f} atoms")
         print(f"  mean BPE length          = {m['mean_bpe_length']:.1f} motifs")
         print(f"  mean compression         = {m['mean_compression']:.3f}")
-        print(f"  top 3 over-used motifs:  {[(mot, round(lo, 2)) for mot, lo in m['top_over_used_motifs'][:3]]}")
+        print(f"  top 3 over-used motifs:  "
+              f"{[(mot, round(lo, 2)) for mot, lo in m['top_over_used_motifs'][:3]]}")
 
     (OUT / "aggregate_metrics.json").write_text(json.dumps(metrics, indent=2))
     plot_metrics_summary(metrics, OUT / "aggregate_metrics.png")
@@ -339,6 +468,10 @@ def main() -> int:
     print(f"\nSaved:")
     print(f"  {OUT / 'aggregate_metrics.json'}")
     print(f"  {OUT / 'aggregate_metrics.png'}")
+    print(f"  {FIG_OUT / 'fig_agg_entropy.png'}")
+    print(f"  {FIG_OUT / 'fig_agg_repertoire.png'}")
+    print(f"  {FIG_OUT / 'fig_agg_length.png'}")
+    print(f"  {FIG_OUT / 'fig_agg_compression.png'}")
     print(f"  {OUT / 'length_by_difficulty.png'}")
     print(f"  {OUT / 'novelty_top_motifs.png'}")
     return 0

@@ -21,12 +21,12 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
-
+import altair as alt
+import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY
+register()
 
 from analysis.preferences.bpe import BPEModel, train_bpe
 from analysis.preferences.canonicalize import canonicalize_trajectory
@@ -73,18 +73,41 @@ def plot_vocab_length_histogram(model: BPEModel, out_path: Path) -> None:
     xs = sorted(counter.keys())
     ys = [counter[x] for x in xs]
 
-    fig, ax = plt.subplots(figsize=(7, 4))
-    colors = ["#999999" if x == 1 else "#0072B2" for x in xs]
-    ax.bar(xs, ys, color=colors, edgecolor="white")
-    ax.set_xlabel("Vocabulary item length (number of atomic tokens)")
-    ax.set_ylabel("Items at this length")
-    ax.set_title(f"BPE discovered motifs of increasing length\n"
-                 f"({sum(y for x, y in zip(xs, ys) if x == 1)} atomic + "
-                 f"{sum(y for x, y in zip(xs, ys) if x > 1)} merged)")
-    ax.spines[["top", "right"]].set_visible(False)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    n_single = sum(y for x, y in zip(xs, ys) if x == 1)
+    n_multi = sum(y for x, y in zip(xs, ys) if x > 1)
+
+    df = pd.DataFrame({
+        "length": xs,
+        "count": ys,
+        "type": ["single" if x == 1 else "multi" for x in xs],
+    })
+
+    chart = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X("length:O", title="Vocabulary item length (number of actions)"),
+            y=alt.Y("count:Q", title="Items at this length"),
+            color=alt.Color(
+                "type:N",
+                scale=alt.Scale(domain=["single", "multi"], range=[GRAY, BLUE]),
+                legend=None,
+            ),
+        )
+        .properties(
+            width=420,
+            height=240,
+            title=alt.TitleParams(
+                text="BPE vocabulary: token length distribution",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+    chart.save(str(out_path), scale_factor=2)
 
 
 def save_top_motifs(model: BPEModel, expressed: list[list[str]], out_path: Path) -> None:
@@ -159,36 +182,57 @@ def plot_pair_levenshtein_comparison(
     bpe_dists: dict[tuple[str, str], list[float]],
     out_path: Path,
 ) -> None:
-    """Side-by-side violin plot: canonical vs BPE Levenshtein per agent-pair."""
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=True)
+    """Side-by-side box plot: canonical vs BPE Levenshtein per agent-pair."""
+    rows = []
+    for (a, b), dists in canonical_dists.items():
+        label = f"{a}\nvs\n{b}"
+        for d in dists:
+            rows.append({"representation": "Canonical atoms", "pair_label": label, "distance": d})
+    for (a, b), dists in bpe_dists.items():
+        label = f"{a}\nvs\n{b}"
+        for d in dists:
+            rows.append({"representation": "BPE motifs", "pair_label": label, "distance": d})
 
-    for ax, dists, title in [
-        (axes[0], canonical_dists, "Canonical atoms (76 unique)"),
-        (axes[1], bpe_dists, "BPE motifs (200 vocab)"),
-    ]:
-        pairs = sorted(dists.keys())
-        data = [dists[p] for p in pairs]
-        labels = [f"{a}\nvs\n{b}" for a, b in pairs]
-        parts = ax.violinplot(data, positions=range(len(data)), widths=0.7, showmeans=True)
-        for pc in parts["bodies"]:
-            pc.set_facecolor("#0072B2")
-            pc.set_alpha(0.55)
-        # Add mean labels
-        means = [np.mean(d) if d else 0 for d in data]
-        for i, m in enumerate(means):
-            ax.text(i, m, f" {m:.2f}", fontsize=8, va="center", ha="left")
-        ax.set_xticks(range(len(data)))
-        ax.set_xticklabels(labels, fontsize=8)
-        ax.set_ylim(0, 1)
-        ax.set_title(title, fontsize=10)
-        ax.spines[["top", "right"]].set_visible(False)
-    axes[0].set_ylabel("Pairwise Levenshtein distance")
-    fig.suptitle("How much do agents diverge procedurally on the same task?\n"
-                 "Before BPE (canonical atoms) vs. after BPE (emergent motifs)",
-                 fontsize=11)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    df = pd.DataFrame(rows)
+
+    panel = (
+        alt.Chart(df)
+        .mark_boxplot(extent=1.5)
+        .encode(
+            x=alt.X(
+                "distance:Q",
+                title="Pairwise Levenshtein distance (0=identical, 1=completely different)",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            y=alt.Y("pair_label:N", title=None),
+            color=alt.Color(
+                "representation:N",
+                scale=alt.Scale(
+                    domain=["Canonical atoms", "BPE motifs"],
+                    range=[GRAY, BLUE],
+                ),
+                legend=None,
+            ),
+            column=alt.Column(
+                "representation:N",
+                title=None,
+                header=alt.Header(labelFontSize=10),
+            ),
+        )
+        .properties(
+            width=260,
+            height=160,
+            title=alt.TitleParams(
+                text="Within-task procedural divergence",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+    panel.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:

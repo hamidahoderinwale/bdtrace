@@ -30,10 +30,15 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import sys
+
+import altair as alt
 import numpy as np
+import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY, NEAR_BLACK
+register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CACHE = PROJECT_ROOT / "output" / "trajectories" / ".cache"
@@ -216,79 +221,81 @@ def efficiency_frontier(seqs: dict, stats: dict, resolved: set) -> dict:
     return out
 
 
-def plot_atoms(atoms: dict, out_path: Path) -> None:
-    # scatter: x = mean tokens per use, y = occurrences (log)
-    items = [(a, p) for a, p in atoms.items() if p["occurrences"] >= 5]
-    xs = np.array([p["mean_tokens_per_use"] for _, p in items])
-    ys = np.array([p["occurrences"] for _, p in items])
-    names = [a for a, _ in items]
+def plot_atoms(atoms: dict, out_path: Path, top_n: int = 15) -> None:
+    items = sorted(
+        [(a, p) for a, p in atoms.items() if p["occurrences"] >= 5],
+        key=lambda kv: -kv[1]["total_tokens_attributed"],
+    )[:top_n]
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.scatter(xs, ys, s=50, color="#5d90e0", edgecolor="white", alpha=0.85)
-    ax.set_xscale("linear")
-    ax.set_yscale("log")
-    ax.set_xlabel("mean tokens attributed per use (estimated)")
-    ax.set_ylabel("total occurrences across corpus (log scale)")
-    ax.set_title(
-        "Canonical atom cost-vs-usage profile\n"
-        "Top-right = expensive and common (dominant cost drivers). Bottom-left = rare and cheap.",
-        fontsize=11,
-    )
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.grid(True, alpha=0.25)
+    df = pd.DataFrame([
+        {
+            "atom_name": a,
+            "total_tokens_m": p["total_tokens_attributed"] / 1e6,
+            "occurrences": p["occurrences"],
+        }
+        for a, p in items
+    ])
 
-    # annotate top-6 by occurrences and top-3 by cost
-    top_by_count = sorted(items, key=lambda kv: -kv[1]["occurrences"])[:6]
-    top_by_cost = sorted(items, key=lambda kv: -kv[1]["mean_tokens_per_use"])[:3]
-    seen = set()
-    for a, p in top_by_count + top_by_cost:
-        if a in seen:
-            continue
-        seen.add(a)
-        ax.annotate(
-            a, xy=(p["mean_tokens_per_use"], p["occurrences"]),
-            xytext=(6, 4), textcoords="offset points",
-            fontsize=8, color="#333",
+    sort_order = df["atom_name"].tolist()
+    panel_h = top_n * 26
+
+    axis_opts = alt.Axis(domain=False, ticks=False)
+
+    panel1 = (
+        alt.Chart(df)
+        .mark_bar(color=BLUE)
+        .encode(
+            x=alt.X("total_tokens_m:Q", title="Total attributed tokens (millions)", axis=axis_opts),
+            y=alt.Y("atom_name:N", sort=sort_order, title=None,
+                    axis=alt.Axis(domain=False, ticks=False, labelFontSize=9)),
         )
+        .properties(width=240, height=panel_h)
+    )
 
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    panel2 = (
+        alt.Chart(df)
+        .mark_bar(color=SKY)
+        .encode(
+            x=alt.X("occurrences:Q", title="Occurrences across corpus", axis=axis_opts),
+            y=alt.Y("atom_name:N", sort=sort_order, title=None,
+                    axis=alt.Axis(domain=False, ticks=False, labelFontSize=9)),
+        )
+        .properties(width=240, height=panel_h)
+    )
+
+    chart = (
+        alt.hconcat(panel1, panel2)
+        .resolve_scale(y="shared")
+        .properties(
+            title=alt.TitleParams(
+                text=f"Top {top_n} action types by total estimated cost",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_motif_quadrant(motifs: dict, out_path: Path) -> None:
     base_rate = motifs["__base_rate__"]["base_resolve_rate"]
-    items = [(m, p) for m, p in motifs.items() if m != "__base_rate__" and p["n_trajectories_with"] >= 10 and p["n_atoms"] >= 2]
+    items = [
+        (m, p) for m, p in motifs.items()
+        if m != "__base_rate__" and p["n_trajectories_with"] >= 10 and p["n_atoms"] >= 2
+    ]
+
     xs = np.array([p["mean_tokens_per_use"] for _, p in items])
-    ys = np.array([p["success_rate_when_used"] for _, p in items])
-    sizes = np.array([np.sqrt(p["n_trajectories_with"]) * 8 for _, p in items])
-
-    fig, ax = plt.subplots(figsize=(11, 6.5))
-    ax.scatter(xs, ys, s=sizes, color="#5d90e0", edgecolor="white", alpha=0.75)
-    ax.axhline(base_rate, color="#bbb", lw=1, alpha=0.8, label=f"base resolve rate = {base_rate:.2f}")
-
     median_cost = float(np.median(xs))
-    ax.axvline(median_cost, color="#bbb", lw=1, alpha=0.8, label=f"median motif cost = {median_cost:.0f} tokens")
 
-    ax.set_xlabel("estimated mean tokens per use of this motif")
-    ax.set_ylabel("fraction of trajectories using this motif that resolved the task")
-    ax.set_title(
-        "Motif cost vs success: which procedures actually pay off?\n"
-        "Upper-left = cheap + high success (efficient). Lower-right = expensive + low success (wasteful).",
-        fontsize=11,
-    )
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.grid(True, alpha=0.25)
-    ax.legend(fontsize=9, frameon=False, loc="lower right")
-
-    # annotate outliers: highest-success and highest-cost and wasteful
     def abbrev(m: str, maxl: int = 32) -> str:
         parts = m.split("+")
         if len(parts) <= 2:
             s = m.replace("+", "->")
         else:
-            s = f"{parts[0]}->...->{parts[-1]} ({len(parts)})"
-        return s if len(s) <= maxl else s[:maxl-1] + "..."
+            s = f"{parts[0]}->...{parts[-1]} ({len(parts)})"
+        return s if len(s) <= maxl else s[:maxl - 1] + "..."
 
     efficient = sorted(items, key=lambda kv: (-kv[1]["success_rate_when_used"], kv[1]["mean_tokens_per_use"]))[:3]
     expensive = sorted(items, key=lambda kv: -kv[1]["mean_tokens_per_use"])[:3]
@@ -296,38 +303,95 @@ def plot_motif_quadrant(motifs: dict, out_path: Path) -> None:
         [(m, p) for m, p in items if p["mean_tokens_per_use"] >= median_cost],
         key=lambda kv: kv[1]["success_rate_when_used"],
     )[:3]
-    seen = set()
-    for (m, p) in efficient + expensive + wasteful:
-        if m in seen:
-            continue
-        seen.add(m)
-        ax.annotate(
-            abbrev(m), xy=(p["mean_tokens_per_use"], p["success_rate_when_used"]),
-            xytext=(5, 3), textcoords="offset points",
-            fontsize=7, color="#333",
-        )
+    seen: set[str] = set()
+    annotated: list[str] = []
+    for (m, _) in efficient + expensive + wasteful:
+        if m not in seen:
+            seen.add(m)
+            annotated.append(m)
 
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    df = pd.DataFrame([
+        {
+            "motif": m,
+            "mean_tokens_per_use": p["mean_tokens_per_use"],
+            "success_rate_when_used": p["success_rate_when_used"],
+            "n_traj": p["n_trajectories_with"],
+            "label": abbrev(m),
+            "annotate": m in seen,
+        }
+        for m, p in items
+    ])
+
+    axis_opts = alt.Axis(domain=False, ticks=False)
+
+    scatter = (
+        alt.Chart(df)
+        .mark_point(filled=True, opacity=0.7, color=BLUE)
+        .encode(
+            x=alt.X("mean_tokens_per_use:Q",
+                    title="Estimated mean tokens per use",
+                    axis=axis_opts),
+            y=alt.Y("success_rate_when_used:Q",
+                    title="Fraction of trajectories that resolved the task",
+                    axis=alt.Axis(domain=False, ticks=False, format=".0%")),
+            size=alt.Size("n_traj:Q", scale=alt.Scale(range=[20, 200]), legend=None),
+        )
+    )
+
+    hline = (
+        alt.Chart(pd.DataFrame({"y": [base_rate]}))
+        .mark_rule(color=GRAY, strokeDash=[4, 4])
+        .encode(y=alt.Y("y:Q"))
+    )
+
+    vline = (
+        alt.Chart(pd.DataFrame({"x": [median_cost]}))
+        .mark_rule(color=GRAY, strokeDash=[4, 4])
+        .encode(x=alt.X("x:Q"))
+    )
+
+    ann_df = df[df["annotate"]].copy()
+    annotations = (
+        alt.Chart(ann_df)
+        .mark_text(xOffset=5, yOffset=-8, fontSize=8, color="#333333", align="left")
+        .encode(
+            x=alt.X("mean_tokens_per_use:Q"),
+            y=alt.Y("success_rate_when_used:Q"),
+            text=alt.Text("label:N"),
+        )
+    )
+
+    chart = (
+        alt.layer(hline, vline, scatter, annotations)
+        .properties(
+            width=500,
+            height=300,
+            title=alt.TitleParams(
+                text="Motif cost vs. solve rate",
+                fontSize=13, color="#111111", anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_wasteful(motifs: dict, out_path: Path, top_n: int = 12) -> None:
-    items = [(m, p) for m, p in motifs.items() if m != "__base_rate__"
-             and p["n_trajectories_with"] >= 20 and p["n_atoms"] >= 2]
-    ranked = sorted(items, key=lambda kv: (kv[1]["success_rate_when_used"] - (kv[1]["mean_tokens_per_use"] / max(1, kv[1]["mean_tokens_per_use"] + 1)) * 0.0))
-    # Compose a composite wasteful index: high cost, low success relative to base
     base_rate = motifs["__base_rate__"]["base_resolve_rate"]
-    scored = []
+    items = [
+        (m, p) for m, p in motifs.items()
+        if m != "__base_rate__" and p["n_trajectories_with"] >= 20 and p["n_atoms"] >= 2
+    ]
+
     max_cost = max(p["mean_tokens_per_use"] for _, p in items) if items else 1
+    scored = []
     for m, p in items:
         cost_norm = p["mean_tokens_per_use"] / max_cost
-        success_deficit = base_rate - p["success_rate_when_used"]
-        scored.append((m, p, cost_norm - success_deficit * 0))  # preserve flexible
-        # Simpler: waste_score = cost_norm * (base_rate - success_rate) with floor
         waste_score = cost_norm * max(0, base_rate - p["success_rate_when_used"])
-        scored[-1] = (m, p, waste_score)
-
+        scored.append((m, p, waste_score))
     scored.sort(key=lambda t: -t[2])
     top = scored[:top_n]
 
@@ -336,71 +400,130 @@ def plot_wasteful(motifs: dict, out_path: Path, top_n: int = 12) -> None:
         if len(parts) <= 2:
             s = m.replace("+", "->")
         else:
-            s = f"{parts[0]}->...->{parts[-1]} ({len(parts)})"
-        return s if len(s) <= maxl else s[:maxl-1] + "..."
+            s = f"{parts[0]}->...{parts[-1]} ({len(parts)})"
+        return s if len(s) <= maxl else s[:maxl - 1] + "..."
 
-    names = [abbrev(t[0]) for t in top]
-    costs = [t[1]["mean_tokens_per_use"] / 1000 for t in top]
-    success = [t[1]["success_rate_when_used"] for t in top]
+    df = pd.DataFrame([
+        {
+            "motif_name": abbrev(t[0]),
+            "cost_k": t[1]["mean_tokens_per_use"] / 1000,
+            "success_rate": t[1]["success_rate_when_used"],
+        }
+        for t in top
+    ])
 
-    fig, ax1 = plt.subplots(figsize=(11, 5.2))
-    y = np.arange(len(top))
-    ax1.barh(y, costs, color="#c9b5dd", edgecolor="white", label="cost per use (k tokens)")
-    ax1.set_yticks(y)
-    ax1.set_yticklabels(names, fontsize=8)
-    ax1.invert_yaxis()
-    ax1.set_xlabel("mean tokens per use (thousands)", color="#6a4a9f")
-    ax1.tick_params(axis="x", labelcolor="#6a4a9f")
-    ax1.spines[["top", "right"]].set_visible(False)
+    sort_order = df["motif_name"].tolist()
+    panel_h = top_n * 26
+    axis_opts = alt.Axis(domain=False, ticks=False)
 
-    ax2 = ax1.twiny()
-    ax2.plot(success, y, "o-", color="#333333", lw=2, markersize=6, label="resolve-rate when used")
-    ax2.axvline(base_rate, color="#bbb", lw=1, alpha=0.8)
-    ax2.set_xlim(0, max(0.8, max(success) + 0.05))
-    ax2.set_xlabel(f"resolve rate when motif is used  (thin line = base rate {base_rate:.2f})", color="#333333")
-    ax2.tick_params(axis="x", labelcolor="#333333")
-    ax2.spines[["top", "right"]].set_visible(False)
-
-    fig.suptitle(
-        f"Top {top_n} candidate 'wasteful' motifs\n"
-        "High cost (bars) combined with low resolve rate (red line) = procedures that burn tokens without helping.",
-        fontsize=11,
+    panel1 = (
+        alt.Chart(df)
+        .mark_bar(color=SKY)
+        .encode(
+            x=alt.X("cost_k:Q", title="Mean tokens per use (thousands)", axis=axis_opts),
+            y=alt.Y("motif_name:N", sort=sort_order, title=None,
+                    axis=alt.Axis(domain=False, ticks=False, labelFontSize=9)),
+        )
+        .properties(width=240, height=panel_h)
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    base_df = pd.DataFrame({"x": [base_rate]})
+    vline = (
+        alt.Chart(base_df)
+        .mark_rule(color=GRAY, strokeDash=[4, 4])
+        .encode(x=alt.X("x:Q"))
+    )
+
+    bars2 = (
+        alt.Chart(df)
+        .mark_bar(color=ORANGE)
+        .encode(
+            x=alt.X("success_rate:Q", title="Resolve rate when used",
+                    axis=alt.Axis(domain=False, ticks=False, format=".0%")),
+            y=alt.Y("motif_name:N", sort=sort_order, title=None,
+                    axis=alt.Axis(domain=False, ticks=False, labelFontSize=9)),
+        )
+    )
+    panel2 = (
+        alt.layer(bars2, vline)
+        .properties(width=240, height=panel_h)
+    )
+
+    chart = (
+        alt.hconcat(panel1, panel2)
+        .resolve_scale(y="shared")
+        .properties(
+            title=alt.TitleParams(
+                text=f"Top {top_n} candidate wasteful motifs",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_efficiency_frontier(frontier: dict, out_path: Path) -> None:
-    agents = sorted(frontier.keys())
+    df = pd.DataFrame([
+        {
+            "agent": a,
+            "mean_cost_per_task_usd": f["mean_cost_per_task_usd"],
+            "resolve_rate": f["resolve_rate"],
+            "label": f"${f['mean_cost_per_resolved_usd']:.2f}/resolved",
+        }
+        for a, f in frontier.items()
+    ])
 
-    fig, ax = plt.subplots(figsize=(8, 5.2))
-    for a in agents:
-        f = frontier[a]
-        ax.scatter(
-            f["mean_cost_per_task_usd"], f["resolve_rate"],
-            s=220, color=AGENT_COLORS.get(a, "#888"),
-            edgecolor="white", linewidth=1.2, zorder=3,
-        )
-        ax.annotate(
-            f"{a}\n${f['mean_cost_per_resolved_usd']:.2f}/resolved",
-            xy=(f["mean_cost_per_task_usd"], f["resolve_rate"]),
-            xytext=(10, -4), textcoords="offset points",
-            fontsize=9,
-        )
+    color_domain = list(AGENT_COLORS.keys())
+    color_range = [AGENT_COLORS[k] for k in color_domain]
+    axis_opts = alt.Axis(domain=False, ticks=False)
 
-    ax.set_xlabel("mean cost per task attempted (USD)")
-    ax.set_ylabel("resolve rate (fraction of tasks solved)")
-    ax.set_title(
-        "Efficiency frontier: cost vs solve rate per agent\n"
-        "Up-and-left is better. Annotation shows cost per resolved task.",
-        fontsize=11,
+    points = (
+        alt.Chart(df)
+        .mark_point(filled=True, size=200)
+        .encode(
+            x=alt.X("mean_cost_per_task_usd:Q",
+                    title="Mean cost per task attempted (USD)",
+                    axis=axis_opts),
+            y=alt.Y("resolve_rate:Q",
+                    title="Resolve rate",
+                    axis=alt.Axis(domain=False, ticks=False, format=".0%")),
+            color=alt.Color(
+                "agent:N",
+                scale=alt.Scale(domain=color_domain, range=color_range),
+                legend=None,
+            ),
+        )
     )
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.grid(True, alpha=0.25)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    labels = (
+        alt.Chart(df)
+        .mark_text(dy=-16, fontSize=9)
+        .encode(
+            x=alt.X("mean_cost_per_task_usd:Q"),
+            y=alt.Y("resolve_rate:Q"),
+            text=alt.Text("label:N"),
+        )
+    )
+
+    chart = (
+        alt.layer(points, labels)
+        .properties(
+            width=360,
+            height=240,
+            title=alt.TitleParams(
+                text="Token efficiency by agent",
+                fontSize=13, color="#111111", anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:
@@ -462,12 +585,10 @@ def main() -> int:
     plot_atoms(atoms, OUT / "step_resources_atoms.png")
     plot_motif_quadrant(motifs, OUT / "step_resources_motifs.png")
     plot_wasteful(motifs, OUT / "step_resources_wasteful.png")
-    plot_efficiency_frontier(frontier, OUT / "step_resources_efficiency.png")
 
     print(f"\nSaved:")
     for n in ["step_resources.json", "step_resources_atoms.png",
-              "step_resources_motifs.png", "step_resources_wasteful.png",
-              "step_resources_efficiency.png"]:
+              "step_resources_motifs.png", "step_resources_wasteful.png"]:
         print(f"  {OUT / n}")
     return 0
 

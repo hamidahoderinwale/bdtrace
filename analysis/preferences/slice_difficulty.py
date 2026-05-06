@@ -29,11 +29,15 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import altair as alt
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import jensenshannon
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN
+register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
@@ -134,43 +138,67 @@ def analyze_bucket(records: list[dict], bucket_name: str) -> dict:
 
 
 def plot_jsd_by_bucket(results: list[dict], out_path: Path) -> None:
-    buckets = [r["bucket"] for r in results]
-    pair_names = sorted(PAIR_COLORS.keys())
+    # Collapse three pairs into two meaningful groups:
+    # within-family = GPT-4 x GPT-4o (consistently lower)
+    # cross-family  = mean(Claude x GPT-4, Claude x GPT-4o) (consistently higher)
+    WITHIN = "GPT-4__GPT-4o"
+    CROSS  = ["Claude-3.5__GPT-4", "Claude-3.5__GPT-4o"]
 
-    def pair_label(name: str) -> str:
-        a, b = name.split("__")
-        return f"{a} x {b}"
+    group_order  = ["Cross family", "Within GPT family"]
+    group_colors = ["#0072B2", "#009E73"]  # BLUE, GREEN
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=False)
+    rows = []
+    for r in results:
+        for key, panel in [("jsd_full", "All tokens"), ("jsd_motifs", "Repeated sequences only")]:
+            within_jsd = r[key][WITHIN]
+            cross_jsd  = sum(r[key][p] for p in CROSS) / len(CROSS)
+            rows.append({"bucket": r["bucket"], "panel": panel, "group": "Within GPT family", "jsd": within_jsd})
+            rows.append({"bucket": r["bucket"], "panel": panel, "group": "Cross family",       "jsd": cross_jsd})
+    df = pd.DataFrame(rows)
 
-    for ax, key, title in [
-        (axes[0], "jsd_full", "All action tokens (single steps + repeated sequences)"),
-        (axes[1], "jsd_motifs", "Repeated sequences only (two or more steps)"),
-    ]:
-        for pair in pair_names:
-            ys = [r[key][pair] for r in results]
-            ax.plot(
-                buckets, ys,
-                marker="o", color=PAIR_COLORS[pair],
-                label=pair_label(pair),
-                linewidth=2, markersize=7,
+    cscale = alt.Scale(domain=group_order, range=group_colors)
+
+    panels = [
+        ("All tokens",              out_path.parent / (out_path.stem + "_all_tokens.png")),
+        ("Repeated sequences only", out_path.parent / (out_path.stem + "_repeated.png")),
+    ]
+    titles = {
+        "All tokens":              "Behavioral divergence by task difficulty (all tokens)",
+        "Repeated sequences only": "Behavioral divergence by task difficulty (repeated sequences)",
+    }
+
+    for panel_name, panel_path in panels:
+        panel_df = df[df["panel"] == panel_name].copy()
+
+        base = alt.Chart(panel_df).encode(
+            x=alt.X("bucket:O",
+                    sort=BUCKET_ORDER,
+                    axis=alt.Axis(title="Task difficulty", domain=False, ticks=False,
+                                  labelFontSize=11, labelPadding=8)),
+            y=alt.Y("jsd:Q",
+                    scale=alt.Scale(domain=[0, 0.65]),
+                    axis=alt.Axis(title="Jensen-Shannon divergence",
+                                  domain=False, ticks=False,
+                                  values=[0, 0.2, 0.4, 0.6])),
+            color=alt.Color("group:N", sort=group_order, scale=cscale,
+                            legend=alt.Legend(orient="bottom", title=None,
+                                              symbolSize=80)),
+        )
+
+        chart = (
+            (base.mark_line(strokeWidth=2) + base.mark_point(size=60, filled=True, strokeWidth=0))
+            .properties(
+                title=alt.TitleParams(
+                    text=titles[panel_name],
+                    fontSize=13, color="#111111", anchor="start",
+                ),
+                width=320, height=220,
             )
-        ax.set_xlabel("Number of agents that solved the task (0 = nobody, 3 = everyone)")
-        ax.set_ylabel("How different the action mix is\n(0 = identical, 1 = no overlap)")
-        ax.set_title(title, fontsize=10)
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.legend(fontsize=8, frameon=False, loc="best")
-        ax.grid(True, alpha=0.25)
-        ax.set_ylim(bottom=0)
+            .configure_view(strokeWidth=0)
+        )
 
-    fig.suptitle(
-        "How similar are agents' action patterns, by task difficulty?\n"
-        "Lower = agents use a more similar mix of actions. Green = GPT-4 x GPT-4o (same family).",
-        fontsize=11,
-    )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def plot_top_motifs_by_bucket(results: list[dict], out_path: Path, top_n: int = 8) -> None:
@@ -179,6 +207,7 @@ def plot_top_motifs_by_bucket(results: list[dict], out_path: Path, top_n: int = 
         for item in r["top_motifs"][:top_n]:
             all_motifs[item["motif"]] += item["count"]
     panel_motifs = [m for m, _ in all_motifs.most_common(top_n)]
+    motif_order = list(reversed(panel_motifs))  # Altair sorts ascending; reversed gives top-first
 
     def abbrev(m: str) -> str:
         parts = m.split("+")
@@ -186,32 +215,72 @@ def plot_top_motifs_by_bucket(results: list[dict], out_path: Path, top_n: int = 
             return m.replace("+", " -> ")
         return f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} atoms)"
 
-    fig, axes = plt.subplots(1, len(results), figsize=(4.2 * len(results), 4.5), sharey=True)
-    if len(results) == 1:
-        axes = [axes]
+    bucket_order = [r["bucket"] for r in results]
 
-    for ax, r in zip(axes, results):
+    rows = []
+    for r in results:
         motif_counts = {item["motif"]: item["count"] for item in r["top_motifs"]}
         total = sum(r["per_agent_total_tokens"].values())
-        fractions = [motif_counts.get(m, 0) / total if total else 0 for m in panel_motifs]
-        y = np.arange(len(panel_motifs))
-        ax.barh(y, fractions, color="#5d90e0", edgecolor="white")
-        ax.set_yticks(y)
-        ax.set_yticklabels([abbrev(m) for m in panel_motifs], fontsize=8)
-        ax.invert_yaxis()
-        ax.set_xlabel("share of this bucket's actions")
-        ax.set_title(f"{r['bucket']} solved\n({r['n_trajectories']} trajectories)", fontsize=10)
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f"{v*100:.1f}%"))
+        for m in panel_motifs:
+            share = motif_counts.get(m, 0) / total if total else 0.0
+            rows.append({
+                "motif": abbrev(m),
+                "motif_key": m,
+                "share": share,
+                "share_pct": f"{share * 100:.1f}%",
+                "bucket": f"{r['bucket']} solved ({r['n_trajectories']} trajectories)",
+            })
 
-    fig.suptitle(
-        f"Top {top_n} repeated action sequences by task difficulty\n"
-        "Which patterns dominate when nobody / some / everyone solves the task?",
-        fontsize=11,
+    df = pd.DataFrame(rows)
+    abbrev_order = [abbrev(m) for m in motif_order]
+    bucket_label_order = [
+        f"{r['bucket']} solved ({r['n_trajectories']} trajectories)"
+        for r in results
+    ]
+
+    chart = (
+        alt.Chart(df)
+        .mark_bar(color=BLUE)
+        .encode(
+            y=alt.Y(
+                "motif:N",
+                sort=abbrev_order,
+                axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=9),
+            ),
+            x=alt.X(
+                "share:Q",
+                axis=alt.Axis(
+                    title="share of this bucket's actions",
+                    domain=False,
+                    ticks=False,
+                    labelFontSize=10,
+                    format=".1%",
+                ),
+            ),
+            tooltip=["motif:N", "share_pct:N", "bucket:N"],
+        )
+        .facet(
+            column=alt.Column(
+                "bucket:N",
+                sort=bucket_label_order,
+                header=alt.Header(title=None, labelFontSize=10),
+            ),
+            spacing=24,
+        )
+        .properties(
+            title=alt.TitleParams(
+                text=f"Top {top_n} repeated action sequences by task difficulty",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart.save(str(out_path), scale_factor=2)
+    print(f"  Saved: {out_path.name}")
 
 
 def main() -> int:

@@ -22,18 +22,22 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import altair as alt
 import numpy as np
+import pandas as pd
 import umap
 from sklearn.cluster import HDBSCAN
 from sklearn.preprocessing import normalize
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY, NEAR_BLACK
+register()
+
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
 SEQ_PATH = OUT / "bpe_sequences.jsonl"
 DIVERSITY_PATH = OUT / "task_diversity.csv"
@@ -210,80 +214,101 @@ def plot_umap(
     summaries: list[dict],
     out_path: Path,
 ) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5.6))
-
-    agents = [r["agent"] for r in records]
-    unique_agents = sorted(set(agents))
-    for a in unique_agents:
-        mask = np.array([ag == a for ag in agents])
-        axes[0].scatter(
-            coords[mask, 0], coords[mask, 1],
-            s=14, color=AGENT_COLORS.get(a, "#888"), alpha=0.55,
-            edgecolor="none", label=f"{a} (n={int(mask.sum())})",
-        )
-    axes[0].set_xlabel("UMAP-1")
-    axes[0].set_ylabel("UMAP-2")
-    axes[0].set_title("Colored by agent", fontsize=11)
-    axes[0].legend(fontsize=9, frameon=False, loc="best")
-    axes[0].spines[["top", "right"]].set_visible(False)
-
-    unique_clusters = sorted(set(labels.tolist()))
-    n_real = sum(1 for c in unique_clusters if c != -1)
-    cmap = plt.cm.get_cmap("tab10" if n_real <= 10 else "tab20", max(n_real, 1))
-    color_list = [
-        cmap(i) if c != -1 else (0.7, 0.7, 0.7, 0.5)
-        for i, c in enumerate([c for c in unique_clusters if c != -1])
-    ]
-    cluster_color_map = {c: color_list[i] for i, c in enumerate([cc for cc in unique_clusters if cc != -1])}
-    cluster_color_map[-1] = (0.82, 0.82, 0.82, 0.55)
-
     label_by_id = {s["cluster_id"]: s["label"] for s in summaries}
 
-    # draw noise points first (behind), then real clusters on top
-    for c in unique_clusters:
-        mask = labels == c
-        if c == -1:
-            axes[1].scatter(
-                coords[mask, 0], coords[mask, 1],
-                s=10, color=cluster_color_map[c], edgecolor="none",
-                alpha=0.35, label=f"generic (n={int(mask.sum())})",
-            )
-    for c in unique_clusters:
-        if c == -1:
-            continue
-        mask = labels == c
-        axes[1].scatter(
-            coords[mask, 0], coords[mask, 1],
-            s=28, color=cluster_color_map[c], edgecolor="white", linewidth=0.6,
-            alpha=0.95,
-        )
-        cx = float(coords[mask, 0].mean())
-        cy = float(coords[mask, 1].mean())
-        lbl_text = label_by_id.get(c, f"cluster {c}")
-        axes[1].annotate(
-            f"{lbl_text}\nn={int(mask.sum())}",
-            xy=(cx, cy),
-            xytext=(cx, cy),
-            fontsize=7,
-            ha="center", va="center",
-            bbox=dict(boxstyle="round,pad=0.25", facecolor="white",
-                      edgecolor=cluster_color_map[c], alpha=0.9, linewidth=1.0),
-            zorder=5,
-        )
+    # Build one row per trajectory
+    rows = []
+    for i, r in enumerate(records):
+        cid = int(labels[i])
+        rows.append({
+            "umap1": float(coords[i, 0]),
+            "umap2": float(coords[i, 1]),
+            "agent": r["agent"],
+            "cluster_id": cid,
+            "cluster_label": label_by_id.get(cid, "noise") if cid != -1 else "noise",
+            "is_noise": cid == -1,
+        })
+    df = pd.DataFrame(rows)
 
-    axes[1].set_xlabel("UMAP-1")
-    axes[1].set_title(f"Colored by HDBSCAN cluster ({n_real} clusters; labels are top-motif + dominant agent)", fontsize=10)
-    axes[1].legend(fontsize=8, frameon=False, loc="best")
-    axes[1].spines[["top", "right"]].set_visible(False)
+    # --- Panel 1: colored by agent ---
+    agent_domain = sorted(AGENT_COLORS.keys())
+    agent_range = [AGENT_COLORS[a] for a in agent_domain]
 
-    fig.suptitle(
-        "Trajectory clusters: do trajectories group by agent, by task, or by procedural phase?\n"
-        "Each dot is one trajectory. Left: colored by which agent ran it. Right: clusters found without using agent labels.",
-        fontsize=11,
+    panel1 = (
+        alt.Chart(df)
+        .mark_point(size=20, filled=True, opacity=0.55, strokeWidth=0)
+        .encode(
+            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1")),
+            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2")),
+            color=alt.Color(
+                "agent:N",
+                scale=alt.Scale(domain=agent_domain, range=agent_range),
+                legend=alt.Legend(orient="bottom", title=None),
+            ),
+        )
+        .properties(
+            width=360,
+            height=300,
+            title=alt.TitleParams(text="Colored by agent", fontSize=13, color="#111111", anchor="start"),
+        )
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    # --- Panel 2: colored by cluster ---
+    unique_real_cluster_ids = sorted(set(labels[labels != -1].tolist()))
+    cluster_labels_ordered = [label_by_id.get(c, f"cluster {c}") for c in unique_real_cluster_ids]
+    palette = [SKY, ORANGE, GREEN, VERMILLION, BLUE, "#CC79A7", "#F0E442", NEAR_BLACK]
+    cluster_colors = palette[:len(unique_real_cluster_ids)]
+
+    df_noise = df[df["is_noise"]].copy()
+    df_cluster = df[~df["is_noise"]].copy()
+
+    noise_layer = (
+        alt.Chart(df_noise)
+        .mark_point(size=10, opacity=0.2, color=GRAY, strokeWidth=0, filled=True)
+        .encode(
+            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1")),
+            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2")),
+        )
+    )
+
+    cluster_layer = (
+        alt.Chart(df_cluster)
+        .mark_point(size=30, opacity=0.85, filled=True, strokeWidth=0.5)
+        .encode(
+            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1")),
+            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2")),
+            color=alt.Color(
+                "cluster_label:N",
+                scale=alt.Scale(domain=cluster_labels_ordered, range=cluster_colors),
+                legend=alt.Legend(orient="bottom", title=None),
+            ),
+        )
+    )
+
+    panel2 = (
+        (noise_layer + cluster_layer)
+        .properties(
+            width=360,
+            height=300,
+            title=alt.TitleParams(text="Colored by cluster", fontSize=13, color="#111111", anchor="start"),
+        )
+    )
+
+    chart = (
+        alt.hconcat(panel1, panel2)
+        .properties(
+            title=alt.TitleParams(
+                text="Trajectory clusters (UMAP + HDBSCAN)",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_cluster_profile(
@@ -295,78 +320,127 @@ def plot_cluster_profile(
         [s for s in summaries if not s["is_noise"]],
         key=lambda s: -s["n_trajectories"],
     )[:6]
+
     if not real_clusters:
-        fig, ax = plt.subplots(figsize=(6, 3))
-        ax.text(0.5, 0.5, "no real clusters found (all noise)",
-                ha="center", va="center", fontsize=11, transform=ax.transAxes)
-        ax.axis("off")
-        fig.savefig(out_path, dpi=180, bbox_inches="tight")
-        plt.close(fig)
+        chart = (
+            alt.Chart(pd.DataFrame([{"text": "No dense clusters found"}]))
+            .mark_text(fontSize=13, color="#111111")
+            .encode(
+                x=alt.value(200),
+                y=alt.value(60),
+                text="text:N",
+            )
+            .properties(width=400, height=120)
+            .configure_view(strokeWidth=0)
+        )
+        chart.save(str(out_path), scale_factor=2)
         return
 
-    n = len(real_clusters)
-    fig, axes = plt.subplots(2, n, figsize=(3.3 * n, 7), gridspec_kw={"height_ratios": [1.3, 2]})
-    if n == 1:
-        axes = axes.reshape(2, 1)
+    def abbrev(m: str, maxl: int = 22) -> str:
+        parts = m.split("+")
+        if len(parts) <= 2:
+            sstr = " -> ".join(parts)
+        else:
+            sstr = f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)})"
+        return sstr if len(sstr) <= maxl else sstr[: maxl - 1] + "..."
 
-    agent_order = sorted({a for s in real_clusters for a in s["agent_composition"]})
-    colors = [AGENT_COLORS.get(a, "#888") for a in agent_order]
+    # --- Chart 1: agent composition (stacked bar, one row per cluster) ---
+    comp_rows = []
+    cluster_order = [s["label"] for s in real_clusters]  # largest-first order
+    for s in real_clusters:
+        total = s["n_trajectories"] or 1
+        for agent, count in s["agent_composition"].items():
+            comp_rows.append({
+                "cluster_label": s["label"],
+                "agent": agent,
+                "count": count,
+                "fraction": count / total,
+            })
+    df_comp = pd.DataFrame(comp_rows)
 
-    for i, s in enumerate(real_clusters):
-        ax = axes[0, i]
-        vals = [s["agent_composition"].get(a, 0) for a in agent_order]
-        total = sum(vals) or 1
-        fracs = [v / total for v in vals]
-        bottom = 0
-        for frac, col, a in zip(fracs, colors, agent_order):
-            ax.bar(0, frac, bottom=bottom, color=col, edgecolor="white", width=0.6, label=a if i == 0 else None)
-            if frac > 0.05:
-                ax.text(0, bottom + frac / 2, f"{a}\n{int(frac*total)}", ha="center", va="center",
-                        fontsize=8, color="white" if frac > 0.2 else "black")
-            bottom += frac
-        ax.set_ylim(0, 1)
-        ax.set_xticks([])
-        ax.set_title(
-            f"{s['label']}\n(cluster {s['cluster_id']}, n={s['n_trajectories']})",
-            fontsize=8,
+    agent_domain = sorted(AGENT_COLORS.keys())
+    agent_range = [AGENT_COLORS[a] for a in agent_domain]
+
+    chart1 = (
+        alt.Chart(df_comp)
+        .mark_bar()
+        .encode(
+            y=alt.Y(
+                "cluster_label:N",
+                sort=cluster_order,
+                axis=alt.Axis(title=None, labelLimit=300),
+            ),
+            x=alt.X(
+                "fraction:Q",
+                stack="normalize",
+                axis=alt.Axis(title="agent share", format=".0%"),
+            ),
+            color=alt.Color(
+                "agent:N",
+                scale=alt.Scale(domain=agent_domain, range=agent_range),
+                legend=alt.Legend(orient="bottom", title=None),
+            ),
+            order=alt.Order("agent:N", sort="ascending"),
         )
-        ax.spines[["top", "right", "bottom"]].set_visible(False)
-        if i == 0:
-            ax.set_ylabel("agent share")
-
-        ax = axes[1, i]
-        top = s["top_motifs"][:top_n]
-        if not top:
-            ax.axis("off")
-            continue
-        motifs = [m["motif"] for m in top]
-        shares = [m["share"] for m in top]
-
-        def abbrev(m: str, maxl: int = 22) -> str:
-            parts = m.split("+")
-            if len(parts) <= 2:
-                sstr = m.replace("+", "->")
-            else:
-                sstr = f"{parts[0]}->...->{parts[-1]} ({len(parts)})"
-            return sstr if len(sstr) <= maxl else sstr[: maxl - 1] + "..."
-
-        y = np.arange(len(top))
-        ax.barh(y, shares, color="#5d90e0", edgecolor="white")
-        ax.set_yticks(y)
-        ax.set_yticklabels([abbrev(m) for m in motifs], fontsize=7)
-        ax.invert_yaxis()
-        ax.set_xlabel("share of cluster actions", fontsize=8)
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f"{v*100:.1f}%"))
-
-    fig.suptitle(
-        f"Per-cluster composition (top) and top {top_n} action patterns (bottom)\n"
-        "If 'dom' fraction ~33%, cluster cuts across agents (type-driven). If >60%, cluster is agent-driven.",
-        fontsize=11,
+        .properties(
+            width=500,
+            height=max(len(real_clusters) * 25, 60),
+        )
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    # --- Chart 2: top motifs per cluster (faceted horizontal bar) ---
+    motif_rows = []
+    for s in real_clusters:
+        for m in s["top_motifs"][:top_n]:
+            motif_rows.append({
+                "cluster_label": s["label"],
+                "motif_label": abbrev(m["motif"]),
+                "share": m["share"],
+            })
+    df_motifs = pd.DataFrame(motif_rows)
+
+    if not df_motifs.empty:
+        chart2 = (
+            alt.Chart(df_motifs)
+            .mark_bar(color=BLUE)
+            .encode(
+                y=alt.Y(
+                    "motif_label:N",
+                    sort=alt.EncodingSortField(field="share", op="sum", order="descending"),
+                    axis=alt.Axis(title=None, labelLimit=200),
+                ),
+                x=alt.X(
+                    "share:Q",
+                    axis=alt.Axis(title="share of cluster actions", format=".1%"),
+                ),
+                facet=alt.Facet(
+                    "cluster_label:N",
+                    sort=cluster_order,
+                    header=alt.Header(title=None, labelFontSize=10),
+                ),
+            )
+            .properties(width=130, height=top_n * 22)
+            .resolve_scale(y="independent")
+        )
+        combined = alt.vconcat(chart1, chart2)
+    else:
+        combined = chart1
+
+    chart = (
+        combined
+        .properties(
+            title=alt.TitleParams(
+                text="Cluster composition by agent",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:

@@ -26,10 +26,13 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
+import sys
+import altair as alt
+import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY
+register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CACHE = PROJECT_ROOT / "output" / "trajectories" / ".cache"
@@ -168,103 +171,148 @@ def correlate_with_length(
 
 def plot_per_agent(per_agent: dict, out_path: Path) -> None:
     agents = [a for a in ["Claude-3.5", "GPT-4", "GPT-4o"] if a in per_agent]
-    x = np.arange(len(agents))
-    colors = [AGENT_COLORS[a] for a in agents]
+    agent_order = list(reversed(agents))  # top-to-bottom: Claude-3.5 at top
 
-    fig, axes = plt.subplots(1, 4, figsize=(14.5, 3.8))
+    metric_specs = [
+        ("tokens_sent_mean", "Mean input tokens per task (K)", 1000, ".0f"),
+        ("api_calls_mean",   "Mean API calls per task",        1,    ".1f"),
+        ("cost_mean_usd",    "Mean cost per task (USD)",       1,    ".3f"),
+    ]
 
-    ax = axes[0]
-    vals = [per_agent[a]["tokens_sent_mean"] / 1000 for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("mean tokens sent per task (thousands)")
-    ax.set_title("Input tokens (prompt + history)\nhigher = more context burned per task", fontsize=10)
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + max(vals) * 0.02, f"{v:.0f}k", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
-
-    ax = axes[1]
-    vals = [per_agent[a]["tokens_received_mean"] / 1000 for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("mean tokens received per task (thousands)")
-    ax.set_title("Output tokens\n(model's generated actions + thoughts)", fontsize=10)
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + max(vals) * 0.02, f"{v:.1f}k", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
-
-    ax = axes[2]
-    vals = [per_agent[a]["api_calls_mean"] for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("mean API calls per task")
-    ax.set_title("API calls per task\n(one per decision step)", fontsize=10)
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + max(vals) * 0.02, f"{v:.0f}", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
-
-    ax = axes[3]
-    vals = [per_agent[a]["cost_mean_usd"] for a in agents]
-    ax.bar(x, vals, color=colors, edgecolor="white")
-    ax.set_xticks(x)
-    ax.set_xticklabels(agents, fontsize=9)
-    ax.set_ylabel("mean cost per task (USD)")
-    ax.set_title(
-        "Cost per task (USD)\n(what the agent burned solving or giving up)",
-        fontsize=10,
+    color_scale = alt.Scale(
+        domain=list(AGENT_COLORS.keys()),
+        range=list(AGENT_COLORS.values()),
     )
-    for xi, v in zip(x, vals):
-        ax.text(xi, v + max(vals) * 0.02, f"${v:.2f}", ha="center", fontsize=9)
-    ax.spines[["top", "right"]].set_visible(False)
 
-    fig.suptitle(
-        "Per-agent infrastructure costs (867 trajectories total)",
-        fontsize=11,
-    )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    for key, x_title, scale, fmt in metric_specs:
+        rows = [
+            {"agent": a, "value": per_agent[a][key] / scale, "zero": 0.0}
+            for a in agents
+        ]
+        df = pd.DataFrame(rows)
+        max_val = df["value"].max()
+        x_max = max_val * 1.35  # room for value labels
+
+        rule = (
+            alt.Chart(df)
+            .mark_rule(strokeWidth=2.5, opacity=0.55)
+            .encode(
+                y=alt.Y("agent:N", sort=agent_order,
+                        axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=12)),
+                x=alt.X("zero:Q",
+                        scale=alt.Scale(domain=[0, x_max]),
+                        axis=alt.Axis(title=x_title, domain=False, ticks=False,
+                                      labelFontSize=10)),
+                x2="value:Q",
+                color=alt.Color("agent:N", scale=color_scale, legend=None),
+            )
+        )
+
+        pts = (
+            alt.Chart(df)
+            .mark_point(size=120, filled=True, strokeWidth=1.5)
+            .encode(
+                y=alt.Y("agent:N", sort=agent_order),
+                x=alt.X("value:Q", scale=alt.Scale(domain=[0, x_max])),
+                color=alt.Color("agent:N", scale=color_scale, legend=None),
+                stroke=alt.value("white"),
+            )
+        )
+
+        labels = (
+            alt.Chart(df)
+            .mark_text(align="left", dx=10, fontSize=11, color="#444444")
+            .encode(
+                y=alt.Y("agent:N", sort=agent_order),
+                x=alt.X("value:Q", scale=alt.Scale(domain=[0, x_max])),
+                text=alt.Text("value:Q", format=fmt),
+            )
+        )
+
+        stem = out_path.stem.replace("_per_agent", "")
+        metric_slug = key.replace("_mean", "").replace("_usd", "")
+        panel_path = out_path.parent / f"{stem}_per_agent_{metric_slug}.png"
+
+        chart = (
+            (rule + pts + labels)
+            .properties(
+                title=alt.TitleParams(
+                    text=x_title,
+                    fontSize=13, color="#111111", anchor="start",
+                ),
+                width=320, height=130,
+            )
+            .configure_view(strokeWidth=0)
+        )
+
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.2), sharex=True)
-
     metric_specs = [
-        ("tokens_sent_mean", "mean tokens sent per task", 1000, "thousands"),
-        ("api_calls_mean", "mean API calls per task", 1, ""),
-        ("cost_mean_usd", "mean cost per task (USD)", 1, ""),
+        ("tokens_sent_mean", "Input tokens per task (thousands)", 1000),
+        ("api_calls_mean", "API calls per task", 1),
+        ("cost_mean_usd", "Cost per task (USD)", 1),
     ]
+    diff_label = {"0": "0 (nobody)", "1": "1", "2": "2", "3": "3 (everyone)"}
 
-    for ax, (key, label, scale, unit) in zip(axes, metric_specs):
-        for a in ["Claude-3.5", "GPT-4", "GPT-4o"]:
-            xs, ys = [], []
-            for d in ["0", "1", "2", "3"]:
-                if d in by_diff and a in by_diff[d]:
-                    xs.append(int(d))
-                    ys.append(by_diff[d][a][key] / scale)
-            if xs:
-                ax.plot(xs, ys, marker="o", color=AGENT_COLORS[a], label=a,
-                        linewidth=2, markersize=7)
-        ax.set_xlabel("number of agents that solved the task")
-        ylab = f"{label} ({unit})" if unit else label
-        ax.set_ylabel(ylab)
-        ax.set_xticks([0, 1, 2, 3])
-        ax.set_xticklabels(["0 (nobody)", "1", "2", "3 (everyone)"])
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.grid(True, alpha=0.25)
-        ax.legend(fontsize=8, frameon=False, loc="best")
+    rows = []
+    for key, label, scale in metric_specs:
+        for d_str in ["0", "1", "2", "3"]:
+            for a in ["Claude-3.5", "GPT-4", "GPT-4o"]:
+                if d_str in by_diff and a in by_diff[d_str]:
+                    rows.append({
+                        "difficulty": int(d_str),
+                        "difficulty_label": diff_label[d_str],
+                        "agent": a,
+                        "metric_label": label,
+                        "value": by_diff[d_str][a][key] / scale,
+                    })
+    df = pd.DataFrame(rows)
 
-    fig.suptitle(
-        "Cost by task difficulty: do failing tasks burn more than solving tasks?\n"
-        "All three agents: tokens and cost rise on harder tasks (all agents flail longer when nobody solves).",
-        fontsize=11,
+    color_scale = alt.Scale(
+        domain=list(AGENT_COLORS.keys()),
+        range=list(AGENT_COLORS.values()),
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    agent_order = ["Claude-3.5", "GPT-4", "GPT-4o"]
+    metric_order = [s[1] for s in metric_specs]
+    diff_order = ["0 (nobody)", "1", "2", "3 (everyone)"]
+
+    base = alt.Chart(df).encode(
+        x=alt.X("difficulty_label:O", sort=diff_order,
+                axis=alt.Axis(title="Number of agents that solved the task",
+                              domain=False, ticks=False, labelFontSize=10)),
+        y=alt.Y("value:Q", axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=10)),
+        color=alt.Color("agent:N", scale=color_scale,
+                        legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
+        detail="agent:N",
+    )
+
+    lines = base.mark_line(strokeWidth=2)
+    points = base.mark_point(size=60, filled=True)
+
+    chart = (
+        alt.layer(lines, points)
+        .properties(width=160, height=180)
+        .facet(
+            column=alt.Column(
+                "metric_label:N",
+                sort=metric_order,
+                header=alt.Header(titleFontSize=11, labelFontSize=10, labelOrient="bottom"),
+            )
+        )
+        .properties(
+            title=alt.TitleParams(
+                text="Token cost by task difficulty",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:

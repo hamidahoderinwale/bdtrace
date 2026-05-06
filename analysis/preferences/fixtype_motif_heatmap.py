@@ -22,12 +22,16 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import sys
 import numpy as np
+import altair as alt
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from scripts.theme import register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY, VERMILLION
+register()
+
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
 SEQ_PATH = OUT / "bpe_sequences.jsonl"
 FIX_TYPES_PATH = PROJECT_ROOT / "output" / "datasets" / "swe_bench_lite_resolved" / "fix_types.json"
@@ -102,43 +106,102 @@ def main() -> int:
     matrix = matrix[order]
     top_motifs = [top_motifs[i] for i in order]
 
-    # Plot — diverging colormap centered at 1.0, so "average" is the neutral color
-    from matplotlib.colors import TwoSlopeNorm
-    fig, ax = plt.subplots(figsize=(1.8 + 0.95 * len(kept_fts), 0.44 * len(top_motifs) + 2.6))
+    FIX_TYPE_LABELS = {
+        "logic_fix":          "Logic fix",
+        "exception_handling": "Exception handling",
+        "api_change":         "API change",
+        "config_fix":         "Config fix",
+        "guard_clause":       "Guard clause",
+        "type_coercion":      "Type coercion",
+        "refactor":           "Refactor",
+        "string_fix":         "String fix",
+        "test_fix":           "Test fix",
+        "import_fix":         "Import fix",
+        "other":              "Other",
+    }
+
+    # Plot — diverging colormap centered at 1.0 using paper palette
     span = float(max(abs(matrix.min() - 1), abs(matrix.max() - 1)))
-    span = max(span, 0.5)  # keep colormap from collapsing on near-uniform data
-    norm = TwoSlopeNorm(vmin=1.0 - span, vcenter=1.0, vmax=1.0 + span)
-    im = ax.imshow(matrix, cmap="RdBu_r", norm=norm, aspect="auto")
-    ax.set_xticks(range(len(kept_fts)))
-    ax.set_xticklabels(
-        [f"{ft}\n(n={per_ft_n_trajectories[ft]})" for ft in kept_fts],
-        fontsize=10, rotation=35, ha="right",
-    )
-    ax.set_yticks(range(len(top_motifs)))
-    ax.set_yticklabels([abbrev(m) for m in top_motifs], fontsize=9)
+    span = max(span, 0.5)
 
-    # Annotate cells that deviate from average by more than ~25%
-    for i in range(len(top_motifs)):
-        for j in range(len(kept_fts)):
-            v = matrix[i, j]
-            if abs(v - 1.0) >= 0.25:
-                extreme = abs(v - 1.0) > span * 0.6
-                color = "white" if extreme else "#111"
-                ax.text(j, i, f"{v:.1f}x", ha="center", va="center",
-                        fontsize=8, color=color)
+    heatmap_rows = []
+    motif_order = [abbrev(m) for m in top_motifs]
+    for i, motif in enumerate(top_motifs):
+        for j, ft in enumerate(kept_fts):
+            v = float(matrix[i, j])
+            n = per_ft_n_trajectories[ft]
+            ft_label = FIX_TYPE_LABELS.get(ft, ft) + f"\n(n={n})"
+            heatmap_rows.append({
+                "motif":    abbrev(motif),
+                "fix_type": ft_label,
+                "ratio":    v,
+                "text":     f"{v:.1f}x" if abs(v - 1.0) >= 0.4 else "",
+            })
+    hm_df = pd.DataFrame(heatmap_rows)
 
-    ax.set_title(
-        "Which action patterns are fix-type specific?\n"
-        "Cells show how often a motif is used in a fix type relative to the corpus average. "
-        "2x = twice as common; 0.5x = half; 1x = average.",
-        fontsize=11, pad=14,
+    ft_order = [
+        FIX_TYPE_LABELS.get(ft, ft) + f"\n(n={per_ft_n_trajectories[ft]})"
+        for ft in kept_fts
+    ]
+
+    chart_width  = max(420, len(kept_fts) * 60)
+    chart_height = max(320, len(top_motifs) * 20)
+
+    rect = (
+        alt.Chart(hm_df)
+        .mark_rect()
+        .encode(
+            x=alt.X(
+                "fix_type:N",
+                title=None,
+                sort=ft_order,
+                axis=alt.Axis(labelAngle=-30, labelFontSize=10),
+            ),
+            y=alt.Y(
+                "motif:N",
+                title=None,
+                sort=motif_order,
+                axis=alt.Axis(labelFontSize=10, labelLimit=320),
+            ),
+            color=alt.Color(
+                "ratio:Q",
+                scale=alt.Scale(
+                    range=["#D55E00", "#FFFFFF", "#0072B2"],
+                    domainMid=1.0,
+                    domain=[1 - span, 1 + span],
+                ),
+                legend=alt.Legend(title="Usage ratio vs corpus average",
+                                  titleFontSize=10, labelFontSize=9,
+                                  gradientLength=120),
+            ),
+        )
     )
-    cbar = fig.colorbar(im, ax=ax, shrink=0.7)
-    cbar.set_label("usage ratio (fix type / corpus average)")
-    ax.set_xlabel("fix type", labelpad=8)
-    fig.tight_layout()
-    fig.savefig(OUT / "fixtype_motif.png", dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    text_layer = (
+        alt.Chart(hm_df[hm_df["text"] != ""])
+        .mark_text(fontSize=9, fontWeight="normal")
+        .encode(
+            x=alt.X("fix_type:N", sort=ft_order),
+            y=alt.Y("motif:N", sort=motif_order),
+            text="text:N",
+            color=alt.value("#111111"),
+        )
+    )
+    chart = (
+        (rect + text_layer)
+        .properties(
+            width=chart_width,
+            height=chart_height,
+            title=alt.TitleParams(
+                text="Action patterns by fix type",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(grid=False)
+    )
+    chart.save(str(OUT / "fixtype_motif.png"), scale_factor=2)
 
     # Machine-readable output
     out_data = {
