@@ -16,19 +16,24 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+
 import altair as alt
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.theme import register, BLUE, GREEN, ORANGE
+register()
+
 DATA = ROOT / "output" / "pdiff_smoke_test" / "cross_benchmark_transfer.json"
 OUT_DIR = ROOT / "figures" / "procedural-diff"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Project palette (matches scripts/build_saturation_figure_altair.py).
 COLORS = {
-    "SWE-bench Lite": "#0072B2",
-    "SWE-bench Verified": "#009E73",
-    "SWE-Smith": "#E69F00",
+    "SWE-bench Lite": BLUE,
+    "SWE-bench Verified": GREEN,
+    "SWE-Smith": ORANGE,
 }
 
 BUCKETS = [

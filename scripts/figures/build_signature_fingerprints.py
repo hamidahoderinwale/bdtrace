@@ -22,12 +22,18 @@ import json
 from collections import Counter
 from pathlib import Path
 
+import sys
+
 import altair as alt
 import pandas as pd
 
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.theme import register, BLUE, GREEN, ORANGE
+register()
+
 from analysis.pdiff import signature, view_from_trace
 
-ROOT = Path(__file__).resolve().parents[2]
 LITE = ROOT / "output" / "resolved_traces_lite_full.jsonl"
 VERIFIED = ROOT / "output" / "resolved_traces_verified_full.jsonl"
 SWE_SMITH = ROOT / "output" / "resolved_traces_swe_smith.jsonl"
@@ -38,9 +44,9 @@ SWE_SMITH_CAP = 5000
 TOP_K = 20
 
 COLORS = {
-    "SWE-bench Lite": "#0072B2",
-    "SWE-bench Verified": "#009E73",
-    "SWE-Smith": "#E69F00",
+    "SWE-bench Lite": BLUE,
+    "SWE-bench Verified": GREEN,
+    "SWE-Smith": ORANGE,
 }
 
 
