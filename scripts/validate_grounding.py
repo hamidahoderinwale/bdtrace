@@ -157,7 +157,9 @@ def f1_score(claimed: set, actual: set) -> tuple[float, float, float]:
         return (1.0, 1.0, 1.0) if not claimed else (0.0, 1.0, 0.0)
     if not claimed:
         return (0.0, 0.0, 0.0)
-    tp = len(claimed & actual)
+    claimed_lower = {c.lower() for c in claimed}
+    actual_lower = {a.lower() for a in actual}
+    tp = len(claimed_lower & actual_lower)
     precision = tp / len(claimed)
     recall = tp / len(actual)
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
