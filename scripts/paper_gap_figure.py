@@ -66,7 +66,7 @@ for bar, val in zip(bars2, fractions):
     ax2.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.2,
              f"{val}%", ha="center", va="bottom", fontsize=9, color=NAVY)
 ax2.set_ylabel("Mean fraction of failures", fontsize=9)
-ax2.set_ylim(0, 58)
+ax2.set_ylim(0, 100)
 ax2.set_title("B. 45.8% of failures are composition failures", fontsize=11,
               color=NAVY, pad=10)
 ax2.tick_params(axis="x", labelsize=9)
@@ -90,7 +90,7 @@ ax3.set_xticklabels(rep_labels, fontsize=7.5, rotation=0)
 ax3.set_ylabel("F1 at k=5", fontsize=9)
 ax3.set_title("C. Structural representations outperform self-report", fontsize=11,
               color=NAVY, pad=10)
-ax3.set_ylim(0, 0.33)
+ax3.set_ylim(0, 1.0)
 # Annotate the grounding finding
 ax3.annotate("Agent self-report\nF1 = 0.20",
              xy=(4, 0.075), xytext=(4.5, 0.24),
