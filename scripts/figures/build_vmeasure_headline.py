@@ -27,13 +27,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+
 import altair as alt
 import pandas as pd
 
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.theme import register, BLUE, GRAY
+register()
+
 from analysis.pdiff import view_from_trace
 from analysis.pdiff.vmeasure import bootstrap_stability, compute_metrics
-
-ROOT = Path(__file__).resolve().parents[2]
 LITE = ROOT / "output" / "resolved_traces_lite_full.jsonl"
 ASSIGNMENTS = ROOT / "output" / "canonical_forms" / "instance_assignments.parquet"
 OUT_DIR = ROOT / "figures" / "procedural-diff"
@@ -104,46 +109,50 @@ def build_chart(df: pd.DataFrame) -> alt.Chart:
     df = df.sort_values("ari", ascending=False).reset_index(drop=True)
     order = df["reference"].tolist()
 
+    # Symmetric domain so 0 sits at the midpoint.
+    max_abs = max(abs(df["ci_low"].min()), abs(df["ci_high"].max()), 0.12)
+    domain = [-round(max_abs + 0.03, 2), round(max_abs + 0.03, 2)]
+
     base = alt.Chart(df).encode(
         y=alt.Y("reference:N", title=None, sort=order,
-                axis=alt.Axis(labelFontSize=10)),
+                axis=alt.Axis(labelFontSize=11, ticks=False, domain=False)),
     )
 
     ci = base.mark_rule(strokeWidth=2, color="#666666").encode(
-        x=alt.X("ci_low:Q", title="ARI (chance-corrected)",
-                scale=alt.Scale(domain=[-0.2, 0.4])),
+        x=alt.X("ci_low:Q",
+                title="Adjusted Rand Index",
+                scale=alt.Scale(domain=domain),
+                axis=alt.Axis(domain=False, ticks=False,
+                              values=[-0.1, 0.0, 0.1])),
         x2="ci_high:Q",
     )
 
-    dots = base.mark_point(size=120, filled=True, color="#0072B2").encode(
+    dots = base.mark_point(size=120, filled=True, color=BLUE).encode(
         x=alt.X("ari:Q"),
     )
 
-    rule0 = alt.Chart(pd.DataFrame([{"x": 0.0}])).mark_rule(
-        strokeDash=[4, 4], color="gray", opacity=0.6, strokeWidth=0.8,
-    ).encode(x="x:Q")
-
     vlabels = base.mark_text(
-        align="left", dx=8, fontSize=9, color="#333333",
+        align="left", dx=8, fontSize=10, color="#555555",
     ).encode(
         x=alt.X("ci_high:Q"),
         text=alt.Text("v_label:N"),
     )
 
-    chart = (rule0 + ci + dots + vlabels).properties(
+    chart = (ci + dots + vlabels).properties(
         width=380,
         height=150,
         title=alt.TitleParams(
-            text="Canonical-form clusters vs reference partitions",
-            subtitle="Dots: ARI point estimate; bars: 95% bootstrap CI (n=100); text: V-measure",
-            fontSize=11,
-            subtitleFontSize=9,
+            text="Fix form clusters align with patch complexity, not code location",
+            subtitle="Dot: Adjusted Rand Index; bar: 95% bootstrap CI; label: V-measure",
+            fontSize=13,
+            subtitleFontSize=10,
+            subtitleColor="#888888",
             anchor="start",
         ),
     ).configure_axis(
         grid=False,
-        labelFontSize=9,
-        titleFontSize=10,
+        labelFontSize=10,
+        titleFontSize=11,
     ).configure_view(
         strokeWidth=0,
     )
