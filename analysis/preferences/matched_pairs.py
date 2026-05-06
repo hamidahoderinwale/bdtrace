@@ -21,17 +21,20 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import wilcoxon
+import altair as alt
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY, NEAR_BLACK
+register()
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
 SEQ_PATH = OUT / "bpe_sequences.jsonl"
 PAIRS_PATH = OUT / "tied_outcome_pairs.csv"
@@ -173,116 +176,217 @@ def analyze_agent_pair(
 
 
 def plot_volcano(results: list[dict], out_path: Path) -> None:
-    fig, axes = plt.subplots(1, len(results), figsize=(4.5 * len(results), 4.2), sharey=True)
-    if len(results) == 1:
-        axes = [axes]
-
-    for ax, r in zip(axes, results):
-        deltas = np.array([mr["mean_delta"] for mr in r["motif_results"]])
-        pvals = np.array([mr["p_value"] for mr in r["motif_results"]])
-        sig = np.array([mr["significant_fdr_5"] for mr in r["motif_results"]])
-        valid = ~np.isnan(pvals)
-        deltas_v = deltas[valid]
-        pvals_v = pvals[valid]
-        sig_v = sig[valid]
-
-        ax.scatter(
-            deltas_v[~sig_v],
-            -np.log10(pvals_v[~sig_v] + 1e-12),
-            s=22, color="#bbbbbb", edgecolor="none", alpha=0.6,
-            label="not significant",
+    rows = []
+    for r in results:
+        pair_label = (
+            f"{r['agent_a']} vs {r['agent_b']}  "
+            f"({'same family' if r['same_family'] else 'cross family'})"
         )
-        ax.scatter(
-            deltas_v[sig_v],
-            -np.log10(pvals_v[sig_v] + 1e-12),
-            s=36, color=PAIR_COLORS[(r["agent_a"], r["agent_b"])],
-            edgecolor="white", linewidth=0.4,
-            label=f"significant (FDR 5%): {int(sig_v.sum())}",
+        panel_title = (
+            f"{pair_label} | "
+            f"{r['n_tied_outcome_tasks']} tasks, "
+            f"{r['n_significant_fdr_5']}/{r['n_motifs_tested']} motifs significant"
         )
-        ax.axvline(0, color="#555", lw=0.6)
-        ax.set_xlabel(f"mean freq({r['agent_a']}) - freq({r['agent_b']})\n(per task, averaged)")
-        if ax is axes[0]:
-            ax.set_ylabel("-log10(p-value), Wilcoxon signed-rank")
-        family_tag = "same family" if r["same_family"] else "cross family"
-        ax.set_title(
-            f"{r['agent_a']} vs {r['agent_b']}  ({family_tag})\n"
-            f"{r['n_tied_outcome_tasks']} tied-outcome tasks, "
-            f"{r['n_significant_fdr_5']}/{r['n_motifs_tested']} motifs significant",
-            fontsize=10,
-        )
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.legend(fontsize=7, frameon=False, loc="upper left")
+        pair_color = PAIR_COLORS.get((r["agent_a"], r["agent_b"]), GRAY)
+        for mr in r["motif_results"]:
+            pval = mr["p_value"]
+            if np.isnan(pval):
+                continue
+            rows.append({
+                "pair_label": pair_label,
+                "panel_title": panel_title,
+                "mean_delta": mr["mean_delta"],
+                "neg_log_p": -np.log10(pval + 1e-12),
+                "significant": mr["significant_fdr_5"],
+                "point_color": pair_color if mr["significant_fdr_5"] else GRAY,
+                "point_size": 50 if mr["significant_fdr_5"] else 20,
+            })
+    df = pd.DataFrame(rows)
 
-    fig.suptitle(
-        "Matched-pairs analysis: which motifs differ when agents solve the same task?\n"
-        "Each dot is one motif. Right = used more by first agent; left = used more by second.",
-        fontsize=11,
+    panels = []
+    for r in results:
+        pair_label = (
+            f"{r['agent_a']} vs {r['agent_b']}  "
+            f"({'same family' if r['same_family'] else 'cross family'})"
+        )
+        panel_title = (
+            f"{pair_label} | "
+            f"{r['n_tied_outcome_tasks']} tasks, "
+            f"{r['n_significant_fdr_5']}/{r['n_motifs_tested']} motifs significant"
+        )
+        sub = df[df["panel_title"] == panel_title]
+
+        points = (
+            alt.Chart(sub)
+            .mark_point(opacity=0.6, filled=True)
+            .encode(
+                x=alt.X(
+                    "mean_delta:Q",
+                    axis=alt.Axis(title="mean delta (agent_a - agent_b)", domain=False, ticks=False),
+                ),
+                y=alt.Y(
+                    "neg_log_p:Q",
+                    axis=alt.Axis(title="-log10(p-value)", domain=False, ticks=False),
+                ),
+                color=alt.Color("point_color:N", scale=None),
+                size=alt.Size("point_size:Q", scale=None, legend=None),
+            )
+            .properties(
+                width=280,
+                height=240,
+                title=alt.TitleParams(
+                    text=pair_label,
+                    fontSize=11,
+                    color="#111111",
+                    anchor="start",
+                ),
+            )
+        )
+
+        rule = (
+            alt.Chart(pd.DataFrame({"x": [0]}))
+            .mark_rule(color="#555555", strokeWidth=0.8)
+            .encode(x=alt.X("x:Q"))
+        )
+
+        panels.append(alt.layer(points, rule))
+
+    chart = (
+        alt.hconcat(*panels)
+        .properties(
+            title=alt.TitleParams(
+                text="Matched-pair action pattern divergence",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None:
-    fig, axes = plt.subplots(1, len(results), figsize=(5.2 * len(results), 4.8))
-    if len(results) == 1:
-        axes = [axes]
-
-    def abbrev(m: str, max_len: int = 26) -> str:
+    def abbrev(m: str, max_len: int = 30) -> str:
         parts = m.split("+")
         if len(parts) <= 2:
             s = m.replace("+", " -> ")
         else:
             s = f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} atoms)"
-        return s if len(s) <= max_len else s[: max_len - 1] + "…"
+        return s if len(s) <= max_len else s[: max_len - 1] + "..."
 
-    for ax, r in zip(axes, results):
+    panels = []
+    for r in results:
+        pair_color = PAIR_COLORS.get((r["agent_a"], r["agent_b"]), GRAY)
+        family_tag = "same family" if r["same_family"] else "cross family"
+
         all_tested = [mr for mr in r["motif_results"] if not np.isnan(mr["p_value"])]
         all_tested.sort(key=lambda mr: abs(mr["mean_delta"]), reverse=True)
         top = all_tested[:top_n]
+
         if not top:
-            ax.text(0.5, 0.5, "no testable tokens",
-                    ha="center", va="center", fontsize=11, transform=ax.transAxes)
-            ax.set_title(f"{r['agent_a']} vs {r['agent_b']}", fontsize=10)
-            ax.axis("off")
+            panels.append(
+                alt.Chart(pd.DataFrame({"x": [0], "y": [0], "label": ["no testable tokens"]}))
+                .mark_text(fontSize=11, color=GRAY)
+                .encode(
+                    x=alt.X("x:Q", axis=None),
+                    y=alt.Y("y:Q", axis=None),
+                    text="label:N",
+                )
+                .properties(
+                    width=260,
+                    height=top_n * 28,
+                    title=alt.TitleParams(
+                        text=f"{r['agent_a']} vs {r['agent_b']}  ({family_tag})",
+                        fontSize=11,
+                        color="#111111",
+                        anchor="start",
+                    ),
+                )
+            )
             continue
 
-        names = [abbrev(mr["motif"]) for mr in top]
-        deltas = [mr["mean_delta"] for mr in top]
-        sigs = [mr["significant_fdr_5"] for mr in top]
-        pair_color = PAIR_COLORS[(r["agent_a"], r["agent_b"])]
-        colors = [
-            pair_color if d > 0 else "#cc6666"
-            for d in deltas
-        ]
-        edges = ["#111111" if s else "white" for s in sigs]
-        widths = [1.8 if s else 0.4 for s in sigs]
-        y = np.arange(len(top))
-        for yi, d, c, e, w in zip(y, deltas, colors, edges, widths):
-            ax.barh(yi, d, color=c, edgecolor=e, linewidth=w)
-        ax.axvline(0, color="#444", lw=0.8)
-        ax.set_yticks(y)
-        labels = [f"{n}  *" if s else n for n, s in zip(names, sigs)]
-        ax.set_yticklabels(labels, fontsize=8)
-        ax.invert_yaxis()
-        ax.set_xlabel(f"mean freq({r['agent_a']}) - freq({r['agent_b']})")
-        family_tag = "same family" if r["same_family"] else "cross family"
-        n_sig = sum(sigs)
-        ax.set_title(
-            f"{r['agent_a']} vs {r['agent_b']}  ({family_tag})\n"
-            f"{n_sig} of top {len(top)} significant at FDR 5%",
-            fontsize=10,
-        )
-        ax.spines[["top", "right"]].set_visible(False)
+        rows = []
+        for pos, mr in enumerate(top):
+            label = abbrev(mr["motif"])
+            if mr["significant_fdr_5"]:
+                label = label + "  *"
+            direction = "favors_a" if mr["mean_delta"] > 0 else "favors_b"
+            rows.append({
+                "motif_label": label,
+                "mean_delta": mr["mean_delta"],
+                "significant": mr["significant_fdr_5"],
+                "direction": direction,
+                "sort_pos": pos,
+            })
+        df = pd.DataFrame(rows)
+        motif_order = df.sort_values("sort_pos")["motif_label"].tolist()
 
-    fig.suptitle(
-        f"Top {top_n} most-differentiating tokens per agent pair (by mean effect size)\n"
-        "Star + dark border = passes FDR 5% threshold. Bars in agent-pair color favor the first agent; red bars favor the second.",
-        fontsize=11,
+        n_sig = int(df["significant"].sum())
+
+        bars = (
+            alt.Chart(df)
+            .mark_bar()
+            .encode(
+                y=alt.Y(
+                    "motif_label:N",
+                    sort=motif_order,
+                    axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=9, labelLimit=300),
+                ),
+                x=alt.X(
+                    "mean_delta:Q",
+                    axis=alt.Axis(title=None, domain=False, ticks=False),
+                ),
+                color=alt.Color(
+                    "direction:N",
+                    scale=alt.Scale(
+                        domain=["favors_a", "favors_b"],
+                        range=[pair_color, VERMILLION],
+                    ),
+                    legend=None,
+                ),
+            )
+        )
+
+        rule = (
+            alt.Chart(pd.DataFrame({"x": [0]}))
+            .mark_rule(color="#444444", strokeWidth=0.8)
+            .encode(x=alt.X("x:Q"))
+        )
+
+        panel = (
+            alt.layer(bars, rule)
+            .properties(
+                width=260,
+                height=top_n * 28,
+                title=alt.TitleParams(
+                    text=f"{r['agent_a']} vs {r['agent_b']}  ({family_tag})",
+                    fontSize=11,
+                    color="#111111",
+                    anchor="start",
+                ),
+            )
+        )
+        panels.append(panel)
+
+    chart = (
+        alt.hconcat(*panels)
+        .properties(
+            title=alt.TitleParams(
+                text=f"Top {top_n} most-differentiating action patterns per agent pair",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:

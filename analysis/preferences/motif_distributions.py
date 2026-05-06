@@ -26,21 +26,20 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.distance import jensenshannon
+import altair as alt
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from scripts.theme import (
+    register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY,
+    AGENT_COLORS, AGENT_ORDER,
+)
+register()
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
 SEQ_PATH = OUT / "bpe_sequences.jsonl"
-
-AGENT_COLORS = {
-    "GPT-4": "#0072B2",
-    "Claude-3.5": "#009E73",
-    "GPT-4o": "#E69F00",
-}
 
 
 def load_sequences() -> list[dict]:
@@ -59,6 +58,22 @@ def per_agent_token_counts(records: list[dict]) -> dict[str, Counter]:
         agent = r["agent"]
         counts.setdefault(agent, Counter()).update(r["bpe"])
     return counts
+
+
+def per_agent_canonical_counts(records: list[dict]) -> dict[str, Counter]:
+    """Total raw canonical action counts per agent (across all trajectories)."""
+    counts: dict[str, Counter] = {}
+    for r in records:
+        agent = r["agent"]
+        counts.setdefault(agent, Counter()).update(r["canonical"])
+    return counts
+
+
+def per_agent_n_trajectories(records: list[dict]) -> dict[str, int]:
+    n: dict[str, int] = {}
+    for r in records:
+        n[r["agent"]] = n.get(r["agent"], 0) + 1
+    return n
 
 
 def normalize(counter: Counter, vocab: list[str]) -> np.ndarray:
@@ -87,65 +102,215 @@ def compute_jsd_matrix(
     return out
 
 
-def plot_top_motifs_per_agent(
-    records: list[dict],
-    per_agent_counts: dict[str, Counter],
-    top_n: int = 15,
-    motifs_only: bool = True,
-    out_path: Path = None,
+_STAGE_ORDER = ["Explore", "Browse", "Edit", "Test", "Finish"]
+
+_ATOM_STAGE: dict[str, str] = {
+    "SEARCH":              "Explore",
+    "FIND_FILE":           "Explore",
+    "SHELL_LS":            "Explore",
+    "SHELL_CD":            "Explore",
+    "SHELL_CAT":           "Explore",
+    "SHELL_GREP":          "Explore",
+    "SHELL_MKDIR":         "Explore",
+    "OPEN_SRC_PY":         "Browse",
+    "NAV_SRC_PY":          "Browse",
+    "OPEN_TEST_PY":        "Browse",
+    "EDIT_SRC_PY":         "Edit",
+    "EDIT_TEST_PY":        "Edit",
+    "EDIT_REPRO_PY":       "Edit",
+    "EDIT_CONFIG_PY":      "Edit",
+    "CREATE_TEST_PY":      "Edit",
+    "EDIT_OTHER":          "Edit",
+    "RUN_PYTHON_SRC_PY":   "Test",
+    "RUN_PYTHON_ALL":      "Test",
+    "RUN_PYTHON_TEST_PY":  "Test",
+    "RUN_PYTHON_REPRO_PY": "Test",
+    "SUBMIT":              "Finish",
+    "EXIT_ERROR":          "Finish",
+}
+
+_ATOM_LABEL: dict[str, str] = {
+    "SEARCH":              "Search codebase",
+    "FIND_FILE":           "Find file",
+    "SHELL_LS":            "List directory",
+    "SHELL_CD":            "Change directory",
+    "SHELL_CAT":           "Read file contents",
+    "SHELL_GREP":          "Search with grep",
+    "SHELL_MKDIR":         "Create directory",
+    "OPEN_SRC_PY":         "Open source file",
+    "NAV_SRC_PY":          "Browse source",
+    "OPEN_TEST_PY":        "Open test file",
+    "EDIT_SRC_PY":         "Edit source",
+    "EDIT_TEST_PY":        "Edit test",
+    "EDIT_REPRO_PY":       "Edit repro script",
+    "EDIT_CONFIG_PY":      "Edit config",
+    "CREATE_TEST_PY":      "Write new test",
+    "EDIT_OTHER":          "Edit other file",
+    "RUN_PYTHON_SRC_PY":   "Run source file",
+    "RUN_PYTHON_ALL":      "Run full test suite",
+    "RUN_PYTHON_TEST_PY":  "Run test file",
+    "RUN_PYTHON_REPRO_PY": "Run repro script",
+    "SUBMIT":              "Submit fix",
+    "EXIT_ERROR":          "Exit on error",
+}
+
+_STAGE_BAND_COLORS = ["#F4F4F4", "#FFFFFF", "#F4F4F4", "#FFFFFF", "#F4F4F4"]
+
+
+def plot_atom_breakdown(
+    canonical_counts: dict[str, Counter],
+    n_traj: dict[str, int],
+    out_path: Path,
 ) -> None:
-    """Horizontal grouped bar chart: top N motifs by overall frequency,
-    showing per-agent usage fraction side-by-side."""
-    all_counts: Counter = Counter()
-    for c in per_agent_counts.values():
-        all_counts.update(c)
+    """Cleveland dot plot: mean uses per task per agent, grouped by workflow stage."""
+    agents = [a for a in AGENT_ORDER if a in canonical_counts]
 
-    # Pick top N
-    items = list(all_counts.items())
-    if motifs_only:
-        items = [(t, c) for t, c in items if "+" in t]
-    items.sort(key=lambda x: -x[1])
-    top_motifs = [t for t, _ in items[:top_n]]
+    # All atoms across agents (raw canonical)
+    all_atoms: Counter = Counter()
+    for c in canonical_counts.values():
+        for tok, n in c.items():
+            if "+" not in tok:
+                all_atoms[tok] += n
 
-    # For each agent, fraction of their tokens that is each motif
-    agent_totals = {a: sum(c.values()) for a, c in per_agent_counts.items()}
-    agent_fractions = {
-        a: [per_agent_counts[a].get(m, 0) / agent_totals[a] for m in top_motifs]
-        for a in per_agent_counts
-    }
+    # Focus atoms: those with defined stage labels, sorted by (stage, mean frequency desc)
+    stage_idx = {s: i for i, s in enumerate(_STAGE_ORDER)}
+    focus_atoms = [tok for tok in _ATOM_STAGE if tok in all_atoms]
 
-    agents = sorted(per_agent_counts.keys())
-    y = np.arange(len(top_motifs))
-    height = 0.25
+    def mean_rate(atom):
+        return sum(canonical_counts[a].get(atom, 0) for a in agents) / sum(n_traj[a] for a in agents)
 
-    fig, ax = plt.subplots(figsize=(11, 0.35 * len(top_motifs) + 1.8))
-    for i, agent in enumerate(agents):
-        offset = (i - (len(agents) - 1) / 2) * height
-        ax.barh(y + offset, agent_fractions[agent], height,
-                color=AGENT_COLORS.get(agent, "gray"),
-                label=agent, edgecolor="white")
+    focus_atoms.sort(key=lambda a: (stage_idx[_ATOM_STAGE[a]], -mean_rate(a)))
 
-    # Abbreviate motif labels for readability
-    labels = []
-    for m in top_motifs:
-        parts = m.split("+")
-        if len(parts) <= 2:
-            labels.append(m.replace("+", " -> "))
-        else:
-            labels.append(f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} atoms)")
-    ax.set_yticks(y)
-    ax.set_yticklabels(labels, fontsize=8)
-    ax.invert_yaxis()
-    ax.set_xlabel("Share of agent's procedural vocabulary")
-    title = "Agents use different procedural motifs"
-    subtitle = f"Top {top_n} {'motifs' if motifs_only else 'vocabulary items'}; bars = fraction of each agent's BPE tokens"
-    ax.set_title(f"{title}\n{subtitle}", fontsize=10)
-    ax.legend(fontsize=9, frameon=False, loc="lower right")
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, p: f"{v*100:.1f}%"))
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+    # Build data rows: mean uses per task
+    rows = []
+    for atom in focus_atoms:
+        lbl = _ATOM_LABEL[atom]
+        stage = _ATOM_STAGE[atom]
+        for agent in agents:
+            n = n_traj[agent]
+            rate = canonical_counts[agent].get(atom, 0) / n if n > 0 else 0.0
+            rows.append({"atom": atom, "label": lbl, "stage": stage, "agent": agent, "rate": rate})
+    df = pd.DataFrame(rows)
+
+    # Per-atom min/max for range bars
+    rng = df.groupby("label")["rate"].agg(["min", "max"]).reset_index()
+    rng.columns = ["label", "rate_min", "rate_max"]
+    df = df.merge(rng, on="label")
+
+    label_order = [_ATOM_LABEL[a] for a in focus_atoms]
+
+    # Zoom in: clip at 6, annotate outliers at the right edge
+    x_clip = 6.0
+    x_max = x_clip * 1.28  # extra room for labels beyond clip
+
+    color_domain = agents
+    color_range_vals = [AGENT_COLORS[a] for a in agents]
+    color_scale = alt.Scale(domain=color_domain, range=color_range_vals)
+
+    # Clamp rates for plotting; track which are outliers
+    df["rate_plot"] = df["rate"].clip(upper=x_clip)
+    df["is_outlier"] = df["rate"] > x_clip
+
+    # Per-atom min/max on clamped values (for range bars)
+    rng2 = df.groupby("label")["rate_plot"].agg(["min", "max"]).reset_index()
+    rng2.columns = ["label", "rp_min", "rp_max"]
+    df = df.merge(rng2, on="label")
+
+    # Alternating row bands
+    band_rows = [
+        {"label": lbl, "band_color": "#F5F5F5" if i % 2 == 0 else "#FFFFFF",
+         "xmin": 0.0, "xmax": x_max}
+        for i, lbl in enumerate(label_order)
+    ]
+    bands = (
+        alt.Chart(pd.DataFrame(band_rows))
+        .mark_rect()
+        .encode(
+            y=alt.Y("label:N", sort=label_order),
+            x=alt.X("xmin:Q", scale=alt.Scale(domain=[0, x_max])),
+            x2=alt.X2("xmax:Q"),
+            color=alt.Color("band_color:N", scale=None),
+        )
+    )
+
+    # Range bars (clamped)
+    range_bars = (
+        alt.Chart(df.drop_duplicates(subset=["label", "rp_min", "rp_max"]))
+        .mark_rule(color="#CCCCCC", strokeWidth=1.5)
+        .encode(
+            y=alt.Y("label:N", sort=label_order),
+            x=alt.X("rp_min:Q", scale=alt.Scale(domain=[0, x_max])),
+            x2=alt.X2("rp_max:Q"),
+        )
+    )
+
+    # Dots (clamped positions)
+    dots = (
+        alt.Chart(df)
+        .mark_point(size=80, filled=True, strokeWidth=0)
+        .encode(
+            y=alt.Y(
+                "label:N",
+                sort=label_order,
+                axis=alt.Axis(
+                    title=None, domain=False, ticks=False,
+                    labelFontSize=10, labelLimit=175,
+                ),
+            ),
+            x=alt.X(
+                "rate_plot:Q",
+                scale=alt.Scale(domain=[0, x_max]),
+                axis=alt.Axis(
+                    labels=False, title=None,
+                    domain=False, ticks=False,
+                ),
+            ),
+            color=alt.Color("agent:N", scale=color_scale,
+                            legend=alt.Legend(orient="bottom", title=None,
+                                              symbolSize=80, labelFontSize=11)),
+            tooltip=["agent:N", "label:N", alt.Tooltip("rate:Q", format=".1f")],
+        )
+    )
+
+    # Value labels: above each dot, shown when rate >= 0.5
+    label_df = df[df["rate"] >= 0.5].copy()
+    label_df["label_text"] = label_df["rate"].apply(lambda r: f"{r:.1f}")
+    # Outlier labels pin to just past clip with "→" prefix
+    label_df["label_x"] = label_df["rate_plot"]
+    label_df.loc[label_df["is_outlier"], "label_text"] = (
+        label_df.loc[label_df["is_outlier"], "rate"].apply(lambda r: f"→{r:.1f}")
+    )
+    label_df.loc[label_df["is_outlier"], "label_x"] = x_clip - 0.05
+
+    value_labels = (
+        alt.Chart(label_df)
+        .mark_text(dy=-10, fontSize=8.5, fontWeight="normal")
+        .encode(
+            y=alt.Y("label:N", sort=label_order),
+            x=alt.X("label_x:Q", scale=alt.Scale(domain=[0, x_max])),
+            text=alt.Text("label_text:N"),
+            color=alt.Color("agent:N", scale=color_scale, legend=None),
+        )
+    )
+
+    chart = (
+        alt.layer(bands, range_bars, dots, value_labels)
+        .properties(
+            width=430,
+            height=len(focus_atoms) * 26,
+            title=alt.TitleParams(
+                text="How often agents use each action",
+                fontSize=13,
+                fontWeight="normal",
+                color="#111111",
+                anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(grid=False)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_jsd_matrix(
@@ -153,8 +318,8 @@ def plot_jsd_matrix(
     jsd_motifs: dict[tuple[str, str], float],
     out_path: Path,
 ) -> None:
-    """Two small JSD tables side by side: full vocab vs motifs-only."""
-    agents = sorted({a for pair in jsd_full for a in pair})
+    """Two small JSD heatmaps side by side: all tokens vs compound patterns."""
+    agents = [a for a in AGENT_ORDER if a in {ag for pair in jsd_full for ag in pair}]
     n = len(agents)
 
     def make_matrix(d):
@@ -167,36 +332,77 @@ def plot_jsd_matrix(
 
     M_full = make_matrix(jsd_full)
     M_motifs = make_matrix(jsd_motifs)
+    max_val = max(M_full.max(), M_motifs.max())
+    color_scale = alt.Scale(scheme="blues", domain=[0, max_val * 1.05])
 
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4))
+    def make_panel(M, title):
+        rows_off, rows_diag = [], []
+        for i, agent_a in enumerate(agents):
+            for j, agent_b in enumerate(agents):
+                is_diag = i == j
+                value = 0.0 if is_diag else float(M[i, j])
+                entry = {"agent_a": agent_a, "agent_b": agent_b, "value": value}
+                if is_diag:
+                    rows_diag.append(entry)
+                else:
+                    rows_off.append({**entry, "label": f"{value:.2f}"})
+        df_all = pd.DataFrame(rows_off + rows_diag)
+        df_off = pd.DataFrame(rows_off) if rows_off else pd.DataFrame(
+            columns=["agent_a", "agent_b", "value", "label"])
+        df_diag = pd.DataFrame(rows_diag)
 
-    for ax, M, title in [
-        (axes[0], M_full, "Full vocabulary (atoms + motifs)"),
-        (axes[1], M_motifs, "Motifs only (length ≥ 2)"),
-    ]:
-        im = ax.imshow(M, cmap="Blues", vmin=0, vmax=max(M_full.max(), M_motifs.max()) * 1.05)
-        ax.set_xticks(range(n))
-        ax.set_yticks(range(n))
-        ax.set_xticklabels(agents, fontsize=9)
-        ax.set_yticklabels(agents, fontsize=9)
-        ax.set_title(title, fontsize=10)
-        # Annotate cells
-        for i in range(n):
-            for j in range(n):
-                color = "white" if M[i, j] > 0.15 else "black"
-                text = "0" if i == j else f"{M[i, j]:.3f}"
-                ax.text(j, i, text, ha="center", va="center",
-                        color=color, fontsize=9)
-        ax.spines[["top", "right", "bottom", "left"]].set_visible(False)
+        def base_enc(df):
+            return alt.Chart(df).encode(
+                x=alt.X("agent_b:N", sort=agents,
+                        axis=alt.Axis(title=None, domain=False, ticks=False,
+                                      labelFontSize=10, labelAngle=-30)),
+                y=alt.Y("agent_a:N", sort=agents,
+                        axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=10)),
+            )
 
-    fig.suptitle(
-        "Pairwise Jensen-Shannon distance between agent motif distributions\n"
-        "Lower = more similar distribution of procedural practice",
-        fontsize=11,
+        heatmap = base_enc(df_all).mark_rect().encode(
+            color=alt.Color("value:Q", scale=color_scale, legend=None),
+        )
+        text_off = base_enc(df_off).mark_text(fontSize=11, color="white").encode(
+            text=alt.Text("label:N"),
+        )
+        text_diag = base_enc(df_diag).mark_text(fontSize=11, color="#B0C4DE").encode(
+            text=alt.value("-"),
+        )
+        return (
+            alt.layer(heatmap, text_diag, text_off)
+            .properties(
+                width=200,
+                height=200,
+                title=alt.TitleParams(
+                    text=title,
+                    fontSize=11,
+                    fontWeight="normal",
+                    color="#555555",
+                    anchor="middle",
+                ),
+            )
+        )
+
+    panel_a = make_panel(M_full, "All action types")
+    panel_b = make_panel(M_motifs, "Multi-step sequences")
+
+    chart = (
+        alt.hconcat(panel_a, panel_b, spacing=24)
+        .properties(
+            title=alt.TitleParams(
+                text="Claude-3.5 diverges most from the GPT variants",
+                fontSize=13,
+                fontWeight="normal",
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(grid=False)
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:
@@ -207,6 +413,8 @@ def main() -> int:
     print(f"  {len(records)} records across {len({r['agent'] for r in records})} agents")
 
     per_agent_counts = per_agent_token_counts(records)
+    canonical_counts = per_agent_canonical_counts(records)
+    n_traj = per_agent_n_trajectories(records)
 
     # Build vocab from union of counters
     full_vocab = sorted({t for c in per_agent_counts.values() for t in c})
@@ -232,11 +440,7 @@ def main() -> int:
         print(f"  {a:12s} x {b:12s}: {v:.4f}")
 
     # Figures
-    plot_top_motifs_per_agent(
-        records, per_agent_counts,
-        top_n=15, motifs_only=True,
-        out_path=OUT / "agent_motif_distributions.png",
-    )
+    plot_atom_breakdown(canonical_counts, n_traj, OUT / "agent_motif_distributions.png")
     plot_jsd_matrix(jsd_full, jsd_motifs, OUT / "agent_jsd_matrix.png")
 
     # Numeric output

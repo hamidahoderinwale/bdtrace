@@ -27,20 +27,23 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import sys
+import altair as alt
 import numpy as np
 import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, COPPER, GREEN, MAGENTA
+register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = PROJECT_ROOT / "output" / "paper2_pilot"
 FIX_TYPES_PATH = PROJECT_ROOT / "output" / "datasets" / "swe_bench_lite_resolved" / "fix_types.json"
 
 TRAJECTORY_PATHS = {
-    "GPT-4 (SWE-agent)": "output/trajectories/lite_20240402_sweagent_gpt4.parquet",
-    "Claude 3.5 Sonnet (SWE-agent)": "output/trajectories/lite_20240620_sweagent_claude3.5sonnet.parquet",
-    "GPT-4o (SWE-agent)": "output/trajectories/lite_20240728_sweagent_gpt4o.parquet",
+    "Claude-3":   "output/trajectories/lite_20240402_sweagent_claude3opus.parquet",
+    "GPT-4":      "output/trajectories/lite_20240402_sweagent_gpt4.parquet",
+    "Claude-3.5": "output/trajectories/lite_20240620_sweagent_claude3.5sonnet.parquet",
+    "GPT-4o":     "output/trajectories/lite_20240728_sweagent_gpt4o.parquet",
 }
 
 GROUPINGS = ["instance_id", "fix_type", "repo", "agent"]
@@ -59,15 +62,28 @@ FEATURES = [
     "n_files_edited",
 ]
 
+FEATURE_LABELS = {
+    "n_steps":        "Total steps",
+    "n_edits":        "File edits",
+    "n_searches":     "Searches",
+    "n_opens":        "File opens",
+    "n_runs":         "Script runs",
+    "n_nav":          "Navigation",
+    "edit_retries":   "Edit retries",
+    "edit_retry_rate":"Edit retry rate",
+    "n_files_opened": "Files opened",
+    "n_files_edited": "Files edited",
+}
+
 GROUPING_COLORS = {
-    "instance_id": "#E69F00",
-    "fix_type": "#CC79A7",
-    "repo": "#56B4E9",
+    "instance_id": BLUE,
+    "fix_type":    COPPER,
+    "repo":        GREEN,
 }
 GROUPING_LABEL = {
-    "instance_id": "task-id (300 bins)",
-    "fix_type": "fix type (13 bins)",
-    "repo": "repo (12 bins)",
+    "instance_id": "Task identity",
+    "fix_type":    "Fix type",
+    "repo":        "Repository",
 }
 
 
@@ -112,36 +128,75 @@ def build_report(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_ratio_bars(report: pd.DataFrame, out_path: Path, title_suffix: str = "") -> None:
-    groupings = COMPARISON_GROUPINGS
     n_feat = len(report)
-    n_grp = len(groupings)
-    fig, ax = plt.subplots(figsize=(10, 0.55 * n_feat * n_grp + 1.8))
-    bar_h = 0.8 / n_grp
-    y_base = np.arange(n_feat)
 
-    for i, g in enumerate(groupings):
-        col = f"ratio_{g}_over_agent"
-        ratios = report[col].values
-        offset = (i - (n_grp - 1) / 2) * bar_h
-        ax.barh(y_base + offset, ratios, bar_h,
-                color=GROUPING_COLORS[g],
-                edgecolor="white", label=GROUPING_LABEL[g])
+    rows = []
+    for _, row in report.iterrows():
+        for g in COMPARISON_GROUPINGS:
+            rows.append({
+                "feature":        FEATURE_LABELS.get(row["feature"], row["feature"]),
+                "feature_raw":    row["feature"],
+                "grouping_label": GROUPING_LABEL[g],
+                "ratio":          row[f"ratio_{g}_over_agent"],
+            })
+    df_plot = pd.DataFrame(rows)
 
-    ax.axvline(1.0, color="#555", lw=0.8, ls="--", label="equal (ratio = 1)")
-    ax.set_yticks(y_base)
-    ax.set_yticklabels(report["feature"], fontsize=9)
-    ax.invert_yaxis()
-    ax.set_xlabel("ratio: sd(group means) / sd(agent means)")
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.legend(fontsize=9, frameon=False, loc="best")
-    ax.set_title(
-        f"Does task, fix-type, or repo explain more than agent?{title_suffix}\n"
-        "Ratio > 1 means that grouping's means vary more than agent means.",
-        fontsize=11,
+    # Sort features by mean ratio descending (largest task-dominance at top)
+    feat_order = (
+        df_plot[df_plot["grouping_label"] == GROUPING_LABEL["instance_id"]]
+        .sort_values("ratio", ascending=True)["feature"]
+        .tolist()
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    color_scale = alt.Scale(
+        domain=[GROUPING_LABEL[g] for g in COMPARISON_GROUPINGS],
+        range=[GROUPING_COLORS[g] for g in COMPARISON_GROUPINGS],
+    )
+
+    bars = (
+        alt.Chart(df_plot)
+        .mark_bar(height=10)
+        .encode(
+            y=alt.Y(
+                "feature:N",
+                sort=feat_order,
+                axis=alt.Axis(title=None, ticks=False, domain=False, labelFontSize=10),
+            ),
+            x=alt.X(
+                "ratio:Q",
+                title="SD of group means / SD of agent means",
+                axis=alt.Axis(ticks=False, domain=False, labelFontSize=10),
+            ),
+            yOffset=alt.YOffset(
+                "grouping_label:N",
+                sort=[GROUPING_LABEL[g] for g in COMPARISON_GROUPINGS],
+                scale=alt.Scale(range=[-8, 8]),
+            ),
+            color=alt.Color(
+                "grouping_label:N",
+                scale=color_scale,
+                legend=alt.Legend(orient="bottom", title=None),
+            ),
+        )
+    )
+
+    chart = (
+        bars
+        .properties(
+            width=380,
+            height=max(260, n_feat * 34),
+            title=alt.TitleParams(
+                text=f"Behavioral feature variance by grouping (ratio to agent){title_suffix}",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(grid=False)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def emit(report: pd.DataFrame, basename: str, title_suffix: str) -> None:

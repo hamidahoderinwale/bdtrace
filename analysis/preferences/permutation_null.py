@@ -29,9 +29,12 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import sys
+import altair as alt
+import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY, NEAR_BLACK
+register()
 import numpy as np
 from scipy.spatial.distance import jensenshannon
 
@@ -134,31 +137,80 @@ def plot_null(results: dict, out_path: Path) -> None:
     keys = ["aggregate"] + BUCKET_ORDER
     valid_keys = [k for k in keys if k in results and not np.isnan(results[k]["observed_gap"])]
 
-    fig, axes = plt.subplots(1, len(valid_keys), figsize=(3.2 * len(valid_keys), 3.8), sharey=False)
-    if len(valid_keys) == 1:
-        axes = [axes]
-
-    for ax, key in zip(axes, valid_keys):
+    panels = []
+    for key in valid_keys:
         r = results[key]
         null = np.array(r["null_distribution"])
         obs = r["observed_gap"]
-        ax.hist(null, bins=30, color="#cccccc", edgecolor="white", alpha=0.9)
-        ax.axvline(obs, color="#111111", lw=2, label=f"observed = {obs:.3f}")
-        ax.axvline(r["null_q95"], color="#888", lw=1, alpha=0.8,
-                   label=f"chance 95th pct = {r['null_q95']:.3f}")
-        ax.set_xlabel("same-family similarity advantage")
-        ax.set_title(f"{key}  (n={r['n_records']})\np = {r['p_value']:.4f}", fontsize=10)
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.legend(fontsize=7, frameon=False, loc="best")
+        q95 = r["null_q95"]
+        n_records = r["n_records"]
+        p_value = r["p_value"]
 
-    fig.suptitle(
-        "Is the same-family advantage above chance?\n"
-        "Red line = observed. Grey bars = chance baseline (agent labels randomly shuffled, 1000 times).",
-        fontsize=11,
+        # Pre-compute histogram bins
+        counts, bin_edges = np.histogram(null, bins=30)
+        bin_df = pd.DataFrame({
+            "x0": bin_edges[:-1],
+            "x1": bin_edges[1:],
+            "count": counts,
+        })
+
+        bars = (
+            alt.Chart(bin_df)
+            .mark_bar(color="#cccccc", stroke="white", strokeWidth=0.5)
+            .encode(
+                x=alt.X("x0:Q", axis=alt.Axis(
+                    title="same-family similarity advantage",
+                    domain=False, ticks=False, labelFontSize=10,
+                )),
+                x2="x1:Q",
+                y=alt.Y("count:Q", axis=alt.Axis(
+                    title=None, domain=False, ticks=False, labelFontSize=10,
+                )),
+            )
+        )
+
+        rule_obs = (
+            alt.Chart(pd.DataFrame({"x": [obs], "label": [f"observed = {obs:.3f}"]}))
+            .mark_rule(color=NEAR_BLACK, strokeWidth=2)
+            .encode(x="x:Q", tooltip="label:N")
+        )
+
+        rule_q95 = (
+            alt.Chart(pd.DataFrame({"x": [q95], "label": [f"chance 95th pct = {q95:.3f}"]}))
+            .mark_rule(color=GRAY, strokeWidth=1, opacity=0.8, strokeDash=[4, 4])
+            .encode(x="x:Q", tooltip="label:N")
+        )
+
+        panel = (
+            (bars + rule_obs + rule_q95)
+            .properties(
+                width=160,
+                height=180,
+                title=alt.TitleParams(
+                    text=f"{key} (n={n_records}, p={p_value:.4f})",
+                    fontSize=10,
+                    color="#111111",
+                    anchor="start",
+                ),
+            )
+        )
+        panels.append(panel)
+
+    chart = (
+        alt.hconcat(*panels, spacing=20)
+        .properties(
+            title=alt.TitleParams(
+                text="Permutation null: same-family divergence",
+                fontSize=13,
+                color="#111111",
+                anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:

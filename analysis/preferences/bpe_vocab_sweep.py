@@ -21,13 +21,14 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import altair as alt
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import jensenshannon
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.theme import register, BLUE, ORANGE, GREEN, GRAY, NEAR_BLACK
+register()
 
 from analysis.preferences.bpe import train_bpe
 from analysis.preferences.canonicalize import canonicalize_trajectory
@@ -131,74 +132,108 @@ def run_sweep(records: list[dict], sweep_V: list[int]) -> list[dict]:
 
 
 def plot_jsd_sweep(results: list[dict], out_path: Path) -> None:
-    Vs = [r["V"] for r in results]
-    pair_names = list(results[0]["jsd_full"].keys())
-
     pair_colors = {
-        "Claude-3.5__GPT-4": "#0072B2",
-        "Claude-3.5__GPT-4o": "#E69F00",
-        "GPT-4__GPT-4o": "#009E73",
+        "Claude-3.5__GPT-4":  BLUE,
+        "Claude-3.5__GPT-4o": ORANGE,
+        "GPT-4__GPT-4o":      GREEN,
     }
+    pair_names = list(results[0]["jsd_full"].keys())
+    pair_labels = [p.replace("__", " x ") for p in pair_names]
+    panel_specs = [
+        ("jsd_full",   "All tokens (atoms and patterns)"),
+        ("jsd_motifs", "Repeated sequences only"),
+    ]
 
-    def label(name: str) -> str:
-        a, b = name.split("__")
-        return f"{a} x {b}"
+    rows = []
+    for r in results:
+        for jsd_key, panel_label in panel_specs:
+            for pair, plabel in zip(pair_names, pair_labels):
+                rows.append({
+                    "V":     r["V"],
+                    "jsd":   r[jsd_key][pair],
+                    "pair":  plabel,
+                    "panel": panel_label,
+                })
+    df = pd.DataFrame(rows)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=False)
+    cscale = alt.Scale(domain=pair_labels,
+                       range=[pair_colors[p] for p in pair_names])
 
-    for ax, key, title in [
-        (axes[0], "jsd_full", "Full vocabulary (atoms + motifs)"),
-        (axes[1], "jsd_motifs", "Motifs only (length ≥ 2)"),
-    ]:
-        for pair in pair_names:
-            ys = [r[key][pair] for r in results]
-            color = pair_colors.get(pair, "gray")
-            ax.plot(Vs, ys, marker="o", color=color, label=label(pair),
-                    linewidth=2, markersize=6)
-        ax.set_xlabel("BPE target vocabulary size (V)")
-        ax.set_ylabel("Jensen-Shannon distance")
-        ax.set_title(title, fontsize=10)
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.legend(fontsize=8, frameon=False, loc="best")
-        ax.grid(True, alpha=0.25)
-
-    fig.suptitle(
-        "Heritability signal across BPE vocabulary size\n"
-        "GPT-family pair should stay lowest if finding is V-robust",
-        fontsize=11,
+    base = alt.Chart(df).encode(
+        x=alt.X("V:O", axis=alt.Axis(title="BPE vocabulary size",
+                                      domain=False, ticks=False, labelFontSize=10)),
+        y=alt.Y("jsd:Q", scale=alt.Scale(domain=[0, 1]),
+                axis=alt.Axis(title="Jensen-Shannon divergence",
+                              domain=False, ticks=False)),
+        color=alt.Color("pair:N", scale=cscale,
+                        legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
     )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart = (
+        (base.mark_line(strokeWidth=2) + base.mark_point(size=55, filled=True))
+        .facet(
+            column=alt.Column("panel:N",
+                              sort=[s[1] for s in panel_specs],
+                              header=alt.Header(title=None, labelFontSize=11)),
+            spacing=60,
+        )
+        .properties(
+            title=alt.TitleParams(
+                text="Pairwise divergence by BPE vocabulary size",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .resolve_scale(y="shared")
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+    )
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def plot_compression_curve(results: list[dict], out_path: Path) -> None:
-    Vs = [r["V"] for r in results]
-    compression = [r["compression_ratio"] for r in results]
+    Vs     = [r["V"] for r in results]
+    compr  = [r["compression_ratio"] for r in results]
     merges = [r["n_merges"] for r in results]
 
-    fig, ax1 = plt.subplots(figsize=(7, 4))
-    ax1.plot(Vs, compression, "o-", color="#0072B2", linewidth=2, label="Compression ratio")
-    ax1.set_xlabel("BPE target vocabulary size (V)")
-    ax1.set_ylabel("Compression ratio (BPE / canonical token count)", color="#0072B2")
-    ax1.tick_params(axis="y", labelcolor="#0072B2")
-    ax1.set_ylim(0, 1.0)
+    df_c = pd.DataFrame({"V": Vs, "value": compr,  "metric": "Compression ratio"})
+    df_m = pd.DataFrame({"V": Vs, "value": merges, "metric": "Merges performed"})
 
-    ax2 = ax1.twinx()
-    ax2.plot(Vs, merges, "s-", color="#E69F00", linewidth=2, label="Merges performed")
-    ax2.set_ylabel("Number of merges", color="#E69F00")
-    ax2.tick_params(axis="y", labelcolor="#E69F00")
+    cscale = alt.Scale(domain=["Compression ratio", "Merges performed"],
+                       range=[BLUE, ORANGE])
 
-    ax1.set_title(
-        "BPE compression saturates as vocabulary grows\n"
-        "Where the curve flattens = diminishing returns on added merges",
-        fontsize=10,
+    def _panel(df_sub: pd.DataFrame, y_title: str, y_format: str) -> alt.Chart:
+        return (
+            alt.Chart(df_sub)
+            .mark_line(strokeWidth=2, point=alt.OverlayMarkDef(filled=True, size=55))
+            .encode(
+                x=alt.X("V:O", axis=alt.Axis(title="BPE vocabulary size",
+                                              domain=False, ticks=False, labelFontSize=10)),
+                y=alt.Y("value:Q",
+                        axis=alt.Axis(title=y_title, domain=False, ticks=False,
+                                      format=y_format)),
+                color=alt.Color("metric:N", scale=cscale,
+                                legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
+            )
+            .properties(width=220, height=200)
+        )
+
+    p1 = _panel(df_c, "Compression ratio", ".2f")
+    p2 = _panel(df_m, "Number of merges",  "d")
+
+    chart = (
+        alt.hconcat(p1, p2, spacing=40)
+        .properties(
+            title=alt.TitleParams(
+                text="BPE compression and merge count",
+                fontSize=13, color="#111111", anchor="start",
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
     )
-    ax1.spines[["top"]].set_visible(False)
-    ax2.spines[["top"]].set_visible(False)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight")
-    plt.close(fig)
+
+    chart.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:
