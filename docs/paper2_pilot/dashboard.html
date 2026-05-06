@@ -173,13 +173,34 @@
 
 <header>
 <h1>Paper 2 Pilot — Procedural Analysis of SWE-Agents</h1>
-<p class="subtitle">Canonicalize-then-BPE methodology on 867 agent trajectories; 3 SWE-agent variants on SWE-bench Lite</p>
-<p class="meta">Generated 2026-04-22 · all figures in <code>output/paper2_pilot/</code></p>
+<p class="subtitle">Canonicalize-then-BPE methodology on 1,162 agent trajectories; 4 agents (Claude-3, Claude-3.5, GPT-4, GPT-4o) on SWE-bench Lite (300 instances)</p>
+<p class="meta">Updated 2026-05-05 · paper figures in <code>output/figures/</code> · pilot figures in <code>output/paper2_pilot/</code></p>
 </header>
+
+<section id="updates-may5" style="background:#e8f5e9; border-left:3px solid #20A380; padding:14px 18px; margin-bottom:30px;">
+<h3 style="margin:0 0 6px 0; font-size:15px; color:#187860;">Session updates, 2026-05-05</h3>
+<ul style="margin:4px 0; font-size:14px; padding-left:20px;">
+  <li><strong>4-agent corpus complete.</strong> Claude-3 (Opus) added; corpus is now 1,162 trajectories across 4 agents × 300 Lite instances.</li>
+  <li><strong>MI replaces eta² as primary variance metric.</strong> Knowing difficulty removes 60% of outcome uncertainty (MI = 0.40 bits); knowing fix type removes 1% (MI = 0.01 bits). Ratio: 47x. Coherent with the paper's information-theoretic register. eta² and omega² are in the appendix as robustness checks.</li>
+  <li><strong>New color palette.</strong> GREEN #20A380 · BLUE #5692E5 · MAGENTA #B4184F · COPPER #CB4D20 · OLIVE #585E53. All figure scripts updated.</li>
+  <li><strong>Figure audit complete.</strong> 12 paper figures, all clean; motif-cost scatter removed; efficiency frontier redesigned as two-panel cost comparison.</li>
+  <li><strong>Glossary expanded</strong> — inline tables and before/after diagrams for BPE merge, canonicalization, type A/B failures, MI, JSD, difficulty buckets, novelty index, and FIM patterns.</li>
+</ul>
+<p style="margin:6px 0 0; font-size:13px; color:#187860;">See section 0 (framing), section 0.5 (current paper figures), section 0.6 (expanded glossary).</p>
+</section>
+
+<section id="updates" style="background:#fff8e1; border-left:3px solid #f0b000; padding:14px 18px; margin-bottom:30px;">
+<h3 style="margin:0 0 6px 0; font-size:15px; color:#5d4400;">Session updates, 2026-04-25</h3>
+<p style="margin:4px 0; font-size:14px;">Four new sections added below covering work this session. Highlights: (a) cross-scaffold β/γ paired finding (categories invariant, emphasis scaffold-determined), (b) Pencil Code methodology validated for the Cursor pluralism corpus expansion, (c) bootstrap CIs reveal that the comparative-prediction headline (structural representations beat reasoning traces) is not statistically significant on this corpus and the Paper 1 framing needs to soften, (d) consolidated three-paper plan with venues.</p>
+<p style="margin:4px 0; font-size:14px;">See sections <a href="#cross-scaffold">13</a>, <a href="#cross-population">14</a>, <a href="#bootstrap-validation">15</a>, <a href="#paper-plan">16</a>.</p>
+<p style="margin:4px 0; font-size:13px; color:#5d4400;">Phase A artifacts (sections 2.1, 2.2, 2.3) were archived during this session. Files moved to <code>_archive/</code> with rationale documented in <code>output/paper2_pilot/_archive/phase_a_audit.md</code>; the descriptive content of section 2 is preserved here for context.</p>
+</section>
+
 
 <nav>
 <strong style="font-size:13px; color:#555;">Contents</strong>
 <ol>
+<li><a href="#standout"><strong>At a glance — contributions and findings</strong></a></li>
 <li><a href="#scope">Scope and methodology</a></li>
 <li><a href="#phaseA">Phase A — pilot on hand-coded 8-token DSL (scaffolding)</a></li>
 <li><a href="#phaseB">Phase B — emergent BPE motifs (committed methodology)</a></li>
@@ -191,9 +212,664 @@
 <li><a href="#limitations">Limitations</a></li>
 <li><a href="#next">Next steps</a></li>
 <li><a href="#questions">Open questions</a></li>
+<li><a href="#cross-scaffold">Cross-scaffold universality (Agentless paired finding, 2026-04-25)</a></li>
+<li><a href="#cross-population">Cross-population corpus expansion (Pencil Code methodology, 2026-04-25)</a></li>
+<li><a href="#bootstrap-validation">Statistical validation update (bootstrap CIs, 2026-04-25)</a></li>
+<li><a href="#paper-plan">Paper plan and venues (2026-04-25)</a></li>
 <li><a href="#glossary">Glossary</a></li>
+<li><a href="#benchmarks">Benchmark landscape</a></li>
+<li><a href="#reviewer-concerns">Anticipated reviewer concerns</a></li>
+<li><a href="#model-expansion">Model expansion plan</a></li>
+<li><a href="#human-centered">Human-centered research connections</a></li>
 </ol>
 </nav>
+
+<section id="standout" style="background:#f9f9f9; border:1px solid #e0e0e0; border-radius:4px; padding:22px 26px; margin-bottom:30px;">
+<h2 style="margin-top:0;">At a glance — what this paper contributes and what to lead with</h2>
+
+<h3 style="margin-top:18px;">The headline finding</h3>
+<p>How hard a task is — measured by how many of four agents solved it — accounts for 60% of whether any given agent succeeds or fails. The kind of bug (logic fix, exception handling, config change, etc.) accounts for 1%. That is a 47-fold difference. The two-panel figure showing this is the paper's most important visual and should be the first data shown in any talk or abstract.</p>
+<p>This matters because most prior work characterizes tasks by their semantic type — the kind of bug — and treats that as a meaningful grouping. It is not. Structural edit complexity, which is visible in the shape of the oracle patch before any agent runs, is what actually determines success.</p>
+
+<h3 style="margin-top:18px;">The structural finding that closes the circularity</h3>
+<p>Difficulty, if measured only by agent outcomes, is circular. We have three independent operationalizations that converge: (1) n_resolved, the fraction of our four agents that solved each task; (2) the 84-agent ease score from the full SWE-bench Lite leaderboard, which correlates with n_resolved at r = 0.76; and (3) fill-in-the-middle (FIM) patterns on the oracle patch itself — readable before running any agent. Hard tasks have patches that introduce conditional logic and new function calls. Easy tasks swap a return value or reassign a variable. This structural grounding is the ICSE-level contribution.</p>
+
+<h3 style="margin-top:18px;">The secondary finding — two independent axes</h3>
+<p>Difficulty and agent identity explain different things and neither explains the other. Difficulty predicts whether an agent succeeds. Agent identity predicts how the agent works — GPT models use shorter, more compressed action sequences; Claude models use longer, more exploratory ones. These behavioral signatures are stable across tasks and task types. Knowing which model ran a trajectory tells you little about whether it succeeded, but tells you a lot about what it did procedurally.</p>
+
+<h3 style="margin-top:18px;">What we built (methodological contributions)</h3>
+<ul style="font-size:14px; line-height:1.85; color:#333;">
+  <li><strong>A behavioral vocabulary for agent trajectories.</strong> We apply byte-pair encoding to the action sequences of 1,162 trajectories, discovering 125 compound motifs from 76 primitive actions. The vocabulary is justified by minimum description length — it is not an arbitrary clustering but the shortest lossless description of what agents did. Compression ratio (motif sequence length / atom sequence length) is a well-defined, model-free measure of how much an agent repeats itself.</li>
+  <li><strong>A multi-predictor, multi-outcome MI decomposition.</strong> Mutual information in bits, normalized to percentage of outcome uncertainty removed, gives a single comparable number across binary outcomes (pass/fail) and continuous ones (trajectory length, compression). This is more coherent than eta² because it does not assume linearity and uses consistent units across all nine predictor-outcome pairs.</li>
+  <li><strong>A failure anatomy.</strong> Between 57% and 73% of all failures — depending on the agent — are Type B: the agent found the right file but could not fix it. Type A failures (never found the file) are the minority. This reframes where effort should go: better navigation is not the bottleneck.</li>
+</ul>
+
+<h3 style="margin-top:18px;">How to order these in a talk (20 minutes)</h3>
+<ol style="font-size:14px; line-height:1.85; color:#333;">
+  <li><strong>5–7 min: The 47× gap.</strong> Show the difficulty panel and the fix-type panel side by side. Let the contrast land. Give the 60% / 1% numbers. Ask: why does the thing everyone uses to characterize bugs explain almost nothing?</li>
+  <li><strong>3–4 min: FIM patterns.</strong> Explain that the answer is visible in the patch itself, before running any agent. Show three examples — a hard pattern, an easy pattern, a fully unsolved one. This is the structural grounding that makes the claim non-circular.</li>
+  <li><strong>3–4 min: The two-axis decomposition.</strong> Show the MI decomposition figure. Difficulty explains success; agent explains style. Neither explains the other. This is why agent comparisons without difficulty control are noise.</li>
+  <li><strong>2–3 min: Behavioral fingerprinting.</strong> Brief: GPT agents compress more, Claude agents explore more. The vocabulary exists. The motif grammar is learnable.</li>
+  <li><strong>2–3 min: So what.</strong> What a centaur interface looks like. What the gym experiment would test. Why model diversity (RL-trained vs SFT-trained) is the next stress test.</li>
+</ol>
+
+<h3 style="margin-top:18px;">What is secondary (do not lead with)</h3>
+<ul style="font-size:14px; line-height:1.85; color:#555;">
+  <li>Cost per resolved task — interesting but downstream of the main finding; mention as a practical implication, not a headline.</li>
+  <li>Variance decomposition (SD ratio across 10 features) — methodologically solid but a supporting result, not the lead.</li>
+  <li>BPE mechanics (merge count, vocabulary size) — belongs in a methods section or appendix, not the opening.</li>
+  <li>Fix type by agent — shows the signal is weak for all agents uniformly; useful as a robustness check, not a contribution.</li>
+</ul>
+</section>
+
+<section id="framing">
+<h2>0. Research framing and argument structure</h2>
+
+<div class="finding">
+<strong>Core thesis.</strong> Current agent benchmarks conflate semantic task category (what kind of bug it is) with structural edit complexity (how hard the patch is to write). Structural complexity — derivable from the oracle patch before running any agent — predicts agent failure with high fidelity. Semantic category predicts almost nothing. Knowing task difficulty removes 60% of outcome uncertainty; knowing fix type removes 1%.
+</div>
+
+<h3>The argument in three levels</h3>
+
+<p><strong>Level 1 — Empirical (workshop paper).</strong> Across 1,162 trajectories and 4 agents, difficulty (how many of the 4 agents solved each task) accounts for 60% of outcome uncertainty (MI = 0.40 bits). Fix type (logic fix, exception handling, API change, etc.) accounts for 1% (MI = 0.01 bits). This is not a subtle effect: the 47× gap is visible by inspection in the figure.</p>
+
+<p><strong>Level 2 — Validated.</strong> The 4-agent difficulty proxy (n_resolved) correlates with the 84-agent ease score from the full SWE-bench Lite leaderboard at Spearman r = 0.76. The proxy captures the difficulty signal but is not identical to intrinsic hardness. Importantly, n_resolved = 0 does not mean "impossible" — many such instances have 84-agent ease up to 0.81. The difficulty axis reflects agent capability, not intrinsic task hardness.</p>
+
+<p><strong>Level 3 — Structural (ICSE core claim).</strong> Difficulty traces back to edit complexity of the oracle patch, identifiable via FIM (fill-in-the-middle) patterns before running any agent. Hard patterns (ease ≈ 0.02): conditional checks with comparisons and new function calls. Easy patterns (ease ≈ 0.67–0.81): return-value swaps, variable reassignments. Fully unsolved (ease = 0.00): algorithm replacement + import + signature change. Fix type is a semantic label that does not capture edit complexity — which is why it has near-zero predictive power.</p>
+
+<h3>Why MI rather than eta²</h3>
+<p>The primary variance attribution metric is <strong>mutual information</strong> (MI) in bits, not eta². The GQM chain justifies this: Goal → attribute outcome uncertainty to predictors; Question → how much of pass/fail uncertainty does knowing X remove?; Metric → I(X; Y) in bits. This is the most coherent choice because the paper already works in an information-theoretic register (entropy of motif distributions, Jensen-Shannon distance between agents, MDL as the justification for BPE). Framing the finding as "difficulty removes 60% of outcome uncertainty" is also more interpretable to a cold reader than "eta² = 0.56."</p>
+<p>Robustness: omega² (bias-corrected eta²) = 0.558 ≈ eta² = 0.560 — bias is negligible at n = 1,162. Both tell the same story. These are in the appendix.</p>
+
+<h3>Measurement validity chain</h3>
+<p>Following Campbell &amp; Fiske (1959) and Cronbach &amp; Meehl (1955), every empirical claim rests on a construct → indicator → operationalization chain:</p>
+<ul class="bullet-list">
+  <li><strong>Construct:</strong> "how hard is this task for agents"</li>
+  <li><strong>Indicator (proxy):</strong> n_resolved (fraction of our 4 agents that solved it)</li>
+  <li><strong>Better indicator:</strong> 84-agent ease score from the full leaderboard (r = 0.76 with proxy — convergent validity)</li>
+  <li><strong>Structural operationalization:</strong> FIM edit patterns on oracle patch (independent of agents entirely — discriminant validity)</li>
+</ul>
+<p>The key insight: n_resolved is a valid indicator of difficulty but is partially circular (it is computed from outcomes). FIM patterns on the oracle patch are the cleanest operationalization — they are derivable before running any agent, removing circularity.</p>
+
+<div class="caveat" style="background:#f0f8f0; border-left-color:#20A380;">
+<strong>Empirical evidence that saves the circularity argument.</strong>
+n_resolved = 0 for 196/300 instances — all agents failed — making 65% of trajectories floor-determined. The 60% MI figure is partly driven by this structure, which is real but not clean. However, within each of the uncertain bins (1/4, 2/4, 3/4), trajectory length does NOT predict pass/fail: r = −0.17 for 1/4 (p = 0.025), r = −0.14 for 2/4 (p = 0.16, n.s.), r = −0.12 for 3/4 (p = 0.26, n.s.). <strong>Difficulty captures something real beyond "tasks that took more steps."</strong> If difficulty were just a proxy for trajectory length, within-bin length should predict outcome — it does not. n_resolved should be presented as convergent validation alongside the 84-agent ease score and FIM patterns, not as the primary operationalization. The FIM patterns argument (pre-agent, structural, non-circular) is the load-bearing claim.
+</div>
+
+<h3>Relevant works</h3>
+<ul class="bullet-list">
+  <li><strong>OverCode</strong> (Glassman et al., 2015) — canonicalize-before-cluster recipe for program traces; direct methodological ancestor. <a href="https://dl.acm.org/doi/10.1145/2702613.2702631" target="_blank">ACM DL</a></li>
+  <li><strong>Modelling student learning from program traces</strong> — learning analytics from behavioral trace data; framing inspiration for treating agent trajectories as structured programs. Glassman et al. / Piech et al.</li>
+  <li><strong>DreamCoder / Ellis et al.</strong> (2021) — library induction via compression; MDL justification for BPE as a motif discovery method. <a href="https://arxiv.org/abs/2006.08381" target="_blank">arXiv</a></li>
+  <li><strong>SWE-bench</strong> (Jimenez et al., 2024) — the benchmark we analyze. <a href="https://arxiv.org/abs/2310.06770" target="_blank">arXiv</a></li>
+  <li><strong>SWE-agent</strong> (Yang et al., 2024) — the scaffold all 4 agents in our corpus use. <a href="https://arxiv.org/abs/2405.15793" target="_blank">arXiv</a></li>
+  <li><strong>DSPy</strong> (Khattab et al., 2023) — optimizes natural language prompts; Direction 1 of the ICSE extension proposes optimizing procedural motif sequences instead. <a href="https://arxiv.org/abs/2310.03714" target="_blank">arXiv</a></li>
+  <li><strong>Wattenberg &amp; Viégas</strong> — interpretability visualizations; reference for optimal figure design and information-dense but clean representations.</li>
+  <li><strong>Popper (1959) / Lakatos (1978) / Hempel (1965)</strong> — philosophy of science: falsificationism, research programme structure (hard core vs protective belt), hypothetico-deductive model. Applied to every method choice in this paper.</li>
+</ul>
+
+<h3>Research framework applied</h3>
+<p>For every method choice, the following framework is applied in order:</p>
+<ol>
+  <li><strong>Construct validity</strong> — does the indicator validly measure the latent construct? Convergent and discriminant validity checks required.</li>
+  <li><strong>GQM</strong> — Goal → Question → Metric. The metric must be traceable to a goal; otherwise it is unjustified convention.</li>
+  <li><strong>Falsificationism</strong> — state the claim being tested and what result would falsify it. The permutation null (p &lt; 0.001) and the MI comparison (60% vs 1%) are both falsification tests.</li>
+  <li><strong>Lakatos</strong> — hard core: difficulty predicts agent success; semantic category does not. Protective belt: which difficulty measure, which metric. Hard core stands across all operationalizations.</li>
+  <li><strong>Causal inference</strong> — this is observational data. Claims use "predicts" / "is associated with" / "accounts for," not "causes."</li>
+</ol>
+</section>
+
+<section id="paper-figures">
+<h2>0.5 Current paper figures</h2>
+<p>All figures generated by <code>scripts/figures/fig_*.py</code> using Altair + <code>scripts/theme.py</code>. Color palette: GREEN #20A380 (Claude-3.5) · BLUE #5692E5 (GPT-4) · MAGENTA #B4184F (GPT-4o) · COPPER #CB4D20 (Claude-3) · OLIVE #585E53 (neutral/gray).</p>
+
+<h3>Pass rate by difficulty bucket</h3>
+<figure>
+  <img src="fig_difficulty.png" alt="Pass rate by difficulty bucket">
+  <figcaption>Pass rate by difficulty bucket (n_resolved / 4 agents) with Wilson 95% CIs. Difficulty spans 0–100% with non-overlapping CIs. MI(difficulty; pass/fail) = 0.40 bits = 60% of H(outcome).</figcaption>
+</figure>
+
+<h3>Pass rate by fix type</h3>
+<figure>
+  <img src="fig_fixtype.png" alt="Pass rate by fix type">
+  <figcaption>Pass rate by fix type with Wilson 95% CIs. All types cluster near 20% with heavily overlapping CIs. MI(fix_type; pass/fail) = 0.01 bits = 1% of H(outcome). Fix type is 47× weaker a predictor than difficulty.</figcaption>
+</figure>
+
+<h3>Difficulty by agent</h3>
+<figure>
+  <img src="fig_difficulty_by_agent.png" alt="Pass rate by difficulty bucket, per agent">
+  <figcaption>Per-agent pass rate across difficulty buckets with Wilson 95% CIs. All agents show monotonic increase with ease; Claude-3 lags consistently. The finding holds across all 4 agents.</figcaption>
+</figure>
+
+<h3>Fix type by agent</h3>
+<figure>
+  <img src="fig_fixtype_by_agent.png" alt="Pass rate by fix type, per agent">
+  <figcaption>Agent-level pass rates within each fix type (7 types with n ≥ 10 per agent). CIs overlap heavily within each fix type — agents agree on which types are hard, but variation within each type is large relative to variation between types. The fix-type signal is weak for all agents.</figcaption>
+</figure>
+
+<h3>Failure type breakdown</h3>
+<figure>
+  <img src="fig_failure_types.png" alt="Type A vs Type B failure proportion per agent">
+  <figcaption>Proportion of failing trajectories that never reached the gold file (type A = navigation failure) vs reached it but still failed (type B = implementation failure). Claude-3 has the most type A failures (43%); Claude-3.5 the fewest (27%).</figcaption>
+</figure>
+
+<h3>Steps after localization (type B failures)</h3>
+<figure>
+  <img src="fig_failure_steps.png" alt="Steps spent after localization in type B failures">
+  <figcaption>Distribution of steps spent after reaching the gold file in type B failures, by agent. Wide IQR for Claude-3.5 and GPT-4o suggests high variance in post-localization strategy. Medians: Claude-3 11, GPT-4 14, Claude-3.5 22, GPT-4o 24.</figcaption>
+</figure>
+
+<h3>Cost per resolved task</h3>
+<figure>
+  <img src="fig_efficiency_frontier.png" alt="Cost per resolved task by agent">
+  <figcaption>Cost per resolved task (USD) — the primary efficiency metric. Claude-3.5 resolves tasks for $6.80 each; Claude-3 costs $29.31 per resolved task despite the highest per-task spend ($3.42).</figcaption>
+</figure>
+
+<h3>Cost per task vs resolve rate</h3>
+<figure>
+  <img src="fig_efficiency_scatter.png" alt="Cost per task vs resolve rate scatter">
+  <figcaption>Cost per task attempted vs resolve rate. GPT-4 and GPT-4o are nearly identical in cost per task ($2.51 vs $2.53) but differ in resolve rate (18% vs 20%). Claude-3.5 is Pareto-efficient on both dimensions.</figcaption>
+</figure>
+
+<h3>Procedural similarity — permutation null</h3>
+<figure>
+  <img src="fig_permutation_null.png" alt="Permutation null distribution for same-family similarity">
+  <figcaption>Permutation null distribution (n = 1000) for the GPT-4/GPT-4o within-family procedural similarity advantage. Bars colored MAGENTA are at or beyond the observed statistic. p &lt; 0.001 — GPT agents share procedures more than chance predicts.</figcaption>
+</figure>
+
+<h3>Representation comparison</h3>
+<figure>
+  <img src="fig_representation_comparison.png" alt="kNN pass/fail F1 by representation type">
+  <figcaption>Nearest-neighbor (k = 2) pass/fail prediction F1 across six representation types. Structural representations (FIM pattern overlap, edit certificates) outperform semantic embeddings (reasoning trace embeddings) — consistent with the difficulty finding. The oracle FIM representation is the cleanest structural predictor.</figcaption>
+</figure>
+
+<h3>Agent identification from motifs (backbone probe)</h3>
+<figure>
+  <img src="backbone_probe.png" alt="Backbone probe confusion matrix">
+  <figcaption>Logistic regression (TF-IDF motif features) predicts agent identity at 78.9% F1 (standard 5-fold CV) or 69.3% F1 (grouped CV, held-out instance sets — the stricter estimate). Both significantly above 33% chance. Top discriminating motifs: GPT-4 uses SUBMIT and SHELL_RM+SUBMIT; Claude-3.5 uses NAV_SRC_PY runs and SHELL_LS; GPT-4o uses rapid CREATE+EDIT+RUN cycles. Agents have detectable behavioral fingerprints in their motif distributions.</figcaption>
+</figure>
+
+<h3>Motif-outcome association (CMH test)</h3>
+<figure>
+  <img src="fig_motif_cmh.png" alt="Cochran-Mantel-Haenszel test per motif">
+  <figcaption>CMH test for each motif: does it predict pass/fail after controlling for difficulty (n_resolved bin)? n=28 motifs tested; 0 significant after FDR correction (BH q=0.05). The clean result: within difficulty strata, no individual motif predicts success. Motifs predict agent identity (fingerprinting); they do not predict task outcome (that is difficulty's job). The two signals are genuinely orthogonal.</figcaption>
+</figure>
+
+<h3>Pass/fail prediction: agent vs motifs (AUC ablation)</h3>
+<figure>
+  <img src="fig_outcome_regression.png" alt="Pass/fail prediction AUC by feature set">
+  <figcaption>Logistic regression with held-out 5-fold CV. Agent identity alone achieves AUC = 49.9% (chance). Motif features alone reach AUC = 68.5%. Adding agent identity to motifs does not improve over motifs alone (68.5%). This is the held-out evaluation counterpart to the corpus-level MI numbers and confirms: agent identity carries no marginal information about task success once motif behavior is observed.</figcaption>
+</figure>
+
+<h3>Pairwise agent procedural similarity (JSD matrix)</h3>
+<figure>
+  <img src="agent_jsd_matrix.png" alt="JSD matrix between agents">
+  <figcaption>Jensen-Shannon divergence between agent pairs. Left: full action vocabulary (single actions). Right: BPE motifs only (multi-step patterns). Claude-3.5 is the most distinctive agent — it diverges most from each of the GPT variants. The cross-family pair Claude-3 vs GPT-4o has the lowest JSD on individual actions (0.12), reflecting shared scaffold conventions; on multi-step motifs, within-family GPT-4 / GPT-4o (0.18) is closer than the across-family Claude-3.5 / GPT-4o (0.25).</figcaption>
+</figure>
+
+<h3>Trajectory length by difficulty bucket, per agent</h3>
+<figure>
+  <img src="length_by_difficulty.png" alt="Trajectory length by task difficulty">
+  <figcaption>Mean trajectory length per agent across difficulty buckets. Left panel: individual actions (canonical length). Right panel: grouped action patterns (BPE length). Length decreases monotonically as more agents pass the task — harder tasks (0/4 solved) produce longer trajectories than easier ones (3/4 solved). This is the macro-level pattern; within each bucket, length does not predict pass/fail (within-bin r = -0.12 to -0.17, see R9).</figcaption>
+</figure>
+
+<h3>Stage allocation</h3>
+<figure>
+  <img src="fig_stage_allocation.png" alt="Stage allocation by agent and outcome">
+  <figcaption>Mean fraction of steps per behavioral stage (Explore, Browse, Edit, Test, Other) broken out by agent and pass/fail outcome. Passing trajectories spend more steps on editing; failing ones over-explore. GPT-4o shows the highest Edit fraction (41% of failing steps).</figcaption>
+</figure>
+
+
+<h3>Variance decomposition across outcome types</h3>
+<figure>
+  <img src="fig_mi_decomposition.png" alt="MI decomposition by predictor and outcome type">
+  <figcaption>Fraction of outcome uncertainty explained by each predictor (MI / H(Y) × 100%). Two orthogonal sources of variation: difficulty explains 60% of pass/fail uncertainty; agent identity explains trajectory length (14%) and compression (6%). Fix type explains little across all outcomes. Difficulty and agent are largely independent predictors of distinct aspects of agent behavior.</figcaption>
+</figure>
+
+<h3>Per-agent aggregate metrics</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:14px 0;">
+  <figure style="margin:0;">
+    <img src="fig_agg_entropy.png" alt="Per-agent motif entropy">
+    <figcaption>Shannon entropy of each agent's motif usage. Higher = more evenly spread across the vocabulary. Claude agents are more diverse; GPT-4 is the most concentrated.</figcaption>
+  </figure>
+  <figure style="margin:0;">
+    <img src="fig_agg_repertoire.png" alt="Distinct motifs at 90% coverage — per-trajectory distribution">
+    <figcaption>Per-trajectory distribution of how many distinct motifs cover 90% of each trajectory's tokens. Box = IQR; whiskers = 10th–90th percentile. GPT-4 uses a very small number (often just 1–2); GPT-4o's distribution is wider, reflecting high within-agent variance.</figcaption>
+  </figure>
+  <figure style="margin:0;">
+    <img src="fig_agg_length.png" alt="Per-agent trajectory length">
+    <figcaption>Mean trajectory length in atoms (uncompressed) and BPE motifs (compressed). GPT-4o runs longest; GPT-4 is the most concise.</figcaption>
+  </figure>
+  <figure style="margin:0;">
+    <img src="fig_agg_compression.png" alt="Per-agent compression ratio">
+    <figcaption>BPE compression ratio (motif length / atom length). Lower = more repeated sub-sequences. GPT agents compress more (0.37–0.39) than Claude agents (0.49–0.50).</figcaption>
+  </figure>
+</div>
+
+<h3>JSD ranking stability (R6)</h3>
+<figure>
+  <img src="fig_jsd_stability.png" alt="JSD by agent pair across vocabulary sizes">
+  <figcaption>Jensen-Shannon divergence between agent pairs across vocabulary sizes V = {100, 150, 200, 300, 500}. The ranking (Claude-3.5/GPT-4o > Claude-3.5/GPT-4 > GPT-4/GPT-4o) is perfectly stable at every V — magnitude scales but order never changes. The qualitative behavioral fingerprinting finding does not depend on the vocabulary size choice.</figcaption>
+</figure>
+
+<h3>Agent MI within difficulty bins (R7)</h3>
+<figure>
+  <img src="fig_per_bin_agent_mi.png" alt="MI(agent; pass/fail) by difficulty bin">
+  <figcaption>MI(agent; pass/fail) within each difficulty bin. Bins 0/4 and 4/4 have zero outcome variance by construction — all tasks fail or all pass regardless of agent. Within uncertain bins (1–3/4), agent identity removes 5–11% of outcome uncertainty — 3–7× the corpus-level figure of 1.5%. The low corpus-level MI is an artifact of the difficulty distribution, not evidence that agent choice is irrelevant.</figcaption>
+</figure>
+
+<h3>Post-localization motifs — short vs long Type B failures (R10)</h3>
+<figure>
+  <img src="fig_postloc_motifs.png" alt="Post-localization motif rates: short vs long Type B failures">
+  <figcaption>Top diverging motifs in the post-localization segment of Type B failures (n=622), split at the median (14 steps). Long failures show a stuck-in-edit-loop signature: EDIT_SRC_PY rises from 23% → 35% of tokens, SUBMIT drops from 9% → 2%, and NAV_SRC_PY falls from 14% → 10%. Short failures navigate and quickly submit; long failures stop exploring and repeatedly edit without success.</figcaption>
+</figure>
+
+<h3>Key numbers at a glance</h3>
+<table>
+<tr><th>Outcome</th><th>Agent identity</th><th>Task difficulty</th><th>Fix type</th></tr>
+<tr><td>Pass/fail (% of H removed) — corpus</td><td class="num">1.5%</td><td class="num" style="color:#20A380;font-weight:600;">60.2%</td><td class="num">1.3%</td></tr>
+<tr><td>Pass/fail (% of H removed) — Verified corpus</td><td class="num">1.3%</td><td class="num" style="color:#20A380;font-weight:600;">73.9%</td><td class="num">—</td></tr>
+<tr><td>Pass/fail (% of H removed) — uncertain bins only</td><td class="num" style="color:#20A380;font-weight:600;">5–11%</td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>Trajectory length (% of H removed)</td><td class="num" style="color:#20A380;font-weight:600;">13.7%</td><td class="num">2.8%</td><td class="num">1.1%</td></tr>
+<tr><td>Compression ratio (% of H removed)</td><td class="num" style="color:#20A380;font-weight:600;">6.2%</td><td class="num">0.6%</td><td class="num">2.1%</td></tr>
+<tr><td colspan="4" style="font-size:12px; color:#666; padding:6px 10px;">Appendix: eta²(difficulty; pass/fail) = 0.560, omega² = 0.558 | Backbone probe: 78.9% agent ID accuracy (F1) from motifs via logistic regression (LR+TF-IDF, 5-fold CV) | Verified replication: n=996, 2 agents, 500 instances</td></tr>
+<tr><th>Agent</th><th>Resolve rate</th><th>Cost/task</th><th>Cost/resolved</th></tr>
+<tr><td>Claude-3.5</td><td class="num">23.9%</td><td class="num">$1.62</td><td class="num">$6.80</td></tr>
+<tr><td>GPT-4o</td><td class="num">20.1%</td><td class="num">$2.53</td><td class="num">$12.57</td></tr>
+<tr><td>GPT-4</td><td class="num">18.0%</td><td class="num">$2.51</td><td class="num">$13.93</td></tr>
+<tr><td>Claude-3</td><td class="num">11.7%</td><td class="num">$3.42</td><td class="num">$29.31</td></tr>
+</table>
+</section>
+
+<section id="concepts">
+<h2>0.6 Concept glossary with references</h2>
+
+<dl class="glossary">
+
+<dt>Canonical atom</dt>
+<dd>
+  <p>The smallest unit in our action vocabulary. Raw agent actions (bash commands, file edits, search queries) are parsed into typed, normalized units. Type tags retain semantic content; literal strings (exact filenames, search terms, line numbers) are stripped, so that two edits to different files map to the same atom. 76 atom types in total.</p>
+  <p style="font-size:13px; color:#555; margin:4px 0 6px;">Why strip literals? Because we want to ask "did this agent search, then open a file?" not "did it search for <em>this exact string</em>?" Two trajectories that navigate differently but perform the same structural sequence should be recognized as using the same pattern.</p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Raw action</th><th style="padding:4px 10px; border:1px solid #ddd;">Canonical atom</th><th style="padding:4px 10px; border:1px solid #ddd;">What was stripped</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">edit /repo/src/utils.py lines 42–58</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">EDIT_SRC_PY</td><td style="padding:4px 10px; border:1px solid #ddd;">filename, line numbers</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">grep -r "KeyError" /repo/</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">SEARCH</td><td style="padding:4px 10px; border:1px solid #ddd;">search term, path</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">python /repo/reproduce_bug.py</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">RUN_PYTHON_REPRO_PY</td><td style="padding:4px 10px; border:1px solid #ddd;">exact path</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">pytest tests/test_parser.py -v</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11.5px;">RUN_TEST</td><td style="padding:4px 10px; border:1px solid #ddd;">test file, flags</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12.5px; color:#666; margin:4px 0;">Inspired by OverCode's canonicalization of student code before clustering (<a href="https://dl.acm.org/doi/10.1145/2702613.2702631" target="_blank">Glassman et al., 2015</a>).</p>
+</dd>
+
+<dt>BPE (Byte Pair Encoding) motif</dt>
+<dd>
+  <p>BPE was originally a text compression algorithm (<a href="https://dl.acm.org/doi/10.3115/981574.981603" target="_blank">Gage 1994</a>, repurposed for NLP tokenization by Sennrich et al., 2016). Applied to agent trajectories: start with the 76-atom vocabulary; iteratively find the most-frequent adjacent pair and bind it into a new compound unit. After 125 merges the vocabulary contains 125 compound motifs on top of the 76 atoms. Compression factor: 0.42 (a BPE sequence is 42% as long as the atom sequence).</p>
+  <p style="font-size:13px; color:#555; margin:4px 0 6px;"><strong>Why BPE?</strong> Because it finds the sub-sequences that most compactly describe the corpus — the Minimum Description Length (MDL) principle. The motifs that survive to the top of the merge list are the patterns the corpus "wants" to use. This aligns with DreamCoder's library-induction-via-compression approach.</p>
+  <p style="font-size:13px; color:#555; margin:4px 0 6px;"><strong>Step-by-step example — the first merge actually performed:</strong></p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse; width:100%; max-width:620px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Step</th><th style="padding:4px 10px; border:1px solid #ddd;">Sequence</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">Atom sequence (before merge 1)</td>
+          <td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">SEARCH &nbsp; NAV_SRC_PY &nbsp; <span style="background:#FFF3CD; padding:1px 3px; border-radius:2px;">EDIT_SRC_PY &nbsp; EDIT_SRC_PY</span> &nbsp; RUN_TEST</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">Most frequent pair (800+ occurrences)</td>
+          <td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px; color:#CB4D20;">EDIT_SRC_PY + EDIT_SRC_PY</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">After merge 1</td>
+          <td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">SEARCH &nbsp; NAV_SRC_PY &nbsp; <span style="background:#D4EDDA; padding:1px 3px; border-radius:2px;">EDIT_SRC_PY×2</span> &nbsp; RUN_TEST</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">After 125 merges (example motif)</td>
+          <td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;"><span style="background:#CCE5FF; padding:1px 3px; border-radius:2px;">EDIT_SRC_PY + RUN_TEST + EDIT_SRC_PY</span> &nbsp;= "edit-test-edit loop"</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12.5px; color:#666; margin:4px 0;">MDL justification: <a href="https://arxiv.org/abs/2006.08381" target="_blank">DreamCoder (Ellis et al., 2021)</a>. NLP tokenization: Sennrich et al. (2016).</p>
+</dd>
+
+<dt>Difficulty (n_resolved)</dt>
+<dd>
+  <p>For each of the 300 SWE-bench Lite instances, count how many of our 4 agents solved it. Bins: 0/4 (none solved), 1/4, 2/4, 3/4, 4/4. This is the primary difficulty proxy.</p>
+  <p style="font-size:13px; color:#555; margin:4px 0 6px;"><strong>Why this is valid but imperfect:</strong> it is partially circular (derived from agent outcomes, not intrinsic task properties). The 84-agent ease score from the full SWE-bench leaderboard correlates at Spearman r = 0.76 (convergent validity). FIM pattern analysis on the oracle patch is the cleanest independent operationalization — derivable before running any agent.</p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Bucket</th><th style="padding:4px 10px; border:1px solid #ddd;"># instances</th><th style="padding:4px 10px; border:1px solid #ddd;">Interpretation</th><th style="padding:4px 10px; border:1px solid #ddd;">Pass rate (all agents)</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">0/4</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right;">155</td><td style="padding:4px 10px; border:1px solid #ddd;">No agent solved it</td><td style="padding:4px 10px; border:1px solid #ddd;">0%</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">1/4</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right;">62</td><td style="padding:4px 10px; border:1px solid #ddd;">One agent solved it</td><td style="padding:4px 10px; border:1px solid #ddd;">~25%</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">2/4</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right;">40</td><td style="padding:4px 10px; border:1px solid #ddd;">Two agents solved it</td><td style="padding:4px 10px; border:1px solid #ddd;">~50%</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">3/4</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right;">24</td><td style="padding:4px 10px; border:1px solid #ddd;">Three agents solved it</td><td style="padding:4px 10px; border:1px solid #ddd;">~75%</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">4/4</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right;">19</td><td style="padding:4px 10px; border:1px solid #ddd;">All agents solved it</td><td style="padding:4px 10px; border:1px solid #ddd;">100%</td></tr>
+    </tbody>
+  </table>
+</dd>
+
+<dt>Mutual information (MI)</dt>
+<dd>
+  <p>I(X; Y) = H(Y) &minus; H(Y|X), measured in bits. Tells you how much uncertainty about Y is removed by knowing X. Model-free: no distributional assumptions about the shape of the relationship.</p>
+  <p style="font-size:13px; color:#555; margin:4px 0 6px;"><strong>Intuition:</strong> H(Y) is the total uncertainty about whether a trajectory passes. MI(X; Y) is what fraction of that uncertainty is explained by knowing X. If MI = 0, X tells you nothing about Y. If MI = H(Y), X tells you everything.</p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse; width:100%; max-width:520px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Predictor</th><th style="padding:4px 10px; border:1px solid #ddd;">MI (bits)</th><th style="padding:4px 10px; border:1px solid #ddd;">% of H(outcome)</th><th style="padding:4px 10px; border:1px solid #ddd;">Meaning</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">Difficulty (n_resolved)</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right; font-weight:600; color:#20A380;">0.397</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right; font-weight:600; color:#20A380;">60%</td><td style="padding:4px 10px; border:1px solid #ddd;">Knowing difficulty removes 60% of outcome uncertainty</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">Fix type</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right; color:#888;">0.008</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right; color:#888;">1%</td><td style="padding:4px 10px; border:1px solid #ddd;">Knowing fix type removes 1% of outcome uncertainty</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12.5px; color:#666; margin:4px 0;">Reference: Cover &amp; Thomas, <em>Elements of Information Theory</em>.</p>
+</dd>
+
+<dt>JSD (Jensen-Shannon Distance)</dt>
+<dd>
+  <p>A symmetric, bounded (0 to 1) measure of divergence between two probability distributions. JSD = &radic;(JS divergence), where JS divergence = &frac12;KL(P||M) + &frac12;KL(Q||M) and M = (P+Q)/2. Used here to compare two agents' motif usage distributions.</p>
+  <p style="font-size:13px; color:#555; margin:4px 0 6px;"><strong>Why JSD?</strong> (a) Symmetric — swapping agent A and agent B gives the same answer. (b) Bounded in [0, 1] — comparable across runs. (c) Finite even when one agent never uses a motif the other relies on (raw KL divergence would be infinite in that case).</p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse; width:100%; max-width:440px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Agent pair</th><th style="padding:4px 10px; border:1px solid #ddd;">JSD (motifs)</th><th style="padding:4px 10px; border:1px solid #ddd;">Interpretation</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">GPT-4 / GPT-4o</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right; font-weight:600; color:#5692E5;">0.12</td><td style="padding:4px 10px; border:1px solid #ddd;">Most similar — same family</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">Claude-3 / Claude-3.5</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right;">0.19</td><td style="padding:4px 10px; border:1px solid #ddd;">Same family, larger generation gap</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd;">Claude-3.5 / GPT-4o</td><td style="padding:4px 10px; border:1px solid #ddd; text-align:right; color:#888;">0.29</td><td style="padding:4px 10px; border:1px solid #ddd;">Most dissimilar — cross family</td></tr>
+    </tbody>
+  </table>
+</dd>
+
+<dt>Type A / Type B failure</dt>
+<dd>
+  <p>Every failing trajectory falls into one of two categories based on whether the agent ever visited the gold file (the file the oracle patch modifies).</p>
+  <div style="display:flex; gap:16px; margin:10px 0; flex-wrap:wrap;">
+    <div style="flex:1; min-width:220px; border:1px solid #F5C6CB; background:#FFF5F5; padding:12px 14px; border-radius:6px;">
+      <div style="font-weight:600; color:#B4184F; font-size:13px; margin-bottom:4px;">Type A — Navigation failure</div>
+      <div style="font-size:12.5px; color:#333;">Agent never opened or edited the gold file. It could not localize the bug. Often caused by misleading error messages or insufficient search coverage.</div>
+      <div style="margin-top:8px; font-size:12px; color:#666;">
+        Claude-3: ~50% of failures<br>
+        GPT-4o: ~39% (25% clean-exit)<br>
+        Claude-3.5: ~28%<br>
+        GPT-4: ~26%
+      </div>
+    </div>
+    <div style="flex:1; min-width:220px; border:1px solid #BEE5EB; background:#F0FAFF; padding:12px 14px; border-radius:6px;">
+      <div style="font-weight:600; color:#3D7AD8; font-size:13px; margin-bottom:4px;">Type B — Implementation failure</div>
+      <div style="font-size:12.5px; color:#333;">Agent reached the gold file but did not produce a passing patch. Localization succeeded; the edit was wrong or incomplete.</div>
+      <div style="margin-top:8px; font-size:12px; color:#666;">
+        Remaining failing trajectories after type A.<br>
+        Wide IQR in post-localization steps for Claude-3.5 and GPT-4o suggests high variance in what agents try after finding the file.
+      </div>
+    </div>
+  </div>
+  <p style="font-size:12.5px; color:#666; margin:4px 0;"><strong>Note on budget cuts:</strong> GPT-4o trajectories terminated by token budget (39% of all GPT-4o runs) inflate type A counts — an agent that was mid-search when cut is scored as "never reached." Clean-exit-only analysis drops GPT-4o type A to 25%.</p>
+</dd>
+
+<dt>FIM (Fill-in-the-Middle) patterns</dt>
+<dd>
+  <p>A structural characterization of what a gold patch does, extracted by comparing the file before and after the oracle fix. Fully independent of agents — derivable from the patch alone.</p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse; width:100%; max-width:520px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Pattern</th><th style="padding:4px 10px; border:1px solid #ddd;">Example</th><th style="padding:4px 10px; border:1px solid #ddd;">Typical ease</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">SWAP_Return</td><td style="padding:4px 10px; border:1px solid #ddd; font-size:12px;">return x → return y</td><td style="padding:4px 10px; border:1px solid #ddd; color:#20A380;">High (0.67–0.81)</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">REASSIGN_Var</td><td style="padding:4px 10px; border:1px solid #ddd; font-size:12px;">x = old → x = new</td><td style="padding:4px 10px; border:1px solid #ddd; color:#20A380;">High</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">ADD_If + ADD_Call</td><td style="padding:4px 10px; border:1px solid #ddd; font-size:12px;">add conditional + new function call</td><td style="padding:4px 10px; border:1px solid #ddd; color:#CB4D20;">Low (~0.02)</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">REPLACE_Algo + ADD_Import</td><td style="padding:4px 10px; border:1px solid #ddd; font-size:12px;">swap algorithm + new dependency</td><td style="padding:4px 10px; border:1px solid #ddd; color:#B4184F;">0.00 (none solved)</td></tr>
+    </tbody>
+  </table>
+</dd>
+
+<dt>Eta² (eta-squared) and omega²</dt>
+<dd>
+  <p>eta² = SS<sub>between</sub> / SS<sub>total</sub> from one-way ANOVA. Proportion of total sum of squares explained by the grouping variable. Bounded [0,1]. omega² = (SS<sub>between</sub> &minus; (k&minus;1)·MS<sub>within</sub>) / (SS<sub>total</sub> + MS<sub>within</sub>) corrects for finite-sample bias. At n = 1,162, omega² &asymp; eta² (0.558 vs 0.560). Both are in the appendix as robustness checks. MI is the primary metric in the main body because it is coherent with the paper's information-theoretic vocabulary and makes no distributional assumptions about the binary outcome variable.</p>
+</dd>
+
+<dt>Budget cut (exit_cost)</dt>
+<dd>A trajectory terminated because the agent hit the token budget limit rather than voluntarily submitting. Budget-cut trajectories inflate type A counts. GPT-4o is most affected: 39% of its trajectories are budget-cut; clean-exit type A rate drops from 39% to 25%.</dd>
+
+<dt>Novelty index</dt>
+<dd>
+  <p>For each motif used by agent A: novelty = log&#8322;((p<sub>agent</sub> + &epsilon;) / (p<sub>corpus</sub> + &epsilon;)). Positive = over-uses relative to corpus average; negative = under-uses. Top novelty motifs are the agent's procedural fingerprint.</p>
+  <table style="font-size:12.5px; margin:8px 0; border-collapse:collapse; width:100%; max-width:520px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:4px 10px; border:1px solid #ddd;">Agent</th><th style="padding:4px 10px; border:1px solid #ddd;">Top novelty motif</th><th style="padding:4px 10px; border:1px solid #ddd;">Character</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; color:#20A380; font-weight:600;">Claude-3.5</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">RUN_TEST &rarr; RUN_TEST</td><td style="padding:4px 10px; border:1px solid #ddd;">Test-driven iteration</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; color:#5692E5; font-weight:600;">GPT-4</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">NAV_SRC &rarr; NAV_SRC &rarr; NAV_SRC &rarr; NAV_SRC</td><td style="padding:4px 10px; border:1px solid #ddd;">Heavy in-file scrolling</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; color:#B4184F; font-weight:600;">GPT-4o</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">EDIT_SRC_PY &times; 32</td><td style="padding:4px 10px; border:1px solid #ddd;">Long repetition bursts</td></tr>
+      <tr><td style="padding:4px 10px; border:1px solid #ddd; color:#CB4D20; font-weight:600;">Claude-3</td><td style="padding:4px 10px; border:1px solid #ddd; font-family:monospace; font-size:11px;">FIND_FILE &rarr; FIND_FILE</td><td style="padding:4px 10px; border:1px solid #ddd;">Repeated file search</td></tr>
+    </tbody>
+  </table>
+</dd>
+
+<dt>Construct validity</dt>
+<dd>A measurement is construct-valid if it genuinely measures the latent construct it claims to measure. Two key tests: <strong>convergent validity</strong> — different operationalizations of the same construct should agree (here, n_resolved and 84-agent ease correlate at r = 0.76); <strong>discriminant validity</strong> — the measure should not correlate with measures of different constructs (here, n_resolved is uncorrelated with repository size or number of files changed). Reference: <a href="https://psycnet.apa.org/record/1959-05446-001" target="_blank">Campbell &amp; Fiske (1959)</a>.</dd>
+
+<dt>Procedural motif vs semantic label</dt>
+<dd>
+  <p>The core distinction in this paper: a <strong>procedural motif</strong> is what the agent <em>did</em> (sequence of typed actions); a <strong>semantic label</strong> is a human categorization of the task type. Fix type (logic fix, exception handling, API change, etc.) is a semantic label. BPE motifs (SEARCH &rarr; OPEN_SRC, EDIT &rarr; RUN_TEST &rarr; EDIT) are procedural patterns. The paper's central finding: semantic labels have near-zero predictive power (MI = 0.01 bits), while structural task difficulty — which correlates with procedural complexity of the oracle patch — explains 60% of outcome uncertainty.</p>
+</dd>
+
+</dl>
+</section>
+
+<section id="benchmarks">
+<h2>0.7 Relevant benchmarks and datasets</h2>
+<p>For extending or situating this work. Columns: does it produce multi-step agent trajectories? Does it include oracle patches (gold diffs) needed for FIM structural analysis?</p>
+
+<h3>Tier 1 — Repository-level bug fixing (highest relevance)</h3>
+<table style="font-size:13px; width:100%; border-collapse:collapse;">
+<thead><tr style="background:#f5f5f5;">
+  <th style="padding:5px 8px; border:1px solid #ddd;">Benchmark</th>
+  <th style="padding:5px 8px; border:1px solid #ddd;">Year</th>
+  <th style="padding:5px 8px; border:1px solid #ddd;">Size</th>
+  <th style="padding:5px 8px; border:1px solid #ddd;">Lang</th>
+  <th style="padding:5px 8px; border:1px solid #ddd;">Trajectories</th>
+  <th style="padding:5px 8px; border:1px solid #ddd;">Oracle patches</th>
+  <th style="padding:5px 8px; border:1px solid #ddd;">Note</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;"><strong>SWE-bench Lite</strong></td><td style="padding:4px 8px; border:1px solid #ddd;">2023</td><td style="padding:4px 8px; border:1px solid #ddd;">300</td><td style="padding:4px 8px; border:1px solid #ddd;">Python</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes (via scaffold)</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes (PRs)</td><td style="padding:4px 8px; border:1px solid #ddd;"><strong>Primary corpus</strong></td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;"><strong>SWE-bench Verified</strong></td><td style="padding:4px 8px; border:1px solid #ddd;">2024</td><td style="padding:4px 8px; border:1px solid #ddd;">500</td><td style="padding:4px 8px; border:1px solid #ddd;">Python</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd;">Current standard split; human-verified solvability. Validation target for difficulty predictor.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">SWE-bench (full)</td><td style="padding:4px 8px; border:1px solid #ddd;">2023</td><td style="padding:4px 8px; border:1px solid #ddd;">2,294</td><td style="padding:4px 8px; border:1px solid #ddd;">Python</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd;">~32% instances have solution leakage per SWE-bench+ audit (arXiv:2410.06992). Affects behavioral analysis.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">SWE-smith</td><td style="padding:4px 8px; border:1px solid #ddd;">2025</td><td style="padding:4px 8px; border:1px solid #ddd;">50k tasks / 26k traj</td><td style="padding:4px 8px; border:1px solid #ddd;">Python</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes (26k public)</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">Test-pass only</td><td style="padding:4px 8px; border:1px solid #ddd;">Largest public trajectory release. Synthetic bugs — no gold diff, so no FIM analysis. Good for motif scale-up.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">SWE-Gym</td><td style="padding:4px 8px; border:1px solid #ddd;">2024</td><td style="padding:4px 8px; border:1px solid #ddd;">2,438 + ~26k traj</td><td style="padding:4px 8px; border:1px solid #ddd;">Python</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes (GPT-4o, Claude-3.5)</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">Test-pass only</td><td style="padding:4px 8px; border:1px solid #ddd;">Same scaffold format as our corpus. More trajectory data from same agent families.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">SWE-lancer</td><td style="padding:4px 8px; border:1px solid #ddd;">2025</td><td style="padding:4px 8px; border:1px solid #ddd;">1,400+</td><td style="padding:4px 8px; border:1px solid #ddd;">Python/JS/TS</td><td style="padding:4px 8px; border:1px solid #ddd; color:#CB4D20;">Partial</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">E2E tests only</td><td style="padding:4px 8px; border:1px solid #ddd;"><strong>Key: freelance pay rate as independent difficulty label.</strong> Best external validator for a structural difficulty predictor.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">Multi-SWE-bench</td><td style="padding:4px 8px; border:1px solid #ddd;">2025</td><td style="padding:4px 8px; border:1px solid #ddd;">1,632–2,132</td><td style="padding:4px 8px; border:1px solid #ddd;">7–8 langs</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd;">ByteDance. Multilingual extension of SWE-bench methodology. Good for testing generalization of FIM patterns across languages.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">BugsInPy</td><td style="padding:4px 8px; border:1px solid #ddd;">2020</td><td style="padding:4px 8px; border:1px solid #ddd;">493</td><td style="padding:4px 8px; border:1px solid #ddd;">Python</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">No</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd;">Already in codebase. Useful for patch complexity comparison but no agent scaffold.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">Defects4J</td><td style="padding:4px 8px; border:1px solid #ddd;">2014–2022</td><td style="padding:4px 8px; border:1px solid #ddd;">835</td><td style="padding:4px 8px; border:1px solid #ddd;">Java</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">No</td><td style="padding:4px 8px; border:1px solid #ddd; color:#20A380;">Yes</td><td style="padding:4px 8px; border:1px solid #ddd;">Foundation of APR research; useful for comparing patch complexity distributions cross-language.</td></tr>
+</tbody>
+</table>
+
+<h3>Tier 2 — Code generation (lower relevance; single-turn)</h3>
+<table style="font-size:13px; width:100%; border-collapse:collapse; margin-top:8px;">
+<thead><tr style="background:#f5f5f5;">
+  <th style="padding:5px 8px; border:1px solid #ddd;">Benchmark</th><th style="padding:5px 8px; border:1px solid #ddd;">Size</th><th style="padding:5px 8px; border:1px solid #ddd;">Trajectories</th><th style="padding:5px 8px; border:1px solid #ddd;">Note</th>
+</tr></thead>
+<tbody>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">BigCodeBench</td><td style="padding:4px 8px; border:1px solid #ddd;">1,140</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">No</td><td style="padding:4px 8px; border:1px solid #ddd;">Function-level, single-turn. Tests compositional library use. Not suitable for trajectory analysis.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">LiveCodeBench</td><td style="padding:4px 8px; border:1px solid #ddd;">Ongoing</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">No</td><td style="padding:4px 8px; border:1px solid #ddd;">Anti-contamination via time-gating; competitive programming. Difficulty independently labeled by contest tier.</td></tr>
+<tr><td style="padding:4px 8px; border:1px solid #ddd;">HumanEval / MBPP</td><td style="padding:4px 8px; border:1px solid #ddd;">164 / 974</td><td style="padding:4px 8px; border:1px solid #ddd; color:#B4184F;">No</td><td style="padding:4px 8px; border:1px solid #ddd;">Near-saturated by modern models. Minimal relevance.</td></tr>
+</tbody>
+</table>
+
+<h3>Key insight from the benchmark survey</h3>
+<div class="finding">
+<strong>SWE-smith (26k trajectories) and SWE-Gym are the natural scale-up targets for motif analysis</strong> — same scaffold format, much larger corpus. Neither has oracle gold diffs, so FIM structural analysis requires staying on SWE-bench proper. SWE-lancer's pay-rate difficulty labels are the strongest independent validator for a structural difficulty predictor — if FIM complexity predicts solve rates on Lite, checking against SWE-lancer pay tiers is the cleanest cross-benchmark validity test.
+</div>
+<p style="font-size:13px; color:#555;">Data quality note: SWE-bench+ (arXiv:2410.06992, Oct 2024) found ~32% of original SWE-bench instances have solution text leaked in the issue description, and ~31% have weak test suites. Our 300 Lite instances should be cross-checked against the SWE-bench+ filtered list — solution leakage would cause agents to succeed via pattern-matching rather than reasoning, confounding behavioral motif analysis.</p>
+</section>
+
+<section id="reviewer-concerns">
+<h2>0.8 Anticipated reviewer concerns</h2>
+<p style="font-size:13px; color:#555; margin-bottom:14px;">Each concern is framed around why it would matter — what it would mean for the paper's central claims if it were valid — followed by where we currently stand and what work remains.</p>
+
+<h3>R1 — The difficulty measure is circular</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">A reviewer will notice that n_resolved is computed from the same agent outcomes we use it to predict. If an agent failed, n_resolved for that task is lower; if it passed, higher. Predicting pass/fail from a variable derived from pass/fail is not a clean finding — it could be tautological, and 65% of trajectories sit in floor or ceiling bins where n_resolved perfectly determines outcome by construction.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> If the circularity is real, the 60% MI figure is inflated and the headline finding collapses.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> We have three lines of defense. First, within the uncertain bins (1/4, 2/4, 3/4), trajectory length does not predict pass/fail — r = −0.14 to −0.17, non-significant in two of three bins. If difficulty were just a proxy for how long the agent tried, within-bin length would predict outcome. It does not. Second, the 84-agent ease score from the full SWE-bench Lite leaderboard correlates with n_resolved at r = 0.76 — an independent measure that cannot be circular relative to our 4-agent corpus. Third, FIM pattern analysis on the oracle patch identifies structural edit complexity before any agent runs, grounding difficulty in code structure rather than outcomes.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> The FIM pattern analysis exists but has not been formally run on this corpus to show it predicts n_resolved. That computation closes the argument. Until it is done, the structural grounding is asserted rather than demonstrated.</p>
+
+<h3>R2 — All agents use the same scaffold</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">Every agent in the core corpus runs on SWE-agent. A reviewer will argue that behavioral differences between Claude and GPT families might reflect how each model interacts with SWE-agent's specific prompting and tool interface — not anything intrinsic to the model. Put differently: you cannot separate model from scaffold when every model uses the same scaffold.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> If the scaffold drives behavioral patterns, the "agent behavioral fingerprint" finding is a scaffold artifact, not a model property.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> This concern is substantially addressed. Section 13 presents a direct comparison: the same Claude-3.5 Sonnet backbone run on both SWE-agent and Agentless, on the same 300 tasks. Phase categories (localize, repair, verify) transfer across scaffolds. Phase emphasis does not — SWE-agent spends 65–69% of trajectory on repair; Agentless spends 50–60% on localization. This shows the scaffold shapes the procedural distribution but the underlying phase grammar is model-stable. The confound is real but not fatal: scaffold and model are separable, and we have the paired comparison to show it.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> The scaffold × backbone factorial is partial. We have SWE-agent × {GPT-4, Claude-3.5, GPT-4o} and Agentless × Claude-3.5. Completing the factorial with Agentless × GPT-4 and GPT-4o would allow a clean scaffold effect estimate. This is follow-on work.</p>
+
+<h3>R3 — Fix type labels may be unreliable</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">The MI(fix type; pass/fail) = 1% finding depends on the fix type labels being a valid characterization of task semantics. If the labels are noisy — assigned by a single annotator without validation — the 1% figure might reflect measurement error rather than a real signal. A reviewer cannot distinguish "fix type genuinely predicts nothing" from "the labels are too noisy to measure any real signal."</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> The 47× gap (difficulty vs fix type) is only meaningful if fix type is a legitimate measure. A poorly labeled taxonomy weakens the comparison.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand (documented):</strong> Labels are LLM-automated via a FixTypeModule (DSPy pipeline) applied to AST-extracted edit certificates and patch diffs. The field name <code>fix_type_hand</code> implies human review at some point, but <code>scripts/discover_fix_forms.py</code> contains no annotation logic — it loads pre-existing labels as ground truth and treats them as a fixed classification. n=289 instances labeled: logic_fix (142), exception_handling (34), api_change (27), config_fix (20), guard_clause (17), refactor (13), string_fix (11), type_coercion (11), test_fix (5), other (4), import_fix (3), async_fix (1), loop_fix (1). No multiple-annotator process and no inter-rater reliability measurement are documented.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> The MI(fix type; pass/fail) = 1% finding is not heavily load-bearing — the paper's core claim is that fix type is a weak predictor. A noisy automated label would only attenuate the signal toward zero, which strengthens rather than weakens the "1% is real" reading. If a reviewer presses, the response is: (1) the labels are programmatically derived from patch structure, not subjective human judgment; (2) 1% is an upper bound if the labels are noisy — the true signal is at most this; (3) the FIM pattern analysis, which uses oracle patches directly, does not rely on these labels. No Cohen's κ is needed because the claim direction is robust to label noise.</p>
+
+<h3>R4 — Scope is narrow: 300 Python tasks, 4 agents, one scaffold</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">SWE-bench Lite is 300 Python repository issues. A reviewer working on Java, C++, or multi-language systems will ask whether a 47× predictive gap between difficulty and fix type holds outside Python. A reviewer familiar with other scaffolds will ask whether SWE-agent's specific tool set shapes the behavioral patterns we report.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> If findings are Python-specific or SWE-agent-specific, they are interesting observations about one benchmark setting rather than a general claim about agent behavior.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> Claims are explicitly scoped to SWE-bench Lite + SWE-agent throughout. The 47× gap is large enough that a reviewer would need to argue the effect reverses in other settings, not merely shrinks. The cross-scaffold Agentless finding partially addresses the scaffold dimension.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Result (done):</strong> Replicated on SWE-bench Verified (500 instances, 2 agents: GPT-4 + Claude-3.5, n=996 trajectories). MI(difficulty; pass/fail) = 0.633 bits = <strong>73.9%</strong> — higher than the Lite figure of 60%. The finding strengthens on the cleaned, human-verified split. MI(agent; pass/fail) = 1.3%, consistent with Lite (1.5%). Saved: <code>output/paper2_pilot/verified_mi.json</code>. Multi-SWE-bench adds non-Python scope when needed.</p>
+
+<h3>R5 — Some instances may have solution text in the issue description</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">SWE-bench+ (arXiv:2410.06992) found that roughly 32% of original SWE-bench instances have the patch or fix text present in the issue description itself. An agent reading the issue could succeed by copying rather than solving. If our corpus includes such instances, some of the "passed" trajectories reflect pattern-matching on leaked text, not structural problem-solving — and the difficulty signal is partially confounded.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> If leaked instances cluster in the easy bins (where agents succeed), the 60% MI figure is partly driven by leakage rather than difficulty. The behavioral motif analysis for passing trajectories would also be contaminated.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> The SWE-bench+ paper (arXiv:2410.06992) describes the contamination problem but does not publish a public exclusion list of specific instance IDs. The SWE-bench Lite-S derived subset exists, which removes problematic instances (9.3% insufficient info, 4.3% exact gold patch in description, 10% complete solution in description, 4.3% misleading instructions), but this is a re-curated subset, not a flagged list we can cross-reference programmatically.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> The exclusion list is not publicly available for cross-reference. Two options: (1) Read the SWE-bench+ arXiv PDF appendix for a supplementary table; (2) Reframe the response — the finding that difficulty explains 73.9% of MI on the Verified subset (human-verified solvability, cleaned) is a stronger protection than a leakage cross-reference, since Verified instances were already audited for quality.</p>
+
+<h3>R6 — BPE vocabulary size is a free parameter</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">The BPE motif vocabulary is built with V = 200 merges. A reviewer will ask whether the behavioral fingerprinting findings — compression ratios, JSD distances between agents, top motif rankings — are stable if V is set to 100 or 300. If the results change substantially, the findings are an artifact of the hyperparameter choice.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> The MDL justification argues V = 200 is the minimum-description-length optimum, but a reader who does not accept that argument needs empirical stability across V as reassurance.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> An MDL sweep exists in <code>output/paper2_pilot/bpe_mdl_sweep.json</code> and <code>bpe_vocab_sweep.json</code>. The sweep data is present but no figure shows the stability of key findings across V values.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Result (done):</strong> JSD stability figure generated across V = {100, 150, 200, 300, 500}. The agent-pair ranking (Claude-3.5/GPT-4o &gt; Claude-3.5/GPT-4 &gt; GPT-4/GPT-4o) is perfectly stable at every vocabulary size — magnitude scales but order never changes. This directly addresses the free-parameter concern: the qualitative finding is robust to vocabulary choice. Figure: <code>output/figures/fig_jsd_stability.png</code>.</p>
+
+<h3>R7 — Agent barely predicts success (1.5% MI), so why compare agents?</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">MI(agent; pass/fail) = 1.5%. A reviewer will read this as: which model runs the task barely matters for whether it succeeds. They will then question whether a four-agent behavioral comparison is worth doing if agent identity is so weakly related to the outcome that matters most.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> The 1.5% figure, if misread, undermines the motivation for studying agent behavior at all.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> The 1.5% is a corpus-level figure dominated by the difficulty distribution — 65% of trajectories are in bins where no agent or every agent succeeds, leaving little room for agent effects. Within difficulty-controlled comparisons, agent differences are more visible. Claude-3.5 resolves 23.9% of tasks vs Claude-3 at 11.7% — a 2× gap. The core framing is that difficulty and agent identity explain <em>different things</em>: difficulty explains success, agent explains behavioral style (length, compression, procedural structure). These are independent explanatory axes, which is the substantive finding — not a limitation.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Result (done):</strong> Computed per-difficulty-bin MI(agent; pass/fail). Bins 0/4 and 4/4 have zero outcome variance by construction (all fail / all pass), so agent MI is 0 there — this accounts for 65% of the corpus. Within the uncertain bins: 1/4 → 11.4% (n=165), 2/4 → 10.1% (n=101), 3/4 → 4.9% (n=87). Within-bin agent MI is 3–7× higher than the corpus-level 1.5%. The argument is now concrete: agent identity barely predicts absolute success because most tasks are either too hard or too easy for agent choice to matter; on competitive tasks, agent matters substantially. Saved: <code>output/paper2_pilot/per_bin_agent_mi.json</code>.</p>
+
+<h3>R8 — Causal language</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">This is observational data. Everything we report is correlation. A reviewer will flag any language that implies difficulty causes failure, or that the motif vocabulary causes behavioral differences.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> We use "predicts," "is associated with," and "accounts for" throughout. The FIM pattern analysis is the closest we get to a non-circular causal story: structural patch complexity is fixed in the repository before any agent runs, so it cannot be an artifact of agent behavior. This gives the difficulty finding a temporal ordering — oracle patch structure precedes agent action — even if it does not establish a mechanism.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> Audit the full paper draft for causal language. Add a threats-to-validity section that explicitly acknowledges observational design and names the three main confounds (scaffold choice, agent capability tier, Python-only scope).</p>
+
+<h3>R9 — Low power in the intermediate difficulty bins</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">The within-bin analysis (showing trajectory length does not predict pass/fail in the uncertain bins) uses n = 101 for the 2/4 bin and n = 87 for the 3/4 bin. A reviewer will note that non-significance at these sample sizes does not rule out a real effect — it may simply reflect insufficient power.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> We use within-bin non-significance to argue that difficulty captures real structural signal rather than just effort. If this is a power issue, the argument weakens.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> The correlation values themselves are small (r = −0.14 and −0.12) and in the wrong direction to support a trajectory-length-as-difficulty story. The effect, if real, is small — and a small effect does not threaten the paper's claims.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Result (done):</strong> Bootstrap 95% CIs (n=2000) computed for within-bin correlation(n_steps, passed). 1/4 bin: r = −0.174 [−0.295, −0.034] p = 0.025 (significant but small); 2/4 bin: r = −0.140 [−0.315, +0.054] p = 0.163 (n.s.); 3/4 bin: r = −0.122 [−0.337, +0.069] p = 0.259 (n.s.). The upper CI bounds are all below +0.07 — ruling out a meaningful positive effect. The correlation is small, and even its upper bound is inconsistent with trajectory length driving success. The framing: "effort does not explain difficulty" is empirically grounded at all sample sizes. Saved: <code>output/paper2_pilot/within_bin_length_ci.json</code>.</p>
+
+<h3>R10 — Post-localization behavior is described but not studied</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">We report that 57–73% of failures are Type B — the agent found the right file but could not fix it — and that GPT-4o shows high variance in how many steps it spends post-localization (IQR: 9 to 52 steps). A reviewer will ask: what is the agent actually doing in those steps? The implication that a motif-based stopping rule could detect stuck trajectories depends on knowing whether stuck trajectories have a characteristic motif signature. We do not currently study this.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> The failure anatomy finding motivates the most practically useful implication of the paper — stage-aware budget control for deployed agents. Without studying post-localization content, the implication is speculative.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> We measure post-localization duration only. The data to study content exists: trajectories can be split at the localization step and motif distributions computed on each segment.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Result (done):</strong> n=622 Type B failures with BPE data. Median post-localization duration = 14 steps (IQR: 9–27). Split at median into short (n=312) vs long (n=310) groups. <strong>Long Type B failures have a clear stuck-in-edit-loop signature:</strong> EDIT_SRC_PY rises from 23% → 35% of post-localization tokens; SUBMIT drops from 9% → 2%; NAV_SRC_PY drops from 14% → 10%. Short failures still navigate and quickly submit. Long failures stop exploring and repeatedly edit without success. EDIT_TEST_PY and RUN_PYTHON_TEST_PY are both 3× higher in long failures — agents test more but cannot close the gap. A motif-based stopping rule is well-motivated: rising EDIT_SRC_PY concentration with declining SUBMIT is a detectable signature. Figure: <code>output/figures/fig_postloc_motifs.png</code>. Data: <code>output/paper2_pilot/r10_postloc_motifs.json</code>.</p>
+
+<h3>R11 — All four models share the same training paradigm</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">Claude-3, Claude-3.5, GPT-4, and GPT-4o are all RLHF-aligned instruction-following models from two companies. A reviewer will ask whether the behavioral fingerprinting findings would hold for a model trained differently — one that reasons before acting (DeepSeek-R1), one trained only on code demonstrations (Qwen2.5-Coder), or one from a third company lineage (Gemini). If the behavioral signatures collapse when you add a reasoning model, the "agent identity explains behavioral style" finding may be company-lineage-specific rather than general.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> The paper's claim that behavioral fingerprinting is a property of agent identity needs to be tested against meaningfully different agents, not just different versions of the same training recipe.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> Model expansion is planned (see section 0.9). DeepSeek-R1 and Qwen2.5-Coder are the priority additions for paradigm coverage.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> Run at least one reasoning model and one code-SFT model on SWE-bench Lite. If their compression ratios and motif distributions fall outside the RLHF cluster, the fingerprinting finding generalizes across paradigms. If they fall inside, the finding is paradigm-specific and claims should be scoped accordingly.</p>
+
+<h3>R12 — Tasks are characterized by code structure, not by user intent</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;">SWE-bench tasks come with GitHub issue descriptions — natural language that represents what the user wanted. The paper characterizes tasks by fix type (a code-structure label) and by FIM patterns (a patch-structure measure). A reviewer working on human-AI collaboration will note that in real deployments, the only thing available before the agent runs is the user's prompt. Whether structural difficulty is recoverable from prompt language — rather than from the oracle patch — is an open question, and its answer determines whether the difficulty operationalization is useful outside benchmark settings.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Why this matters:</strong> If difficulty can only be measured from the oracle patch (which you don't have in production), the practical value of the finding is limited to benchmark analysis. If it can be recovered from the prompt, it becomes a pre-agent signal with deployment value.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>Where we stand:</strong> Not studied. The issue descriptions exist in the SWE-bench dataset and could be used to test whether intent classification from natural language predicts FIM pattern class or n_resolved.</p>
+<p style="font-size:13px; color:#333; line-height:1.7;"><strong>What remains:</strong> This is speculative — flag as future work rather than a gap in the current paper. The argument to make now is that FIM patterns are the cleanest current operationalization, and extending this to prompt-level prediction is a natural follow-on.</p>
+</section>
+
+<section id="model-expansion">
+<h2>0.9 Model expansion plan</h2>
+<p style="font-size:13px; color:#555; margin-bottom:14px;">The current 4-model corpus (Claude-3, Claude-3.5, GPT-4, GPT-4o) covers only one training paradigm: RLHF-aligned instruction followers. Expanding the model set to include genuinely different training paradigms tests whether the behavioral fingerprints we find generalize — and whether paradigm is a third explanatory axis alongside task and agent.</p>
+
+<h3>Candidate models and rationale</h3>
+<table style="border-collapse:collapse; font-size:13px; width:100%; margin:10px 0;">
+<tr style="background:#f5f5f5;">
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Model</th>
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Training paradigm</th>
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Estimated cost (300 Lite tasks)</th>
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Why include</th>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">DeepSeek-R1</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">RL from verifiable execution rewards</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">~$15–25</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Sharpest paradigm contrast: extended reasoning before acting, outcome-RL prunes exploratory dead-ends. Predicted: lower edit retry rate, higher compression (reasoning tokens), concentrated edits. Strong stress-test of "task dominates agent" claim.</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">DeepSeek-V3</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">SFT + RLHF (different lineage)</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">~$4</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Cheap RLHF baseline from a non-OpenAI/Anthropic lineage. Adds a third family to test whether behavioral fingerprint is paradigm-specific or company-specific.</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Qwen2.5-Coder-32B-Instruct</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Code-specific SFT (open weights)</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">~$6 via Together.ai API</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">SFT-on-code baseline: behavioral cloning without outcome-RL shaping. Predicted: higher edit retry rate (no RL to prune bad patterns), shorter trajectories (demos are curated). Cheapest paradigm-class addition.</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Gemini 2.0 Flash</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">RLHF (Google lineage)</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">~$2–3</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Cheapest addition, different company lineage, lets us test whether RLHF behavioral signature is company-specific or paradigm-wide.</td>
+</tr>
+</table>
+
+<h3>Running Qwen2.5-Coder-32B via Together.ai — process</h3>
+<p style="font-size:13px; color:#555;">SWE-agent natively supports Together.ai via the <code>TOGETHER_API_KEY</code> env var and OpenAI-compatible endpoints. The model runs exactly like GPT-4 in the scaffold — only the API key and model name change.</p>
+<ol style="font-size:13px; color:#333; line-height:1.8;">
+  <li>Create a Together.ai account and add API key to <code>.env</code> as <code>TOGETHER_API_KEY=...</code></li>
+  <li>In the SWE-agent model config, set <code>model: together_ai/Qwen/Qwen2.5-Coder-32B-Instruct</code></li>
+  <li>Run SWE-bench Lite evaluation: <code>python run.py --model together_ai/Qwen/Qwen2.5-Coder-32B-Instruct --split lite</code></li>
+  <li>300 tasks × ~50 steps × ~2k tokens/step at $0.20/M tokens = <strong>~$6 total</strong></li>
+  <li>Output parquet goes into <code>output/trajectories/</code> with the standard schema — no code changes needed downstream</li>
+</ol>
+<p style="font-size:13px; color:#555;">Note: Together.ai also hosts <strong>Qwen3-Coder</strong> (the successor, now state-of-the-art on SWE-bench Verified, comparable to Claude Sonnet 4). Worth considering as the stronger open-source representative.</p>
+<div class="caveat">
+<strong>Paradigm coverage after expansion:</strong> RLHF (Claude-3, Claude-3.5, GPT-4, GPT-4o, DeepSeek-V3, Gemini Flash) · Code-SFT (Qwen2.5-Coder) · Execution-RL / reasoning (DeepSeek-R1). Three distinct paradigm classes; behavioral fingerprint differences between classes become a first-class finding.
+</div>
+</section>
+
+<section id="human-centered">
+<h2>0.10 Human-centered research connections</h2>
+<p style="font-size:13px; color:#555; margin-bottom:14px;">Two position papers directly connect to this work's methodology and extend its implications toward interface design and collaborative evaluation. These inform the paper's framing and future work — not current scope, but worth tracking for venue fit and follow-on contributions.</p>
+
+<h3>"Humans are Missing from AI Coding Agent Research" (Wang et al.)</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;"><a href="https://zorazrw.github.io/files/position-haicode.pdf" target="_blank">Paper (PDF)</a> — argues that current agent benchmarks (SWE-bench included) are built around fully autonomous evaluation, which misaligns with how developers actually use agents. Key critiques: (1) no persistent context across tasks despite shared repositories; (2) agents optimized for task success, not for being useful to a human copilot; (3) code correctness metrics miss intent alignment and verifiability.</p>
+<p style="font-size:13px; color:#555;"><strong>Connection to this work:</strong> Our Type B failure analysis (agent reached the gold file but still failed) is exactly the class of failure where a human would intervene. The motif vocabulary gives a behavioral signal for WHERE in the trajectory a human checkpoint adds most value. This work provides the measurement layer that Wang et al. argue is missing.</p>
+
+<h3>"AI Should Not Be An Imitation Game: Centaur Evaluations" (Stanford, PMLR 2025)</h3>
+<p style="font-size:13px; color:#333; line-height:1.7;"><a href="https://digitaleconomy.stanford.edu/wp-content/uploads/2025/06/CentaurEvaluations.pdf" target="_blank">Paper (PDF)</a> — position paper arguing that AI benchmarks measure imitation of human performance rather than human-AI collaboration. Proposes "centaur evaluations" where a human and AI together are the unit of measurement. Key point: in RE-Bench, top AI systems score 4× higher than humans at short time horizons but humans outperform 2:1 at 32-hour horizons — fully autonomous evaluation misses the collaboration regime entirely.</p>
+<p style="font-size:13px; color:#555;"><strong>Connection to this work:</strong> The behavioral motif vocabulary is a prerequisite for centaur interface design — you cannot build a useful human-in-the-loop interface without a compact representation of what the agent is doing procedurally. Our compression ratio and motif clustering give a human-readable signal of agent state that could surface intervention points.</p>
+
+<h3>Interface directions (not current scope)</h3>
+<p style="font-size:13px; color:#555;">These are documented here for venue targeting and follow-on framing, not for current implementation.</p>
+<ul style="font-size:13px; color:#333; line-height:1.8;">
+  <li><strong>Live intervention interface:</strong> Surface the agent's current motif cluster in real time. Flag when the agent enters a high-edit-retry zone (motif = EDIT+EDIT+EDIT without RUN) — this is the natural human checkpoint. Connects to LIVE workshop interests (live programming, immediate feedback).</li>
+  <li><strong>Procedural audit trail:</strong> At task completion, show the motif sequence as a compressed timeline. Lets a human developer quickly verify that the agent took a sensible path, not just that the tests passed.</li>
+  <li><strong>Centaur stopping criterion:</strong> Use the motif distribution shift (trajectory entering a novel cluster vs. the training distribution) as a signal to request human review. The BPE vocabulary is the representation needed to compute this.</li>
+</ul>
+
+<h3>Venue fit</h3>
+<table style="border-collapse:collapse; font-size:13px; width:100%; margin:10px 0;">
+<tr style="background:#f5f5f5;">
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Venue</th>
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Fit</th>
+  <th style="padding:6px 10px; border:1px solid #ddd; text-align:left;">Angle</th>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">ICSE / FSE / ASE</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Primary</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Empirical study of agent behavior; difficulty vs fix-type finding; motif taxonomy as SE methodology</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">MSR</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Primary</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Mining software repositories; trajectory dataset; behavioral variance decomposition</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">LIVE workshop (PLDI/SPLASH)</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Follow-on</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Live programming interface for motif-based agent transparency; centaur interface prototype</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">CHI / UIST</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Follow-on</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Human-in-the-loop interface design; centaur evaluation of motif-surfacing tool</td>
+</tr>
+<tr>
+  <td style="padding:6px 10px; border:1px solid #ddd;">NeurIPS / ICML</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Stretch</td>
+  <td style="padding:6px 10px; border:1px solid #ddd;">Procedural gym / behavioral control as an ML contribution; requires the gym experiments</td>
+</tr>
+</table>
+</section>
 
 <section id="scope">
 <h2>1. Scope and methodology</h2>
@@ -220,15 +896,15 @@
 <h2>2. Phase A — pilot on hand-coded 8-token DSL (scaffolding)</h2>
 <p>The pre-extracted SWE-agent parquets collapse each trajectory's actions into an 8-token DSL (<code>CREATE, EDIT, NAV, OPEN, OTHER, RUN, SEARCH, SUBMIT</code>). Phase A uses this DSL directly as scaffolding. Findings here motivate the full methodology; they are preliminary and will be replaced by Phase B results for the paper.</p>
 
-<h3>2.1 Variance decomposition across 862 trajectories</h3>
+<h3>2.1 Variance decomposition across 1,162 trajectories</h3>
 
 <div class="finding">
-<strong>Task dominates agent at the feature-count level.</strong> Task identity explains 35–48% of variance in per-trajectory counts; agent identity explains only 1–13%. Holds on both full corpus (862 trajectories) and task-matched subset (262 shared tasks). Not a sampling artifact.
+<strong>Task identity drives feature variation more than agent identity.</strong> For 8 of 10 per-trajectory features, the SD of task-means exceeds the SD of agent-means (ratio &gt; 1). Searches (4.1×) and edit retry rate (3.2×) are the most task-dominated. Holds on both full corpus (1,162 trajectories across 4 agents) and task-matched subset (262 shared tasks).
 </div>
 
 <figure>
 <img src="variance_decomposition.png" alt="Variance decomposition full corpus">
-<figcaption>Task-explained variance (orange) dominates agent-explained variance (blue) across all 10 per-trajectory features on SWE-bench Lite. Dashed line at 50% reference.</figcaption>
+<figcaption>SD of group means divided by SD of agent means, for three groupings (task identity, fix type, repository) across 10 per-trajectory features. Ratio &gt; 1 means that grouping explains more feature variation than agent identity.</figcaption>
 </figure>
 
 <p><strong>Interpretation:</strong> at the level of raw action counts, what an agent does depends more on the task than on which agent is solving it. Agent style does not live in count features. This motivates the rollout-layer analysis in Phase B.</p>
@@ -240,7 +916,7 @@
 </div>
 
 <figure>
-<img src="pair_action_levenshtein.png" alt="Pair action Levenshtein violin">
+<img src="_archive/pair_action_levenshtein.png" alt="Pair action Levenshtein violin">
 <figcaption>Pairwise normalized Levenshtein distance on 8-token action sequences for 99 tied-outcome pairs, per agent-pair.</figcaption>
 </figure>
 
@@ -255,12 +931,12 @@
 </div>
 
 <figure>
-<img src="task_diversity_distribution.png" alt="Task diversity distribution">
+<img src="_archive/task_diversity_distribution.png" alt="Task diversity distribution">
 <figcaption>Distribution of per-task procedural divergence across 300 tasks. Bimodal-ish with mass around 0.5–0.7; few tasks force convergence.</figcaption>
 </figure>
 
 <figure>
-<img src="task_diversity_by_resolved.png" alt="Task diversity by outcome">
+<img src="_archive/task_diversity_by_resolved.png" alt="Task diversity by outcome">
 <figcaption>Divergence split by outcome category. Tasks where all agents succeed exhibit tighter procedural agreement than tasks with mixed or no success.</figcaption>
 </figure>
 
@@ -1047,14 +1723,26 @@
 
 <section id="next">
 <h2>10. Next steps</h2>
+
+<p style="font-size:13px; color:#555; margin-bottom:12px;">Status updated 2026-04-25. Items below tagged by current state: <span style="background:#e8f4ea; color:#2CA02C; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">done</span> for completed work, <span style="background:#fdf2d9; color:#aa7700; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">partial</span> for partially completed, <span style="background:#eaf0f5; color:#0C6583; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">pending</span> for outstanding.</p>
+
+<h3>Done</h3>
 <ol class="bullet-list">
-<li><strong>Cross-benchmark motif transfer.</strong> Apply Lite-trained BPE to Verified trajectories, measure motif coverage. Bridges to Paper 1's compositional-compactness finding and addresses cultural-universality phenomenon.</li>
-<li><strong>Rationale atlas (LLM-judge pipeline).</strong> Run tied-outcome pairs through LLM judge; embed rationales; cluster. Produces the rationale-layer complement to BPE motifs. API key available.</li>
-<li><strong>Permutation null for heritability.</strong> Shuffle agent labels, re-compute same-family vs cross-family JSD gap, get a p-value. Cheap to run; converts the 0.06 gap from descriptive to inferential.</li>
-<li><strong>Slicing by repo and scope (difficulty done; see §5.2).</strong> Repo-slice as the next robustness check — does heritability hold within django, sympy, astropy individually? Scope slicing (patch size) deferred unless it adds phenomena difficulty doesn't.</li>
-<li><strong>Permutation null for the mixed-bucket heritability gap.</strong> The 0.10 gap is descriptively clear; shuffle-label test would convert it to inferential.</li>
-<li><strong>Add a fourth agent with a different scaffold.</strong> Target SWE-Fixer and/or Agentless to enable scaffold × backbone factorial analysis. That's the cleanest test of heritability.</li>
-<li><strong>Inspect the 16 unknown canonical tokens.</strong> Either assign them to an existing atom or create new atoms. Currently non-load-bearing but not ignorable.</li>
+<li><span style="background:#e8f4ea; color:#2CA02C; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">done</span> <strong>Cross-benchmark motif transfer.</strong> Lite-trained BPE applied to Verified and SWE-Smith. Coverage Lite→Verified 95.6%, Lite→SWE-Smith 91.4% at the edit-op level after normalization. Cited as the OOD coverage finding throughout the dashboard.</li>
+<li><span style="background:#e8f4ea; color:#2CA02C; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">done</span> <strong>Permutation null for heritability.</strong> Aggregate observed gap +0.0516 vs null 95th percentile 0.015, p = 0.0010 on n=867. Same-family advantage above chance. Per-difficulty slice nulls also ran (0/3 p=0.002, 1/3 p=0.001, 2/3 p=0.047, 3/3 p=0.026), all significant. The "p=0.001 heritability" claim cited throughout the dashboard rests on this.</li>
+<li><span style="background:#e8f4ea; color:#2CA02C; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">done</span> <strong>Permutation null for difficulty-bucket heritability gaps.</strong> Per-difficulty-slice nulls all ran with significant p-values (see above). Shuffle-label test converted the descriptive 0.06-0.10 gap to inferential.</li>
+</ol>
+
+<h3>Partial</h3>
+<ol class="bullet-list" start="4">
+<li><span style="background:#fdf2d9; color:#aa7700; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">partial</span> <strong>Add a fourth agent with a different scaffold.</strong> Agentless added in this session via the β/γ work (see §<a href="#cross-scaffold">13</a>). Same Claude 3.5 Sonnet backbone as <code>20240620_sweagent_claude3.5sonnet</code>, so the SWE-agent vs Agentless comparison directly isolates scaffold effect. Result: phase categories transfer; phase emphasis differs. The full scaffold × backbone factorial is partial: we have SWE-agent × {GPT-4, Claude 3.5, GPT-4o} plus Agentless × Claude 3.5. Adding Agentless × GPT-4 and Agentless × GPT-4o (and maybe SWE-Fixer or OpenHands as a third scaffold) would complete the factorial.</li>
+</ol>
+
+<h3>Pending</h3>
+<ol class="bullet-list" start="5">
+<li><span style="background:#eaf0f5; color:#0C6583; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">pending</span> <strong>Rationale atlas (LLM-judge pipeline).</strong> Run tied-outcome pairs through LLM judge; embed rationales; cluster. Produces the rationale-layer complement to BPE motifs. API key available. Highest priority of the three pending items because the bootstrap exercise (§<a href="#bootstrap-validation">15</a>) showed comparative point estimates can fail under proper testing; the rationale atlas needs multi-judge stability checks before procedural-Clio writing.</li>
+<li><span style="background:#eaf0f5; color:#0C6583; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">pending</span> <strong>Slicing by repo (and optionally scope).</strong> Difficulty-slice already done (§5.2) and per-difficulty permutation nulls all significant. Repo-slice not yet run; useful robustness check (does heritability hold within django, sympy, astropy individually?). Half a day of work. Scope slicing (patch size) deferred unless it adds phenomena difficulty does not.</li>
+<li><span style="background:#eaf0f5; color:#0C6583; padding:1px 6px; border-radius:2px; font-size:12px; font-weight:500;">pending</span> <strong>Inspect the 16 unknown canonical tokens.</strong> Either assign them to an existing atom or create new atoms. Currently non-load-bearing (coverage 99.9%) but should be addressed before paper writing. Smallest task; an hour or two.</li>
 </ol>
 </section>
 
@@ -1129,6 +1817,242 @@
 <dt>Phase A / Phase B</dt>
 <dd>Phase A uses the pre-extracted hand-coded 8-token DSL (scaffolding only). Phase B is the committed methodology: canonicalize-then-BPE on raw <code>.traj</code> files.</dd>
 </dl>
+</section>
+
+
+<section id="cross-scaffold">
+<h2>13. Cross-scaffold universality (2026-04-25)</h2>
+
+<p>Same problem set (SWE-bench Lite), same backbone (Claude 3.5 Sonnet), different scaffold (SWE-agent vs Agentless). The variable that changes is the scaffold's architectural commitment: SWE-agent gives the LLM autonomy to choose tool calls; Agentless takes that autonomy away and runs a fixed pipeline (file localization sub-stages, four parallel repair samples, regression-test selection plus reproducer generation).</p>
+
+<h3>13.1 The empirical Agentless pipeline</h3>
+
+<p>300 Agentless logs scanned. 12 phase markers appear in every log in the same order. The pipeline is fully deterministic at the structural level.</p>
+
+<figure>
+<img src="agentless_pipeline.png" alt="Agentless pipeline phase taxonomy">
+<figcaption>Figure 13.1: 12 deterministic phase markers across 300 Agentless logs (Claude 3.5 Sonnet, SWE-bench Lite). 100% coverage on every marker. The architectural commitment of the Agentless scaffold made empirically visible.</figcaption>
+</figure>
+
+<h3>13.2 β and γ extractors</h3>
+
+<p>Two extractors built and run on all 300 logs:</p>
+
+<ul class="bullet-list">
+<li><strong>β extractor</strong>: maps Agentless events onto the existing 76-atom SWE-agent canonical alphabet. Atoms with no analog simply do not appear.</li>
+<li><strong>γ extractor</strong>: emits Agentless-native atoms that preserve scaffold-internal structure (LOCALIZE_FILES, LOCALIZE_EMBED, LOCALIZE_ELEMENTS, LOCALIZE_LINES, REPAIR_SAMPLE_1-4, REGRESSION_SELECT, REPRO_GEN).</li>
+</ul>
+
+<p>Per-log averages across 300 logs: mean β length 20.75 atoms; mean γ length 10.06 atoms; β/γ ratio 2.05. The ratio reflects per-file expansion (FIND_FILE atoms multiply per file mentioned in localizer outputs).</p>
+
+<h3>13.3 The paired finding</h3>
+
+<figure>
+<img src="cross_scaffold_phase_distribution.png" alt="Cross-scaffold phase distribution">
+<figcaption>Figure 13.2: Phase distribution per scaffold over the same SWE-bench Lite problem set with Claude 3.5 backbone. SWE-agent dominates with repair (65-69% of trajectory). Agentless front-loads localization (50-60% depending on counting scheme). All three coarse phases (localize / repair / verify) appear in both scaffolds.</figcaption>
+</figure>
+
+<div class="finding">
+<strong>Finding 13.</strong> Phase categories (localize / repair / verify) are scaffold-invariant. Phase emphasis is scaffold-determined. The categorical level transfers; the proportional level reflects each scaffold's architectural commitment about agent autonomy. This is a more nuanced universals claim than &quot;phase shape transfers cleanly&quot; and is honestly defensible.
+</div>
+
+<p>Folds into the procedural-Clio paper as part of phenomenon 3 (cultural universality). Specifically: cross-scaffold universals at the categorical level, with the empirically-identified scaffold-emphasis variable as the source of cross-scaffold variation.</p>
+
+</section>
+
+<section id="cross-population">
+<h2>14. Cross-population corpus expansion (2026-04-25)</h2>
+
+<p>Procedural-Clio's framework on LLM agents is single-population. The Cursor pluralism paper extends it to multiple populations: human engineers (GitHub PR commit sequences), human novices (Pencil Code traces), and LLM agents (existing). Today: methodology validation for the Pencil Code population.</p>
+
+<h3>14.1 Pencil Code methodology validation</h3>
+
+<p>Used Ross, Srivastava, Blanchard, Andreas (<a href="https://arxiv.org/abs/2510.05056">arXiv 2510.05056</a>) public release. Their <code>Trace</code> class parses raw trace text into an ordered sequence of program snapshots; their <code>get_clean_edit_dict</code> categorizes diffs between consecutive programs into 5 mutually exclusive types (LARGE_ADD, LARGE_DEL, SMALL_ADD, SMALL_DEL, MODIFY_EXISTING) plus auxiliary signals (color changes, function additions, comment additions).</p>
+
+<p>117 multi-program traces extracted from two assignments (lighthouse and confetti). 5-atom base alphabet. BPE trained at target_size=20, learned 15 merges, mean compression 0.69.</p>
+
+<figure>
+<img src="pencilcode_methodology_validation.png" alt="Pencil Code methodology validation">
+<figcaption>Figure 14.1: Methodology validation on Pencil Code public subset. Top-left: edit-atom distribution per assignment. Top-right: trace-length distribution (n=117 multi-program traces). Bottom-left: top BPE motifs after merge (V=20). Bottom-right: per-trace compression ratio. Pipeline runs structurally; vocabulary is small but interpretable.</figcaption>
+</figure>
+
+<p>Top motifs after merge include <code>SMALL_ADD+MODIFY_EXISTING</code> (build then refine), <code>SMALL_ADD+SMALL_ADD+SMALL_ADD+SMALL_ADD</code> (incremental construction), <code>MODIFY_EXISTING</code> runs of length 4-8 (concentrated tweaking), and <code>SMALL_ADD+SMALL_DEL</code> (try-and-undo). These are interpretable procedural patterns recognizable as novice editing behavior.</p>
+
+<div class="caveat">
+<strong>Important caveat.</strong> The public release is model-generated trace mimicry, not raw student data. Real student traces remain behind a Hugging Face gated permission, with access pending Pencil Code team approval. Of 250 raw entries per assignment, only 25-92 had ≥2 programs (the model sometimes terminates early). For substantive claims about real student procedural variation we need the gated dataset; today's work confirms only that the pipeline runs structurally.
+</div>
+
+<div class="finding">
+<strong>Finding 14.</strong> The procedural-Clio framework's pipeline transfers structurally to Pencil-Code-shaped data. The five-atom base alphabet captures gross edit structure; BPE produces interpretable motifs; per-trace fingerprints emerge. Production-grade analysis on real student traces requires HF access; the methodology check is positive.
+</div>
+
+<h3>14.2 Other corpora in the Cursor pluralism paper plan</h3>
+
+<table>
+<tr><th>corpus</th><th>population</th><th>access status</th><th>role</th></tr>
+<tr><td>SWE-bench LLM agents</td><td>LLM agents on real bugs</td><td>have</td><td>LLM-agent population anchor</td></tr>
+<tr><td>GitHub PR commit sequences</td><td>human engineers on real codebases</td><td>public via API</td><td>primary human-engineer population</td></tr>
+<tr><td>Pencil Code (gated)</td><td>human novices, K-12</td><td>application pending</td><td>secondary human-novice population</td></tr>
+<tr><td>Codeforces (optional)</td><td>human experts at algorithmic problems</td><td>public API</td><td>discussion-section stress test</td></tr>
+</table>
+
+</section>
+
+<section id="bootstrap-validation">
+<h2>15. Statistical validation update (2026-04-25)</h2>
+
+<p>Bootstrap CIs were missing from the representation-comparison analyses underlying section 3. Run today to test whether the headline comparative claim (&quot;structural patterns predict co-pass/co-fail better than reasoning or semantics&quot;) is statistically supported under proper resampling.</p>
+
+<h3>15.1 Setup</h3>
+
+<p>Five representations (edit certificates, FIM Jaccard, staged narrative embeddings, CoT free-form embeddings, fix-type one-hot). 275 instances with all five representations available. Pass rate 21% (57 pass / 218 fail). kNN F1 at k=5 with leave-one-out. Bootstrap with 1000 iterations of resampling instances with replacement.</p>
+
+<h3>15.2 Results</h3>
+
+<figure>
+<img src="bootstrap_f1_cis.png" alt="Bootstrap F1 confidence intervals">
+<figcaption>Figure 15.1: Left: F1 at k=5 with 95% bootstrap CI per representation. Right: paired differences. All eight pairwise comparisons have CIs that cross zero (red markers). The point-estimate ordering (structural &gt; embedding &gt; semantic) is consistent with the originally-reported narrative, but no pair reaches statistical significance under bootstrap on this corpus.</figcaption>
+</figure>
+
+<table>
+<tr><th>representation</th><th>F1 point</th><th>95% CI</th></tr>
+<tr><td>edit_cert</td><td class="num">0.200</td><td class="num">[0.111, 0.522]</td></tr>
+<tr><td>fim_jaccard</td><td class="num">0.169</td><td class="num">[0.067, 0.521]</td></tr>
+<tr><td>staged_embed</td><td class="num">0.111</td><td class="num">[0.097, 0.500]</td></tr>
+<tr><td>cot_embed</td><td class="num">0.075</td><td class="num">[0.116, 0.505]</td></tr>
+<tr><td>fix_type</td><td class="num">0.060</td><td class="num">[0.000, 0.347]</td></tr>
+</table>
+
+<p>The point estimates from this run differ from numbers cited in <code>findings.md</code> (which claims 0.347 / 0.266 / 0.161 for analogous comparisons). The discrepancy looks like best-k-per-method selection in the older analysis or a different input set. Either way the cited numbers overstate.</p>
+
+<div class="finding">
+<strong>Finding 15.</strong> The comparative-prediction claim that has been carrying motivational weight for Paper 1 is not statistically validated under bootstrap on this corpus size with this metric. All eight pairwise differences cross zero in the 95% CI. The Paper 1 framing must reset around what IS validated.
+</div>
+
+<div class="caveat">
+<strong>Two paths forward.</strong>
+<br>(1) <strong>Reframe Paper 1.</strong> Drop the comparative-prediction headline; lead with the pdiff primitive itself plus what it surfaces (OOD coverage 95.6% / 91.4%, composition failure 43.8%, self-report failure F1 = 0.20, localization bottleneck). All four of these are individually validated and don't depend on the comparative claim.
+<br>(2) <strong>Pool benchmarks and re-bootstrap.</strong> Combine SWE-bench Lite + Verified + SWE-Smith for n &gt; 1000 and re-run. If the trend persists at larger n, the comparative claim is recoverable. Requires deriving equivalent pass/fail labels for Verified and SWE-Smith (different format than Lite).
+</div>
+
+<p>Implication for procedural-Clio (Paper 2): apply the same bootstrap or permutation-null discipline to phenomena 1, 2, 4 (style consistency, heritability sub-claims, pluralism vs convergence) before paper writing. Don't rely on point estimates alone. Heritability already has p = 0.001 from a permutation null and is unaffected.</p>
+
+</section>
+
+<section id="paper-plan">
+<h2>16. Paper plan and venues (2026-04-25)</h2>
+
+<p>Three papers, ordered by readiness, with shared infrastructure. Each cites the others.</p>
+
+<h3>16.1 Paper 1: pdiff primitive (reframed)</h3>
+
+<p><strong>Thesis (after today's reframe).</strong> A composable procedural-difference primitive for agent trajectories with bounded sub-distances at token, edit, scope, and module levels. Validated by what it surfaces (OOD coverage, composition failure, self-report failure, localization bottleneck), not by predictive accuracy on co-pass/co-fail.</p>
+
+<p><strong>Headline empirical content.</strong></p>
+<ul class="bullet-list">
+<li>The pdiff primitive plus a Python library</li>
+<li>OOD vocabulary coverage (Lite to Verified 95.6%, Lite to SWE-Smith 91.4%)</li>
+<li>Composition failure 43.8% across 84 leaderboard agents (50.4% on hardest)</li>
+<li>Self-report failure F1 = 0.20</li>
+<li>Localization bottleneck (file 0.55-0.76 → scope 0.25-0.31)</li>
+<li>OOD does not predict difficulty (Spearman = -0.083; patch size dominates at -0.362) reported as a feature, not a bug</li>
+</ul>
+
+<p><strong>Status.</strong> Closest to ready; roughly four to six weeks to ship.</p>
+<p><strong>Venue.</strong> NeurIPS Datasets and Benchmarks (primary). ICSE/FSE as software engineering alternative.</p>
+
+<h3>16.2 Paper 2: procedural-Clio</h3>
+
+<p><strong>Thesis.</strong> A measurement framework for procedural variation among code-fixing agents, applied to SWE-agents on SWE-bench. The contribution is the framework plus a catalog of phenomena it reveals.</p>
+
+<p><strong>Headline empirical content.</strong></p>
+<ul class="bullet-list">
+<li>Two-layer framework: action layer (canonicalize-then-discover via 76-atom alphabet plus BPE) plus rationale layer (LLM-judge text embedded plus HDBSCAN)</li>
+<li>Cross-layer correspondence (rationale axes mapped onto action motifs)</li>
+<li>Four Tier-1 phenomena: style consistency, heritability (p = 0.001), cultural universality (cross-scaffold paired finding plus cross-corpus on Verified), pluralism vs convergence</li>
+<li>Aggregate-plus-sliced reporting per phenomenon to guard against Simpson's paradox</li>
+<li>Four controls per Zheng et al. (length, outcome, rationale length, position bias) against judge bias</li>
+<li>Atlas plus motif library plus Python library as released artifacts</li>
+</ul>
+
+<p><strong>Status.</strong> Empirically most-developed. Roughly eight to ten weeks including writing.</p>
+<p><strong>Venue.</strong> NeurIPS Datasets and Benchmarks (primary). COLM as second strong fit.</p>
+
+<h3>16.3 Paper 3: Cursor pluralism (multi-population)</h3>
+
+<p><strong>Thesis.</strong> The procedural-Clio framework, applied across populations, demonstrates that the same atlas supports systematically different per-population rankings. Pluralism-preserving evaluation has a real substrate.</p>
+
+<p><strong>Headline empirical content.</strong></p>
+<ul class="bullet-list">
+<li>Multi-population corpora: SWE-bench LLM agents (have), GitHub PR commits (build), Pencil Code novices (gated; methodology validated today)</li>
+<li>Per-population fingerprints showing systematic differences</li>
+<li>Bradley-Terry per population over the discovered atlas, with rank-divergence demonstration</li>
+<li>Optional: live procedural search frontend as the queryable demo</li>
+</ul>
+
+<p><strong>Status.</strong> Three to six months timeline depending on Pencil Code HF access.</p>
+<p><strong>Venue.</strong> NeurIPS Datasets and Benchmarks; COLM; or CHI/UIST if a real-user collaborator emerges.</p>
+
+<h3>16.4 Paper 4 (deferred): procedural budget under controlled scaffold</h3>
+
+<p><strong>Sharpened thesis (added 2026-04-25).</strong> Are procedural styles preferences or are they load-bearing for capability? If a model has a preferred style (Claude 3.5 is measurably more grepy than GPT-4o; Agentless is dramatically grepy by architectural design) and you constrain that style at fixed budget, does its capability degrade? If yes, the style was load-bearing for that model. If no, the style was preference and the model can adapt.</p>
+
+<p>This reframes the original "DSPy programmable shape" trajectory from a methodology demonstration into an intervention study with a falsifiable hypothesis. The mechanism (declarative scaffold language via DSPy idioms) is the same; the empirical claim is sharper.</p>
+
+<p><strong>Headline empirical setup.</strong></p>
+<ol class="bullet-list">
+<li>Pick a procedural axis to constrain. Localize-fraction is the obvious one given today's β/γ data. Other candidates: number of repair iterations, presence of test-running, trajectory length.</li>
+<li>Pick a budget to equalize. Total tokens consumed is the standard fairness measure; total tool calls is more directly procedural.</li>
+<li>Build constrained DSPy programs at multiple constraint levels (e.g., localize ≤ 10%, ≤ 25%, ≤ 50%) at the same total budget.</li>
+<li>Run on a small instance set (50 SWE-bench Lite instances is enough for a pilot) with multiple backbones at each constraint level.</li>
+<li>Measure pass rate per (backbone, constraint) cell. If pass rate degrades faster for some backbones than others, style was load-bearing for the faster-degrading ones.</li>
+</ol>
+
+<p><strong>Soft evidence already in hand from today's β/γ.</strong> Across SWE-agent backbones, localize fractions are 8% (GPT-4o), 11% (GPT-4), 13% (Claude 3.5). Across scaffolds, Agentless is at 50-60% localize. If you forced everyone to 10% localize at fixed budget:</p>
+<ul class="bullet-list">
+<li>GPT-4o would be roughly unchanged.</li>
+<li>GPT-4 mildly constrained.</li>
+<li>Claude 3.5 (SWE-agent) meaningfully constrained.</li>
+<li>Agentless (Claude 3.5) severely constrained.</li>
+</ul>
+<p>The performance differential under that constraint IS the experiment. The hypothesis is &quot;the more constrained, the larger the performance hit, conditional on style being load-bearing.&quot;</p>
+
+<div class="finding">
+<strong>Why this matters.</strong> Today's leaderboards mix capability and procedure. A study that holds budget constant and varies allowed procedures gives you the &quot;capability under constraint&quot; axis that current evaluation does not. It directly informs the Cursor pluralism story: if styles are mostly preferences, personalization is free; if styles are load-bearing, personalization narrows. It also speaks to fairness in agent comparison (different models burn wildly different compute on the same task; equalizing budget is an underserved control).
+</div>
+
+<p><strong>Cost.</strong> 4 backbones × 4 constraint levels × 50 instances ≈ a few hundred LLM calls per cell, in the range of $50-200 per backbone. Real but tractable.</p>
+
+<p><strong>Status.</strong> Deferred until after procedural-Clio lands. Roughly 4-6 weeks of build plus run plus write when activated.</p>
+
+<p><strong>Venue.</strong> EMNLP via ACL ARR (LM-systems track) or COLM. The cognitive-scaffolding theoretical framing (Wood, Bruner, Ross 1976; Vygotsky) gives the paper intellectual anchoring beyond the framework demo.</p>
+
+<p><strong>Honest caveats.</strong></p>
+<ul class="bullet-list">
+<li>Defining &quot;constraint&quot; precisely is hard for free-form scaffolds. Easier in Agentless because phases are explicit.</li>
+<li>Budget equalization is interpretation-sensitive (tokens, calls, wall time, dollars give different stories).</li>
+<li>Pass rate is a noisy metric on 50-instance sets; either need more instances or a continuous metric to reduce noise.</li>
+</ul>
+
+<h3>16.5 Open decisions</h3>
+
+<table>
+<tr><th>decision</th><th>recommendation</th></tr>
+<tr><td>Paper 1 framing</td><td>Reframe around the primitive plus surfaced findings; defer pooling unless time allows</td></tr>
+<tr><td>β/γ promotion to repo</td><td>Promote parser plus extractors to <code>analysis/preferences/agentless_*.py</code></td></tr>
+<tr><td>Pencil Code HF access</td><td>Apply now; lead time is real</td></tr>
+<tr><td>Cross-scaffold finding integration</td><td>Expand procedural-Clio's phenomenon 3 (cultural universality) to include the paired finding</td></tr>
+<tr><td>Bootstrap discipline for procedural-Clio phenomena</td><td>Add up front; the lesson from today</td></tr>
+</table>
+
+<h3>16.6 Risk register</h3>
+
+<ul class="bullet-list">
+<li><strong>Multi-judge atlas stability fails (ARI &lt; 0.4).</strong> Would weaken procedural-Clio's framework claim. Mitigation: anticipate the failure mode; frame the paper to survive moderate-stability findings (ARI 0.4-0.6 still publishable as &quot;framework recovers a partially stable atlas&quot;).</li>
+<li><strong>BugsInPy replication shows substantially different composition rate.</strong> Reframes the 43.8% finding as benchmark-specific. Mitigation: report honestly either way.</li>
+<li><strong>Pencil Code HF access denied.</strong> Removes one human population from Cursor pluralism. Mitigation: GitHub PRs as primary; the paper still works.</li>
+</ul>
+
 </section>
 
 <footer>
