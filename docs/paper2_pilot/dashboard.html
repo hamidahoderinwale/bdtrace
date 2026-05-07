@@ -348,7 +348,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <h2 style="color:#20A380; border-bottom:2px solid #20A380; padding-bottom:4px; margin-top:30px;">HEADLINE FIGURES (paper main body)</h2>
 <p style="font-size:13px; color:#555;">The eight figures that anchor the paper's findings. All from the extended 8-submission corpus (2,344 trajectories, 4 scaffolds, 7 backbones).</p>
 
-<h3>Backbone probe — 8-class agent identification (Section 4)</h3>
+<h3>Backbone probe, 8-class agent identification (Section 4)</h3>
 <figure>
   <img src="backbone_probe_extended.png" alt="Backbone probe extended to 8 submissions">
   <figcaption>Macro F1 = 0.83 (5-fold grouped CV, chance 12.5%). Scaffold dominates backbone: 4 distinct scaffolds at F1 ≥ 0.98; 4 within-scaffold backbones at F1 0.70–0.86.</figcaption>
@@ -369,7 +369,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <h3>Steps after localization, Type B failures (Section 6)</h3>
 <figure>
   <img src="fig_failure_steps_extended.png" alt="Post-localization steps">
-  <figcaption>Median steps after localization. Claude-3.7-thinking highest at 28 — over-deliberation pattern.</figcaption>
+  <figcaption>Median steps after localization. Claude-3.7-thinking highest at 28; over-deliberation pattern.</figcaption>
 </figure>
 
 <h3>R10 stuck-edit-loop signature (Section 6)</h3>
@@ -378,7 +378,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Long Type B vs short Type B motif rates across 7 applicable submissions. Stuck-edit-loop signature generalizes.</figcaption>
 </figure>
 
-<h3>Per-form FP-growth templates — top pattern (Section 7)</h3>
+<h3>Per-form FP-growth templates, top pattern (Section 7)</h3>
 <figure>
   <img src="fig_motif_fpgrowth_templates_extended.png" alt="FP-growth top template per FIM form">
   <figcaption>Top pass-enriched canonical pattern per FIM form, 8-submission corpus.</figcaption>
@@ -391,27 +391,27 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </figure>
 
 <h3>Per-agent procedural fingerprint, four metrics (Section 4)</h3>
-<p style="font-size:13px; color:#555;">Same scaffold story as the backbone probe, in interpretable units. Scaffold sets the diversity ceiling; backbone modulates within. Agentless's row reads as a deterministic pipeline (entropy 0, single motif covers 90% of behavior, extreme compression). Claude-3.7-thinking sits at the low-entropy / long-trajectory end of SWE-agent — the long-but-stuck fingerprint.</p>
+<p style="font-size:13px; color:#555;">Same scaffold story as the backbone probe, in interpretable units. Scaffold sets the diversity ceiling; backbone modulates within. Agentless's row reads as a deterministic pipeline (entropy 0, single motif covers 90% of behavior, extreme compression). Claude-3.7-thinking sits at the low-entropy and long-trajectory end of SWE-agent; the long-but-stuck fingerprint.</p>
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:14px 0;">
   <figure style="margin:0;">
     <img src="fig_agg_entropy_extended.png" alt="Per-agent motif entropy (extended)">
-    <figcaption>Motif entropy by agent — extended corpus.</figcaption>
+    <figcaption>Motif entropy by agent.</figcaption>
   </figure>
   <figure style="margin:0;">
     <img src="fig_agg_repertoire_extended.png" alt="Distinct motifs at 90% (extended)">
-    <figcaption>Distinct motifs at 90% coverage — extended corpus.</figcaption>
+    <figcaption>Distinct motifs at 90% coverage.</figcaption>
   </figure>
   <figure style="margin:0;">
     <img src="fig_agg_length_extended.png" alt="Mean trajectory length (extended)">
-    <figcaption>Mean trajectory length — extended corpus.</figcaption>
+    <figcaption>Mean trajectory length.</figcaption>
   </figure>
   <figure style="margin:0;">
     <img src="fig_agg_compression_extended.png" alt="Mean BPE compression (extended)">
-    <figcaption>BPE compression ratio — extended corpus.</figcaption>
+    <figcaption>BPE compression ratio.</figcaption>
   </figure>
 </div>
 
-<h3>Per-agent megatable — corpus + fingerprint + outcomes (Table 1)</h3>
+<h3>Per-agent megatable: corpus, fingerprint, and outcomes (Table 1)</h3>
 <p style="font-size:13px; color:#555;">Single anchor table for the paper. Rows grouped by scaffold; bold marks the three observations called out in §4: (i) Agentless deterministic pipeline; (ii) Claude-3.7-thinking long-but-stuck; (iii) within-scaffold backbone effects survive within-paradigm but break under paradigm change. Source LaTeX at <code>output/paper2_pilot/per_agent_megatable.tex</code>.</p>
 <div style="overflow-x:auto; margin:14px 0;">
 <table style="border-collapse:collapse; font-size:12px; min-width:100%;">
@@ -439,7 +439,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <tr style="background:#F2F8F4;"><td>SWE-agent</td><td>GPT-4</td><td>RLHF dense</td><td>GPT-4</td><td style="text-align:right;">300</td><td style="text-align:right;">18.0%</td><td style="text-align:right;">21.4</td><td style="text-align:right;">50</td><td style="text-align:right;">0.416</td><td style="text-align:right;">5.76</td><td style="text-align:right;">27.6%</td><td style="text-align:right;">72.4%</td><td style="text-align:right;">14</td></tr>
 <tr style="background:#F2F8F4;"><td>SWE-agent</td><td>GPT-4o</td><td>RLHF dense</td><td>GPT-4o</td><td style="text-align:right;">278</td><td style="text-align:right;">18.3%</td><td style="text-align:right;">39.1</td><td style="text-align:right;"><strong>60</strong></td><td style="text-align:right;">0.405</td><td style="text-align:right;">6.01</td><td style="text-align:right;">38.1%</td><td style="text-align:right;">61.9%</td><td style="text-align:right;">26</td></tr>
 <tr style="background:#FBF1F5;"><td>DARS</td><td>DeepSeek-R1</td><td>RL-only reasoning</td><td>DARS+R1</td><td style="text-align:right;">299</td><td style="text-align:right;">47.0%</td><td style="text-align:right;">24.0</td><td style="text-align:right;">22</td><td style="text-align:right;"><strong>0.552</strong></td><td style="text-align:right;">4.65</td><td style="text-align:right;">21.5%</td><td style="text-align:right;">78.5%</td><td style="text-align:right;">16</td></tr>
-<tr style="background:#F0F5FB;"><td>Agentless</td><td>Claude-3.5 (Sonnet)</td><td>RLHF dense</td><td>Agentless+Claude-3.5</td><td style="text-align:right;">300</td><td style="text-align:right;">40.7%</td><td style="text-align:right;">13.0</td><td style="text-align:right;"><strong>1</strong></td><td style="text-align:right;"><strong>0.077</strong></td><td style="text-align:right;"><strong>0.00</strong></td><td style="text-align:right;">—</td><td style="text-align:right;">—</td><td style="text-align:right;">—</td></tr>
+<tr style="background:#F0F5FB;"><td>Agentless</td><td>Claude-3.5 (Sonnet)</td><td>RLHF dense</td><td>Agentless+Claude-3.5</td><td style="text-align:right;">300</td><td style="text-align:right;">40.7%</td><td style="text-align:right;">13.0</td><td style="text-align:right;"><strong>1</strong></td><td style="text-align:right;"><strong>0.077</strong></td><td style="text-align:right;"><strong>0.00</strong></td><td style="text-align:right;">n/a</td><td style="text-align:right;">n/a</td><td style="text-align:right;">n/a</td></tr>
 <tr style="background:#F7F6F0;"><td>Moatless</td><td>DeepSeek-V3</td><td>MoE pretrain</td><td>Moatless+V3</td><td style="text-align:right;">294</td><td style="text-align:right;">30.7%</td><td style="text-align:right;">13.0</td><td style="text-align:right;">14</td><td style="text-align:right;">0.403</td><td style="text-align:right;">3.83</td><td style="text-align:right;">28.6%</td><td style="text-align:right;">71.4%</td><td style="text-align:right;">17</td></tr>
 </tbody>
 </table>

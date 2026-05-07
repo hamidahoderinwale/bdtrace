@@ -157,13 +157,13 @@ def save_panels(metrics: dict) -> None:
 
     panels = {
         "fig_agg_entropy_extended.png":     ("entropy_motifs_bits",
-            "Motif entropy by agent (bits) — extended corpus", "Entropy (bits)", None),
+            "Motif entropy by agent", "Entropy (bits)", None),
         "fig_agg_repertoire_extended.png":  ("distinct_motifs_at_90pct",
-            "Distinct motifs at 90% coverage — extended corpus", "Number of motifs", None),
+            "Distinct motifs at 90% coverage", "Number of motifs", None),
         "fig_agg_length_extended.png":      ("mean_canonical_length",
-            "Mean trajectory length (atoms) — extended corpus", "Mean atoms per trajectory", None),
+            "Mean trajectory length", "Mean atoms per trajectory", None),
         "fig_agg_compression_extended.png": ("mean_compression",
-            "Mean BPE compression ratio — extended corpus", "BPE length / atom length", [0, 1]),
+            "Mean BPE compression ratio", "BPE length / atom length", [0, 1]),
     }
     for fname, (key, title, ylabel, ydomain) in panels.items():
         df = pd.DataFrame([{"agent": a, "value": metrics[a][key]} for a in agents_present])
