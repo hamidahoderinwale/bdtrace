@@ -378,7 +378,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Median steps after localization. Claude-3.7-thinking highest at 28; over-deliberation pattern.</figcaption>
 </figure>
 
-<h3>R10 stuck-edit-loop signature (Section 6)</h3>
+<h3>Stuck-edit-loop signature (Section 6)</h3>
 <figure>
   <img src="fig_postloc_motifs_extended.png" alt="Post-localization motif rates extended">
   <figcaption>Long Type B vs short Type B motif rates across 7 applicable submissions. Stuck-edit-loop signature generalizes.</figcaption>
@@ -487,14 +487,14 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>4-agent medians: Claude-3 11, GPT-4 14, Claude-3.5 22, GPT-4o 24.</figcaption>
 </figure>
 
-<h4>R10 stuck-loop signature (4-agent baseline)</h4>
+<h4>Stuck-loop signature (4-agent baseline)</h4>
 <figure>
   <img src="fig_postloc_motifs.png" alt="Post-localization motif rates: short vs long Type B failures">
   <figcaption>4-agent: EDIT_SRC_PY 23%→35%, SUBMIT 9%→2% in long Type B failures.</figcaption>
 </figure>
 
 <h3 style="color:#5692E5; margin-top:24px; font-size:15px;">B. Robustness checks and supporting analyses</h3>
-<p style="font-size:12px; color:#666;">Direct responses to anticipated reviewer concerns (R5–R10) and supporting evidence for paper claims.</p>
+<p style="font-size:12px; color:#666;">Robustness checks and supporting evidence anticipating reviewer concerns about issue-text leakage, vocabulary-size sensitivity, agent effects within difficulty bins, motif-outcome independence, and post-localization behavior. (Internal cross-reference: see anticipated reviewer concerns section for R-labels.)</p>
 
 <h4>Pass rate by difficulty bucket</h4>
 <figure>
@@ -520,13 +520,13 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Within-type variation exceeds between-type variation per agent.</figcaption>
 </figure>
 
-<h4>Procedural similarity, permutation null (R5)</h4>
+<h4>Procedural similarity, permutation null</h4>
 <figure>
   <img src="fig_permutation_null.png" alt="Permutation null distribution for same-family similarity">
   <figcaption>n=1000 permutations. p&lt;0.001 for GPT-4/GPT-4o within-family advantage.</figcaption>
 </figure>
 
-<h4>Motif-outcome CMH test (R7)</h4>
+<h4>Motif-outcome CMH test</h4>
 <figure>
   <img src="fig_motif_cmh.png" alt="Cochran-Mantel-Haenszel test per motif">
   <figcaption>0/28 motifs significant after FDR (q=0.05). Within difficulty strata, no motif predicts outcome.</figcaption>
@@ -538,13 +538,13 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Length decreases as more agents pass; macro pattern only (within-bin r = −0.12 to −0.17).</figcaption>
 </figure>
 
-<h4>JSD ranking stability across V (R6)</h4>
+<h4>JSD ranking stability across vocabulary size</h4>
 <figure>
   <img src="fig_jsd_stability.png" alt="JSD by agent pair across vocabulary sizes">
   <figcaption>JSD pair ranking invariant across V ∈ {100, 150, 200, 300, 500}. Magnitude scales; order fixed.</figcaption>
 </figure>
 
-<h4>Agent MI within difficulty bins (R7)</h4>
+<h4>Agent MI within difficulty bins</h4>
 <figure>
   <img src="fig_per_bin_agent_mi.png" alt="MI(agent; pass/fail) by difficulty bin">
   <figcaption>Within uncertain bins (1 to 3 of 4), agent removes 5 to 11% of outcome uncertainty (3 to 7× corpus-level).</figcaption>
