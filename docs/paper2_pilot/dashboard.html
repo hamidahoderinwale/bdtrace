@@ -360,6 +360,12 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Three regimes: Agentless ~1.0 vs all (deterministic-pipeline disjointness), within-SWE-agent 0.11–0.20, cross-scaffold 0.54–0.78.</figcaption>
 </figure>
 
+<h3>History Flow: file-touch sequences on a single instance (Section 6, case study)</h3>
+<figure>
+  <img src="fig_history_flow_extended.png" alt="History Flow: file-touch sequences across 8 agents on django__django-16041">
+  <figcaption>Single instance, 8 agents, file-touch sequences. Gold patch file in MAGENTA. The 4 original SWE-agent backbones either miss the gold file entirely (Claude-3, GPT-4o) or reach it but fail (Claude-3.5 at step 1, GPT-4 at step 22). The 4 newer submissions all reach the gold file within 5 steps. Inspired by Wattenberg and Viegas (2004).</figcaption>
+</figure>
+
 <h3>Failure types per agent (Section 6)</h3>
 <figure>
   <img src="fig_failure_types_extended.png" alt="Type A vs Type B per agent">
