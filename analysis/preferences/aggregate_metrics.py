@@ -363,6 +363,7 @@ def plot_length_by_difficulty(
         .properties(
             title=alt.TitleParams(
                 text="Trajectory length by task difficulty",
+                subtitle="4-agent baseline",
                 fontSize=13, subtitleFontSize=11,
                 color="#111111", subtitleColor="#888888", anchor="start",
             )

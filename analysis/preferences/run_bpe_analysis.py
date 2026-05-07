@@ -36,9 +36,10 @@ CACHE = PROJECT_ROOT / "output" / "trajectories" / ".cache"
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
 
 AGENT_SHORT = {
-    "20240402_sweagent_gpt4": "GPT-4",
+    "20240402_sweagent_claude3opus":     "Claude-3",
+    "20240402_sweagent_gpt4":            "GPT-4",
     "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o": "GPT-4o",
+    "20240728_sweagent_gpt4o":           "GPT-4o",
 }
 
 TARGET_VOCAB = 200
@@ -105,7 +106,7 @@ def plot_vocab_length_histogram(model: BPEModel, out_path: Path) -> None:
             ),
         )
         .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+        .configure_axis(grid=False)
     )
     chart.save(str(out_path), scale_factor=2)
 
@@ -230,7 +231,7 @@ def plot_pair_levenshtein_comparison(
             ),
         )
         .configure_view(strokeWidth=0)
-        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+        .configure_axis(grid=False)
     )
     panel.save(str(out_path), scale_factor=2)
 

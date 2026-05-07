@@ -31,7 +31,10 @@ import sys
 import altair as alt
 import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.theme import register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY
+from scripts.theme import (
+    register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY,
+    AGENT_COLORS as CANONICAL_AGENT_COLORS,
+)
 register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -45,10 +48,12 @@ AGENT_SHORT = {
     "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
     "20240728_sweagent_gpt4o": "GPT-4o",
 }
+# 3-agent palette using canonical theme colors (Claude-3 cost data unavailable
+# in this pilot dump, hence excluded).
 AGENT_COLORS = {
-    "Claude-3.5": "#009E73",
-    "GPT-4": "#0072B2",
-    "GPT-4o": "#E69F00",
+    "Claude-3.5": CANONICAL_AGENT_COLORS["Claude-3.5"],
+    "GPT-4":      CANONICAL_AGENT_COLORS["GPT-4"],
+    "GPT-4o":     CANONICAL_AGENT_COLORS["GPT-4o"],
 }
 
 
@@ -250,15 +255,22 @@ def plot_per_agent(per_agent: dict, out_path: Path) -> None:
 
 
 def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
+    """Render one combined 3-panel PNG (token_cost_by_difficulty.png) plus
+    three per-metric standalone PNGs (one per axis), per the
+    "split into multiple plots" style preference.
+
+    Subtitle marks this as a 3-agent baseline (cost data is unavailable for
+    the new submissions in the extended corpus).
+    """
     metric_specs = [
-        ("tokens_sent_mean", "Input tokens per task (thousands)", 1000),
-        ("api_calls_mean", "API calls per task", 1),
-        ("cost_mean_usd", "Cost per task (USD)", 1),
+        ("tokens_sent_mean", "Input tokens per task (thousands)", 1000, "tokens"),
+        ("api_calls_mean", "API calls per task", 1, "api_calls"),
+        ("cost_mean_usd", "Cost per task (USD)", 1, "cost"),
     ]
-    diff_label = {"0": "0 (nobody)", "1": "1", "2": "2", "3": "3 (everyone)"}
+    diff_label = {"0": "0", "1": "1", "2": "2", "3": "3"}
 
     rows = []
-    for key, label, scale in metric_specs:
+    for key, label, scale, slug in metric_specs:
         for d_str in ["0", "1", "2", "3"]:
             for a in ["Claude-3.5", "GPT-4", "GPT-4o"]:
                 if d_str in by_diff and a in by_diff[d_str]:
@@ -267,6 +279,7 @@ def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
                         "difficulty_label": diff_label[d_str],
                         "agent": a,
                         "metric_label": label,
+                        "metric_slug": slug,
                         "value": by_diff[d_str][a][key] / scale,
                     })
     df = pd.DataFrame(rows)
@@ -276,43 +289,66 @@ def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
         range=list(AGENT_COLORS.values()),
     )
     agent_order = ["Claude-3.5", "GPT-4", "GPT-4o"]
-    metric_order = [s[1] for s in metric_specs]
-    diff_order = ["0 (nobody)", "1", "2", "3 (everyone)"]
+    diff_order = ["0", "1", "2", "3"]
 
-    base = alt.Chart(df).encode(
-        x=alt.X("difficulty_label:O", sort=diff_order,
-                axis=alt.Axis(title="Number of agents that solved the task",
-                              domain=False, ticks=False, labelFontSize=10)),
-        y=alt.Y("value:Q", axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=10)),
-        color=alt.Color("agent:N", scale=color_scale,
-                        legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
-        detail="agent:N",
-    )
-
-    lines = base.mark_line(strokeWidth=2)
-    points = base.mark_point(size=60, filled=True)
-
-    chart = (
-        alt.layer(lines, points)
-        .properties(width=160, height=180)
-        .facet(
-            column=alt.Column(
-                "metric_label:N",
-                sort=metric_order,
-                header=alt.Header(titleFontSize=11, labelFontSize=10, labelOrient="bottom"),
-            )
+    def _per_metric_panel(metric_label: str, df_panel: pd.DataFrame, width: int = 320, height: int = 220):
+        base = alt.Chart(df_panel).encode(
+            x=alt.X("difficulty_label:O", sort=diff_order,
+                    axis=alt.Axis(title="Number of agents that solved the task",
+                                  domain=False, ticks=False, labelFontSize=10)),
+            y=alt.Y("value:Q",
+                    axis=alt.Axis(title=metric_label, domain=False, ticks=False,
+                                  labelFontSize=10)),
+            color=alt.Color("agent:N", scale=color_scale,
+                            legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
+            detail="agent:N",
         )
+        lines = base.mark_line(strokeWidth=2)
+        points = base.mark_point(size=60, filled=True)
+        return alt.layer(lines, points).properties(width=width, height=height)
+
+    # 1) Per-metric standalone PNGs (split-into-multiple-plots preference).
+    for key, label, scale, slug in metric_specs:
+        df_m = df[df["metric_slug"] == slug]
+        panel = _per_metric_panel(label, df_m, width=320, height=220)
+        chart_m = (
+            panel
+            .properties(
+                title=alt.TitleParams(
+                    text=label,
+                    subtitle="3-agent baseline (cost data unavailable for new submissions)",
+                    fontSize=13, subtitleFontSize=10,
+                    color="#111111", subtitleColor="#888888", anchor="start",
+                )
+            )
+            .configure_view(strokeWidth=0)
+            .configure_axis(grid=False)
+        )
+        per_metric_path = out_path.parent / f"token_cost_by_difficulty_{slug}.png"
+        chart_m.save(str(per_metric_path), scale_factor=2)
+        print(f"  Saved: {per_metric_path.name}")
+
+    # 2) Combined 3-panel PNG (kept for the existing dashboard reference).
+    panels = []
+    for key, label, scale, slug in metric_specs:
+        df_m = df[df["metric_slug"] == slug]
+        panels.append(_per_metric_panel(label, df_m, width=200, height=200))
+
+    combined = (
+        alt.hconcat(*panels, spacing=40)
         .properties(
             title=alt.TitleParams(
                 text="Token cost by task difficulty",
-                fontSize=13, color="#111111", anchor="start",
+                subtitle="3-agent baseline (cost data unavailable for new submissions)",
+                fontSize=13, subtitleFontSize=10,
+                color="#111111", subtitleColor="#888888", anchor="start",
             )
         )
         .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
+        .configure_axis(grid=False)
     )
 
-    chart.save(str(out_path), scale_factor=2)
+    combined.save(str(out_path), scale_factor=2)
 
 
 def main() -> int:
