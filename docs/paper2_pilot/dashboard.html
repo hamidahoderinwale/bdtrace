@@ -1780,7 +1780,11 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <div class="finding">
-<strong>DeepSeek-V3 is three orders of magnitude cheaper per task than Claude or GPT.</strong> Moatless+DeepSeek-V3 averages $0.004/task versus $0.78-$3.42 for the Claude/GPT submissions. Comparable token budgets (Moatless 422k input tokens, Claude-3.5 516k), wildly different per-token pricing.
+<strong>Moatless+V3 costs $0.004/task vs $0.78-$3.42 for the Claude/GPT runs — a 200×-850× gap that comes from three multiplicative effects, not one.</strong>
+(1) <em>Base model pricing.</em> DeepSeek-V3 is roughly 10-15× cheaper per token than Claude Sonnet on public rate cards.
+(2) <em>Prompt caching.</em> 29% of all Moatless prompt tokens in this corpus are DeepSeek cache hits (every single one of 300 traces shows cache activity); cached tokens are billed at roughly 5% of the full input rate, so the effective input price is well under the headline rate.
+(3) <em>Bounded per-call architecture.</em> Moatless makes ~41 short LLM calls per task with capped <code>max_tokens=3000</code>, so output volume stays manageable even at high call counts.
+The "comparable token budget" framing (Moatless 422K input ≈ Claude-3.5 516K) holds at the surface but understates the structural difference: Moatless's planner-tree scaffold is shaped to surface prefix caching that SWE-agent's accumulating-context loop never gets the benefit of.
 </div>
 
 <div class="finding">
