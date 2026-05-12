@@ -22,10 +22,15 @@ from collections import Counter
 from pathlib import Path
 
 import altair as alt
+import matplotlib
 import numpy as np
 import pandas as pd
 import umap
+from scipy.stats import gaussian_kde
 from sklearn.preprocessing import normalize
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -98,6 +103,52 @@ def umap_project(X: np.ndarray, n_neighbors: int, min_dist: float, seed: int = 0
     return reducer.fit_transform(X)
 
 
+def cell_density_contours(
+    coords: np.ndarray,
+    cells: list[str],
+    quantile: float = 0.9,
+    grid_n: int = 160,
+    min_points: int = 10,
+) -> dict[str, list[np.ndarray]]:
+    """Per-cell 2D KDE contour at the smallest density level whose enclosed
+    region contains `quantile` of the cell's probability mass.
+
+    Returns: {cell -> list of (k, 2) polygon vertex arrays}.
+    Uses matplotlib only to extract contour line segments; renders nothing.
+    """
+    out: dict[str, list[np.ndarray]] = {}
+    coords = np.asarray(coords)
+    pad_x = (coords[:, 0].max() - coords[:, 0].min()) * 0.05
+    pad_y = (coords[:, 1].max() - coords[:, 1].min()) * 0.05
+    x_min, x_max = coords[:, 0].min() - pad_x, coords[:, 0].max() + pad_x
+    y_min, y_max = coords[:, 1].min() - pad_y, coords[:, 1].max() + pad_y
+    xx, yy = np.meshgrid(
+        np.linspace(x_min, x_max, grid_n),
+        np.linspace(y_min, y_max, grid_n),
+    )
+    grid = np.vstack([xx.ravel(), yy.ravel()])
+    for cell in CELL_ORDER:
+        mask = np.array([c == cell for c in cells])
+        pts = coords[mask]
+        if len(pts) < min_points:
+            continue
+        kde = gaussian_kde(pts.T, bw_method="scott")
+        density = kde(grid).reshape(xx.shape)
+        flat = np.sort(density.ravel())[::-1]
+        cumulative = np.cumsum(flat) / flat.sum()
+        idx = int(np.searchsorted(cumulative, quantile))
+        threshold = flat[min(idx, len(flat) - 1)]
+        fig = plt.figure()
+        cs = plt.contour(xx, yy, density, levels=[threshold])
+        # matplotlib >=3.8 uses allsegs[level_idx] = list of (n, 2) arrays
+        segs = cs.allsegs[0] if cs.allsegs else []
+        plt.close(fig)
+        polys = [np.asarray(s) for s in segs if len(s) >= 4]
+        if polys:
+            out[cell] = polys
+    return out
+
+
 def plot_trajectory_umap(coords: np.ndarray, records: list[dict], out_path: Path) -> None:
     rows = []
     for i, r in enumerate(records):
@@ -108,22 +159,58 @@ def plot_trajectory_umap(coords: np.ndarray, records: list[dict], out_path: Path
             "cell": AGENT_CELL.get(r["agent"], "?"),
         })
     df = pd.DataFrame(rows)
-    chart = (
+
+    contour_rows: list[dict] = []
+    contours = cell_density_contours(coords, df["cell"].tolist(), quantile=0.9)
+    for cell, polys in contours.items():
+        for poly_i, poly in enumerate(polys):
+            for x, y in poly:
+                contour_rows.append({
+                    "umap1": float(x),
+                    "umap2": float(y),
+                    "cell": cell,
+                    "polygon": f"{cell}-{poly_i}",
+                })
+    contour_df = pd.DataFrame(contour_rows)
+
+    color_scale = alt.Scale(
+        domain=CELL_ORDER, range=[CELL_COLORS[c] for c in CELL_ORDER]
+    )
+    color_legend = alt.Color(
+        "cell:N",
+        scale=color_scale,
+        legend=alt.Legend(orient="bottom", title=None, columns=3),
+    )
+    color_nolegend = alt.Color(
+        "cell:N", scale=color_scale, legend=None
+    )
+
+    points = (
         alt.Chart(df)
-        .mark_point(size=18, filled=True, opacity=0.55, strokeWidth=0)
+        .mark_point(size=18, filled=True, opacity=0.42, strokeWidth=0)
         .encode(
             x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1", domain=False, ticks=False)),
             y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2", domain=False, ticks=False)),
-            color=alt.Color(
-                "cell:N",
-                scale=alt.Scale(domain=CELL_ORDER, range=[CELL_COLORS[c] for c in CELL_ORDER]),
-                legend=alt.Legend(orient="bottom", title=None, columns=3),
-            ),
+            color=color_legend,
         )
+    )
+    contour_lines = (
+        alt.Chart(contour_df)
+        .mark_line(strokeWidth=1.6, opacity=0.95)
+        .encode(
+            x="umap1:Q",
+            y="umap2:Q",
+            color=color_nolegend,
+            detail="polygon:N",
+            order=alt.Order("polygon:N"),
+        )
+    )
+    chart = (
+        alt.layer(points, contour_lines)
         .properties(
             width=520, height=420,
             title=alt.TitleParams(
-                text="Procedural space UMAP",
+                text="Procedural space UMAP (90% density contours per cell)",
                 fontSize=11, color="#111111", anchor="start",
             ),
         )
