@@ -1,16 +1,23 @@
 """Shared Altair theme and color palette for all paper figures.
 
-Project palette — five base colors; pick combinations that make sense per plot.
-Priority order for figure prominence: GREEN > BLUE > MAGENTA > COPPER > OLIVE
+Project palette: five base colors plus two extended-cell agent colors.
+Priority order for figure prominence: GREEN > BLUE > MAGENTA > COPPER > OLIVE.
 
-    GREEN   #20A380  teal/green  — Claude-3.5, POSITIVE, structural
-    BLUE    #5692E5  medium blue — GPT-4, STRUCTURAL, benchmark primary
-    MAGENTA #B4184F  crimson     — GPT-4o, HARD, warning/error
-    COPPER  #CB4D20  terracotta  — Claude-3, warm accent, semantic baseline
-    OLIVE   #585E53  dark olive  — NEUTRAL, annotation, support text
+    GREEN   #20A380  teal         — Claude-3.5, POSITIVE, structural
+    BLUE    #5692E5  medium blue  — GPT-4, STRUCTURAL, benchmark primary
+    MAGENTA #B4184F  crimson      — GPT-4o, HARD, warning/error
+    COPPER  #CB4D20  terracotta   — Claude-3, warm accent, semantic baseline
+    OLIVE   #585E53  dark olive   — NEUTRAL, annotation, support text
+    INDIGO  #4658A0  slate-blue   — Claude-3.7-thinking (extended-thinking variant)
+    VIOLET  #7A4FA8  deep purple  — Claude-4 (latest, top performer in the corpus)
+
+INDIGO and VIOLET fill the hue gap between BLUE and MAGENTA so the two
+extended-thinking-cell agents are distinguishable from the four base-cell
+agents without claiming an existing slot.
 
 Darker family variants for additional series:
-    GREEN_D  #187860   BLUE_D  #3D7AD8   MAGENTA_D #8C1040   COPPER_D #A03D18
+    GREEN_D  #187860   BLUE_D    #3D7AD8   MAGENTA_D #8C1040
+    COPPER_D #A03D18   INDIGO_D  #2E3D74   VIOLET_D  #5A347E
 
 Import and call register() at the top of every figure script:
 
@@ -20,17 +27,21 @@ Import and call register() at the top of every figure script:
 import altair as alt
 
 # --- Project palette ---
-GREEN   = "#20A380"  # teal — Claude-3.5, positive, structural
+GREEN   = "#20A380"  # teal       — Claude-3.5, positive, structural
 BLUE    = "#5692E5"  # medium blue — GPT-4, structural
-MAGENTA = "#B4184F"  # crimson — GPT-4o, hard/warn
+MAGENTA = "#B4184F"  # crimson    — GPT-4o, hard/warn
 COPPER  = "#CB4D20"  # terracotta — Claude-3, warm accent
 OLIVE   = "#585E53"  # dark olive — neutral, annotation, support
+INDIGO  = "#4658A0"  # slate-blue — Claude-3.7-thinking (extended-thinking variant)
+VIOLET  = "#7A4FA8"  # deep purple — Claude-4 (latest, top performer in this corpus)
 
 # Darker family variants
 GREEN_D   = "#187860"
 BLUE_D    = "#3D7AD8"
 MAGENTA_D = "#8C1040"
 COPPER_D  = "#A03D18"
+INDIGO_D  = "#2E3D74"
+VIOLET_D  = "#5A347E"
 
 # Legacy aliases (backward compatibility)
 TEAL       = GREEN
@@ -75,24 +86,33 @@ YREF = {"grid": False}
 XREF = {"grid": False}
 
 # Canonical agent identity — single source of truth for all figure scripts.
-# Claude-3   = COPPER  (oldest Claude, lowest pass rate)
-# Claude-3.5 = GREEN   (priority 1 — best Anthropic performance)
-# GPT-4      = BLUE    (priority 2 — confident, targeted)
-# GPT-4o     = MAGENTA (priority 3 — exploratory, higher token cost)
+# Claude-3            = COPPER  (oldest Claude, lowest pass rate)
+# Claude-3.5          = GREEN   (priority 1 — best Anthropic in base cell)
+# GPT-4               = BLUE    (priority 2 — confident, targeted)
+# GPT-4o              = MAGENTA (priority 3 — exploratory, higher token cost)
+# Claude-3.7-thinking = INDIGO  (extended-thinking; slate-blue conveys "contemplative")
+# Claude-4            = VIOLET  (latest, top performer in the corpus)
 AGENT_COLORS = {
-    "Claude-3":   COPPER,   # #CB4D20
-    "Claude-3.5": GREEN,    # #20A380
-    "GPT-4":      BLUE,     # #5692E5
-    "GPT-4o":     MAGENTA,  # #B4184F
+    "Claude-3":            COPPER,   # #CB4D20
+    "Claude-3.5":          GREEN,    # #20A380
+    "GPT-4":               BLUE,     # #5692E5
+    "GPT-4o":              MAGENTA,  # #B4184F
+    "Claude-3.7-thinking": INDIGO,   # #4658A0
+    "Claude-4":            VIOLET,   # #7A4FA8
 }
-AGENT_ORDER = ["Claude-3", "Claude-3.5", "GPT-4", "GPT-4o"]
+AGENT_ORDER = [
+    "Claude-3", "Claude-3.5", "GPT-4", "GPT-4o",
+    "Claude-3.7-thinking", "Claude-4",
+]
 
 # Canonical mapping from SWE-bench submission IDs to short agent names
 AGENT_SHORT = {
-    "20240402_sweagent_claude3opus":    "Claude-3",
-    "20240402_sweagent_gpt4":           "GPT-4",
-    "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o":           "GPT-4o",
+    "20240402_sweagent_claude3opus":                "Claude-3",
+    "20240402_sweagent_gpt4":                       "GPT-4",
+    "20240620_sweagent_claude3.5sonnet":            "Claude-3.5",
+    "20240728_sweagent_gpt4o":                      "GPT-4o",
+    "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
+    "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
 }
 
 
