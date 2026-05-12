@@ -184,7 +184,10 @@ def evaluate_corpus(records: list[dict[str, object]], rules: list[Rule]) -> dict
 
 
 def plot_per_cell_pass_rates(per_cell: dict[str, dict[str, dict[str, float]]], out_path: Path) -> None:
-    """Small-multiple bar chart: rules on rows, cells on x, pass rate on y."""
+    """Heatmap: rules x cells with pass rate encoded as cell fill plus inline
+    percentage labels. Horizontal orientation; all 30 values visible at once;
+    the eye can scan per-rule (row) or per-cell (column) without comparing
+    across faceted panels."""
     rows: list[dict[str, object]] = []
     for rule_name, by_cell in per_cell.items():
         for cell, stats in by_cell.items():
@@ -192,38 +195,63 @@ def plot_per_cell_pass_rates(per_cell: dict[str, dict[str, dict[str, float]]], o
                 "rule": rule_name,
                 "cell": cell,
                 "pass_rate": stats["pass_rate"],
+                "pct_label": f"{stats['pass_rate'] * 100:.0f}%",
                 "n": stats["n"],
             })
     df = pd.DataFrame(rows)
-    chart = (
+    rule_order = list(per_cell.keys())
+
+    cells_rect = (
         alt.Chart(df)
-        .mark_bar()
+        .mark_rect(stroke="white", strokeWidth=2)
         .encode(
             x=alt.X(
                 "cell:N",
                 sort=CELL_ORDER,
-                axis=alt.Axis(title=None, labelAngle=-30),
+                axis=alt.Axis(title=None, labelAngle=-30, labelFontSize=11, domain=False, ticks=False, orient="top"),
             ),
             y=alt.Y(
-                "pass_rate:Q",
-                axis=alt.Axis(title="pass rate", format=".0%"),
-                scale=alt.Scale(domain=[0, 1]),
+                "rule:N",
+                sort=rule_order,
+                axis=alt.Axis(title=None, labelFontSize=11, domain=False, ticks=False, labelLimit=240),
             ),
-            color=alt.Color("cell:N", sort=CELL_ORDER, legend=None),
+            color=alt.Color(
+                "pass_rate:Q",
+                scale=alt.Scale(scheme="blues", domain=[0, 1]),
+                legend=alt.Legend(title="pass rate", format=".0%", orient="bottom"),
+            ),
             tooltip=["rule:N", "cell:N", alt.Tooltip("pass_rate:Q", format=".1%"), "n:Q"],
         )
-        .properties(width=140, height=120)
-        .facet(
-            row=alt.Row("rule:N", header=alt.Header(labelAlign="left", labelAnchor="start")),
+    )
+
+    # Text annotations: black on light cells, white on dark cells.
+    text = (
+        alt.Chart(df)
+        .mark_text(fontSize=11, fontWeight=500)
+        .encode(
+            x=alt.X("cell:N", sort=CELL_ORDER),
+            y=alt.Y("rule:N", sort=rule_order),
+            text="pct_label:N",
+            color=alt.condition(
+                "datum.pass_rate >= 0.55",
+                alt.value("white"),
+                alt.value("#16181D"),
+            ),
         )
-        .resolve_scale(y="shared")
+    )
+
+    chart = (
+        alt.layer(cells_rect, text)
         .properties(
+            width=alt.Step(120),
+            height=alt.Step(36),
             title=alt.TitleParams(
-                text="Pattern-matcher pass rates",
-                fontSize=11,
+                text="Pattern-matcher pass rates by rule and cell",
+                fontSize=12,
                 anchor="start",
             ),
         )
+        .configure_view(strokeWidth=0)
     )
     chart.save(str(out_path), scale_factor=2)
 
