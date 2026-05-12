@@ -12,8 +12,9 @@ Asks:
 
 Outputs:
     output/paper2_pilot/token_cost.json
-    output/paper2_pilot/token_cost_per_agent.png
+    output/paper2_pilot/token_cost_per_agent_{tokens_sent,tokens_received,api_calls,cost}.png
     output/paper2_pilot/token_cost_by_difficulty.png
+    output/paper2_pilot/token_cost_by_difficulty_{tokens,api_calls,cost}.png
 
 Usage:
     python -m analysis.preferences.token_cost
@@ -55,6 +56,15 @@ AGENT_SHORT = {
     "20240728_sweagent_gpt4o":                      "GPT-4o",
     "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
     "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+    "20250111_moatless_deepseek_v3":                "Moatless+V3",
+}
+
+# Submissions for which the trace shape carries no token/cost data
+# (verified by exhaustive key search; see commit message). They stay
+# absent from the figures rather than render as zero rows.
+NO_TOKEN_DATA = {
+    "20241202_agentless-1.5_claude-3.5-sonnet-20241022",  # agentless_log_text
+    "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1",  # dars_traj_list
 }
 # Per-agent colors fall back to the canonical theme; if an agent is
 # missing from the canonical map we use a neutral grey so the plot
@@ -93,9 +103,10 @@ def extract_model_stats(d: dict) -> dict:
     New format (Claude-3.7-thinking / Claude-4, post v1.1):
         {submission, instance_id, format, content: {..., info: {..., model_stats}}}
 
-    Non-SWE-agent submissions (Agentless / DARS / Moatless) have neither
-    shape; their content is a free-form log or a message list, and they
-    return {} here. They're filtered out downstream by the cost > 0 check.
+    Moatless and the other cross-scaffold submissions don't use this
+    shape; Moatless is handled by extract_moatless_stats (per-step
+    `usage` + `response_cost` walker). Agentless and DARS do not carry
+    token data in their traces and stay at zero.
     """
     info = d.get("info")
     if not isinstance(info, dict):
@@ -108,18 +119,65 @@ def extract_model_stats(d: dict) -> dict:
     return stats if isinstance(stats, dict) else {}
 
 
+def extract_moatless_stats(d: dict) -> dict:
+    """Sum per-step LLM-call usage and cost across a Moatless trace.
+
+    Moatless serializes each LLM call's response as a nested object with
+    `usage = {prompt_tokens, completion_tokens, total_tokens}` and
+    `response_cost = <float USD>`. There can be multiple calls per step
+    (planner + identifier + editor) at varying depth, so we walk the
+    whole structure and aggregate.
+
+    Returns a dict matching the model_stats schema (tokens_sent,
+    tokens_received, api_calls, instance_cost), 0 if the trace is not
+    Moatless-shaped or has no usage data.
+    """
+    acc = {"tokens_sent": 0, "tokens_received": 0, "api_calls": 0, "instance_cost": 0.0}
+
+    def walk(node):
+        if isinstance(node, dict):
+            usage = node.get("usage")
+            if isinstance(usage, dict) and (
+                "prompt_tokens" in usage or "completion_tokens" in usage
+            ):
+                acc["api_calls"] += 1
+                acc["tokens_sent"] += int(usage.get("prompt_tokens") or 0)
+                acc["tokens_received"] += int(usage.get("completion_tokens") or 0)
+            cost = node.get("response_cost")
+            if isinstance(cost, (int, float)):
+                acc["instance_cost"] += float(cost)
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(d)
+    return acc
+
+
 def load_model_stats() -> list[dict]:
     records = []
     for agent_dir in sorted(CACHE.iterdir()):
         if not agent_dir.is_dir():
             continue
-        short = AGENT_SHORT.get(agent_dir.name, agent_dir.name)
+        if agent_dir.name not in AGENT_SHORT:
+            # Skip submissions we don't have an extractor for; they would
+            # land as zero rows and be filtered out anyway, but skipping
+            # avoids carrying the long submission ID through downstream
+            # iteration as if it were an agent.
+            continue
+        short = AGENT_SHORT[agent_dir.name]
+        is_moatless = agent_dir.name == "20250111_moatless_deepseek_v3"
         for traj_file in sorted(agent_dir.glob("*.json")):
             if traj_file.name == "manifest.json":
                 continue
             with open(traj_file) as f:
                 d = json.load(f)
-            stats = extract_model_stats(d)
+            stats = (
+                extract_moatless_stats(d) if is_moatless
+                else extract_model_stats(d)
+            )
             records.append({
                 "agent": short,
                 "instance_id": traj_file.stem,
@@ -218,9 +276,10 @@ def plot_per_agent(per_agent: dict, out_path: Path) -> None:
     agent_order = list(reversed(agents))  # top-to-bottom: Claude-3.5 at top
 
     metric_specs = [
-        ("tokens_sent_mean", "Mean input tokens per task (K)", 1000, ".0f"),
-        ("api_calls_mean",   "Mean API calls per task",        1,    ".1f"),
-        ("cost_mean_usd",    "Mean cost per task (USD)",       1,    ".3f"),
+        ("tokens_sent_mean",     "Mean input tokens per task (K)",  1000, ".0f"),
+        ("tokens_received_mean", "Mean output tokens per task (K)", 1000, ".1f"),
+        ("api_calls_mean",       "Mean API calls per task",         1,    ".1f"),
+        ("cost_mean_usd",        "Mean cost per task (USD)",        1,    ".3f"),
     ]
 
     color_scale = alt.Scale(
@@ -298,8 +357,9 @@ def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
     three per-metric standalone PNGs (one per axis), per the
     "split into multiple plots" style preference.
 
-    Subtitle marks this as a 3-agent baseline (cost data is unavailable for
-    the new submissions in the extended corpus).
+    Includes every agent for which token-cost extraction succeeded.
+    Agentless and DARS are omitted from the figure because their trace
+    formats carry no token/cost data; the subtitle says so.
     """
     metric_specs = [
         ("tokens_sent_mean", "Input tokens per task (thousands)", 1000, "tokens"),
@@ -308,10 +368,19 @@ def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
     ]
     diff_label = {"0": "0", "1": "1", "2": "2", "3": "3"}
 
+    # Agents that appear at all in the by_diff table with non-zero cost.
+    # Drops agents whose extraction produced only zeros.
+    agents_with_data = sorted({
+        a
+        for d_str in by_diff
+        for a, stats in by_diff[d_str].items()
+        if stats.get("cost_mean_usd", 0) > 0
+    })
+
     rows = []
     for key, label, scale, slug in metric_specs:
         for d_str in ["0", "1", "2", "3"]:
-            for a in ["Claude-3.5", "GPT-4", "GPT-4o"]:
+            for a in agents_with_data:
                 if d_str in by_diff and a in by_diff[d_str]:
                     rows.append({
                         "difficulty": int(d_str),
@@ -327,8 +396,12 @@ def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
         domain=list(AGENT_COLORS.keys()),
         range=list(AGENT_COLORS.values()),
     )
-    agent_order = ["Claude-3.5", "GPT-4", "GPT-4o"]
+    agent_order = agents_with_data
     diff_order = ["0", "1", "2", "3"]
+    subtitle_text = (
+        f"{len(agents_with_data)} agents; Agentless and DARS "
+        "omitted (trace shapes carry no token/cost data)"
+    )
 
     def _per_metric_panel(metric_label: str, df_panel: pd.DataFrame, width: int = 320, height: int = 220):
         base = alt.Chart(df_panel).encode(
@@ -355,7 +428,7 @@ def plot_by_difficulty(by_diff: dict, out_path: Path) -> None:
             .properties(
                 title=alt.TitleParams(
                     text=label,
-                    subtitle="3-agent baseline (cost data unavailable for new submissions)",
+                    subtitle=subtitle_text,
                     fontSize=13, subtitleFontSize=10,
                     color="#111111", subtitleColor="#888888", anchor="start",
                 )
@@ -429,12 +502,14 @@ def main() -> int:
         "by_difficulty": by_difficulty,
         "length_correlation": length_corr,
     }, indent=2, default=str))
+    # plot_per_agent treats the second arg as a filename stem only; it
+    # writes one PNG per metric (tokens_sent / tokens_received /
+    # api_calls / cost) and does not write the stem path itself.
     plot_per_agent(per_agent, OUT / "token_cost_per_agent.png")
     plot_by_difficulty(by_difficulty, OUT / "token_cost_by_difficulty.png")
 
     print(f"\nSaved:")
     print(f"  {OUT / 'token_cost.json'}")
-    print(f"  {OUT / 'token_cost_per_agent.png'}")
     print(f"  {OUT / 'token_cost_by_difficulty.png'}")
     return 0
 

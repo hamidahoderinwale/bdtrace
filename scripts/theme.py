@@ -34,6 +34,7 @@ COPPER  = "#CB4D20"  # terracotta — Claude-3, warm accent
 OLIVE   = "#585E53"  # dark olive — neutral, annotation, support
 INDIGO  = "#4658A0"  # slate-blue — Claude-3.7-thinking (extended-thinking variant)
 VIOLET  = "#7A4FA8"  # deep purple — Claude-4 (latest, top performer in this corpus)
+SIENNA  = "#9C5F2E"  # earthy brown — Moatless+V3 (cross-scaffold, deep-research-style)
 
 # Darker family variants
 GREEN_D   = "#187860"
@@ -42,6 +43,7 @@ MAGENTA_D = "#8C1040"
 COPPER_D  = "#A03D18"
 INDIGO_D  = "#2E3D74"
 VIOLET_D  = "#5A347E"
+SIENNA_D  = "#6E411F"
 
 # Legacy aliases (backward compatibility)
 TEAL       = GREEN
@@ -92,6 +94,7 @@ XREF = {"grid": False}
 # GPT-4o              = MAGENTA (priority 3 — exploratory, higher token cost)
 # Claude-3.7-thinking = INDIGO  (extended-thinking; slate-blue conveys "contemplative")
 # Claude-4            = VIOLET  (latest, top performer in the corpus)
+# Moatless+V3         = SIENNA  (cross-scaffold; earthy brown distinct from SWE-agent palette)
 AGENT_COLORS = {
     "Claude-3":            COPPER,   # #CB4D20
     "Claude-3.5":          GREEN,    # #20A380
@@ -99,10 +102,12 @@ AGENT_COLORS = {
     "GPT-4o":              MAGENTA,  # #B4184F
     "Claude-3.7-thinking": INDIGO,   # #4658A0
     "Claude-4":            VIOLET,   # #7A4FA8
+    "Moatless+V3":         SIENNA,   # #9C5F2E
 }
 AGENT_ORDER = [
     "Claude-3", "Claude-3.5", "GPT-4", "GPT-4o",
     "Claude-3.7-thinking", "Claude-4",
+    "Moatless+V3",
 ]
 
 # Canonical mapping from SWE-bench submission IDs to short agent names
@@ -113,6 +118,7 @@ AGENT_SHORT = {
     "20240728_sweagent_gpt4o":                      "GPT-4o",
     "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
     "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+    "20250111_moatless_deepseek_v3":                "Moatless+V3",
 }
 
 
