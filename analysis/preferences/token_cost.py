@@ -43,17 +43,26 @@ OUT = PROJECT_ROOT / "output" / "paper2_pilot"
 SEQ_PATH = OUT / "bpe_sequences.jsonl"
 DIVERSITY_PATH = OUT / "task_diversity.csv"
 
+# All SWE-agent-based submissions, which share the `info.model_stats`
+# extraction path. The three cross-scaffold submissions (Agentless,
+# DARS, Moatless) use different schemas and are handled by separate
+# extractors; their values land as zero here and are filtered out
+# before plotting.
 AGENT_SHORT = {
-    "20240402_sweagent_gpt4": "GPT-4",
-    "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o": "GPT-4o",
+    "20240402_sweagent_claude3opus":                "Claude-3",
+    "20240402_sweagent_gpt4":                       "GPT-4",
+    "20240620_sweagent_claude3.5sonnet":            "Claude-3.5",
+    "20240728_sweagent_gpt4o":                      "GPT-4o",
+    "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
+    "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
 }
-# 3-agent palette using canonical theme colors (Claude-3 cost data unavailable
-# in this pilot dump, hence excluded).
+# Per-agent colors fall back to the canonical theme; if an agent is
+# missing from the canonical map we use a neutral grey so the plot
+# still renders.
+_FALLBACK_COLOR = "#888888"
 AGENT_COLORS = {
-    "Claude-3.5": CANONICAL_AGENT_COLORS["Claude-3.5"],
-    "GPT-4":      CANONICAL_AGENT_COLORS["GPT-4"],
-    "GPT-4o":     CANONICAL_AGENT_COLORS["GPT-4o"],
+    a: CANONICAL_AGENT_COLORS.get(a, _FALLBACK_COLOR)
+    for a in AGENT_SHORT.values()
 }
 
 
@@ -76,6 +85,29 @@ def load_difficulty() -> dict[str, int]:
     return out
 
 
+def extract_model_stats(d: dict) -> dict:
+    """Return the model_stats dict, handling both SWE-agent trajectory shapes.
+
+    Old format (Claude-3 / Claude-3.5 / GPT-4 / GPT-4o):
+        {environment, trajectory, history, info: {..., model_stats: {...}}}
+    New format (Claude-3.7-thinking / Claude-4, post v1.1):
+        {submission, instance_id, format, content: {..., info: {..., model_stats}}}
+
+    Non-SWE-agent submissions (Agentless / DARS / Moatless) have neither
+    shape; their content is a free-form log or a message list, and they
+    return {} here. They're filtered out downstream by the cost > 0 check.
+    """
+    info = d.get("info")
+    if not isinstance(info, dict):
+        content = d.get("content")
+        if isinstance(content, dict):
+            info = content.get("info")
+    if not isinstance(info, dict):
+        return {}
+    stats = info.get("model_stats")
+    return stats if isinstance(stats, dict) else {}
+
+
 def load_model_stats() -> list[dict]:
     records = []
     for agent_dir in sorted(CACHE.iterdir()):
@@ -83,9 +115,11 @@ def load_model_stats() -> list[dict]:
             continue
         short = AGENT_SHORT.get(agent_dir.name, agent_dir.name)
         for traj_file in sorted(agent_dir.glob("*.json")):
+            if traj_file.name == "manifest.json":
+                continue
             with open(traj_file) as f:
                 d = json.load(f)
-            stats = (d.get("info") or {}).get("model_stats") or {}
+            stats = extract_model_stats(d)
             records.append({
                 "agent": short,
                 "instance_id": traj_file.stem,
@@ -175,7 +209,12 @@ def correlate_with_length(
 
 
 def plot_per_agent(per_agent: dict, out_path: Path) -> None:
-    agents = [a for a in ["Claude-3.5", "GPT-4", "GPT-4o"] if a in per_agent]
+    # Keep agents whose cost extraction succeeded (mean > 0); the
+    # zero-valued rows are from scaffolds that need separate extraction.
+    agents = [
+        a for a in AGENT_SHORT.values()
+        if a in per_agent and per_agent[a].get("cost_mean_usd", 0) > 0
+    ]
     agent_order = list(reversed(agents))  # top-to-bottom: Claude-3.5 at top
 
     metric_specs = [
