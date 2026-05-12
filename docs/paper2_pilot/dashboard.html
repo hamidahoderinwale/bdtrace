@@ -1753,11 +1753,16 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 
 <h3>5.5 Infrastructure cost and tokens</h3>
 
-<p>Each SWE-agent trajectory carries <code>model_stats</code>: tokens sent, tokens received, API calls, and dollar cost. Aggregated across 867 trajectories this gives an honest infrastructure-cost picture alongside the procedural analysis.</p>
+<p>Per-trajectory token usage and dollar cost extracted from the trace cache for seven of the nine agents. The six SWE-agent submissions surface <code>info.model_stats</code> (or <code>content.info.model_stats</code> in the v1.1+ format); Moatless was reconstructed by summing every nested <code>usage</code> + <code>response_cost</code> across its planner-tree trace. Agentless and DARS carry no token data in their public trace shapes and are omitted. Aggregated across 2,039 trajectories.</p>
 
 <figure>
 <img src="token_cost_per_agent_tokens_sent.png" alt="Per-agent input tokens">
 <figcaption><strong>Input tokens per task</strong> — context accumulated across the trajectory.</figcaption>
+</figure>
+
+<figure>
+<img src="token_cost_per_agent_tokens_received.png" alt="Per-agent output tokens">
+<figcaption><strong>Output tokens per task</strong> — what the model itself emitted (thoughts + actions). Moatless leads by an order of magnitude because its planner serializes reasoning across many short LLM calls; Claude-3.7-thinking is at the bottom despite being an extended-thinking model because v1.1+ SWE-agent does not capture extended-thinking content in <code>tokens_received</code>.</figcaption>
 </figure>
 
 <figure>
@@ -1771,16 +1776,20 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </figure>
 
 <div class="finding">
-<strong>GPT-4 uses half the tokens of Claude or GPT-4o but is not the cheapest.</strong> Mean tokens sent per task: GPT-4 = 242k, GPT-4o = 494k, Claude-3.5 = 516k. Mean cost per task: Claude-3.5 = $1.62, GPT-4 = $2.51, GPT-4o = $2.53. <strong>Claude is the cheapest per task despite using the most tokens</strong> — Anthropic per-token pricing more than offsets the length disadvantage.
+<strong>SWE-agent v1.1+ slashes input tokens by ~10×.</strong> Mean tokens sent per task drops from 220k-516k for the older runs (Claude-3, Claude-3.5, GPT-4, GPT-4o) to 29k-36k for Claude-3.7-thinking and Claude-4. Same scaffold name, very different prompt-management behavior: v1.1 trims context aggressively, where v1.0 accumulated huge prompts.
 </div>
 
 <div class="finding">
-<strong>GPT-4o makes the most granular decisions.</strong> Mean API calls per task: GPT-4o = 39, Claude-3.5 = 33, GPT-4 = 22. GPT-4o is both long-running and finely-partitioned — every edit burst is many small API calls rather than one big one.
+<strong>DeepSeek-V3 is three orders of magnitude cheaper per task than Claude or GPT.</strong> Moatless+DeepSeek-V3 averages $0.004/task versus $0.78-$3.42 for the Claude/GPT submissions. Comparable token budgets (Moatless 422k input tokens, Claude-3.5 516k), wildly different per-token pricing.
+</div>
+
+<div class="finding">
+<strong>Claude-4 makes the most granular decisions.</strong> Mean API calls per task: Claude-4 = 65, Moatless = 41, GPT-4o = 39, Claude-3.7-thinking = 34, Claude-3.5 = 33, GPT-4 = 22, Claude-3 = 17. Claude-4 is both shorter (in input tokens, v1.1 effect) and finer-grained (in api_calls).
 </div>
 
 <figure>
 <img src="token_cost_by_difficulty_tokens.png" alt="Tokens by difficulty">
-<figcaption><strong>Input tokens vs task difficulty.</strong> All three agents burn more on 0/3 tasks (nobody solved) than on 3/3 tasks (everyone solved). GPT-4o averages 564k on 0/3 vs 250k on 3/3 (2.3×); Claude 580k vs 378k (1.5×).</figcaption>
+<figcaption><strong>Input tokens vs task difficulty.</strong> Most agents burn more on 0/3 tasks (nobody solved) than on 3/3 tasks. GPT-4o averages 564k on 0/3 vs 250k on 3/3 (2.3×); Claude-3.5 580k vs 378k (1.5×).</figcaption>
 </figure>
 
 <figure>
@@ -1790,18 +1799,18 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 
 <figure>
 <img src="token_cost_by_difficulty_cost.png" alt="Dollar cost by difficulty">
-<figcaption><strong>Cost vs task difficulty.</strong> Cost gradients (0/3 → 3/3): Claude $2.17 → $1.28 (−$0.89), GPT-4 $2.70 → $1.76 (−$0.94), GPT-4o $2.74 → $1.38 (−$1.36, the largest drop). Failing is consistently 40–60% more expensive than succeeding.</figcaption>
+<figcaption><strong>Cost vs task difficulty.</strong> The hardest tasks are the most expensive across the SWE-agent submissions. The pattern holds independent of vendor and model family.</figcaption>
 </figure>
 
 <div class="finding">
-<strong>Failing a hard task is 40-60% more expensive than solving an easy one.</strong> On 0/3 tasks, GPT-4o averages 564k tokens sent, vs 250k on 3/3 tasks (2.3× more). Claude shows 580k vs 378k (1.5×). Cost rises proportionally. From an infra-cost perspective, the <em>hardest</em> tasks are also the <em>most expensive</em>, and agents flail longer before bailing — all three agents get progressively shorter as tasks become solvable.
+<strong>Failing a hard task is consistently more expensive than solving an easy one.</strong> On 0/3 tasks vs 3/3 tasks: GPT-4o 564k → 250k tokens (2.3×); Claude-3.5 580k → 378k (1.5×). The ratio holds in cost terms too. From an infra-cost perspective, the <em>hardest</em> tasks are also the <em>most expensive</em>: agents flail longer before bailing.
 </div>
 
 <div class="finding">
-<strong>Trajectory length is a near-perfect proxy for tokens burned.</strong> Pearson correlation between canonical atom count and tokens-sent: Claude r=0.96, GPT-4 r=0.98, GPT-4o r=0.95. Per-atom token slope: Claude ~18.5k, GPT-4 ~13k, GPT-4o ~13k — Claude uses ~40% more tokens per step, consistent with its longer per-step observations and thoughts.
+<strong>Trajectory length is a near-perfect proxy for tokens burned (in the older format).</strong> Pearson correlation between canonical atom count and tokens-sent: Claude-3.5 r=0.96, GPT-4 r=0.98, GPT-4o r=0.95. Per-atom token slope: Claude ~18.5k, GPT-4 ~13k, GPT-4o ~13k. The v1.1+ submissions break this proxy (context is trimmed each step), so the correlation only applies to the four older agents.
 </div>
 
-<p><strong>Total burn for this pilot</strong>: 867 trajectories cost ~$1,925 total (Claude $469, GPT-4 $752, GPT-4o $704). Over 300 tasks and 3 agents, this gives the paper an empirical infrastructure-cost baseline: running an autonomous SWE-agent on a SWE-bench-Lite-scale task list costs roughly $2 per task per agent, averaged.</p>
+<p><strong>Total burn for this pilot</strong>: 2,039 trajectories cost ~$3,516 total — Claude-3 $1,026, GPT-4 $752, GPT-4o $704, Claude-3.5 $469, Claude-4 $343, Claude-3.7-thinking $221, Moatless+DeepSeek-V3 $1.21. Average per-task cost ranges from a fraction of a cent (Moatless) to several dollars (Claude-3). Agentless and DARS are excluded because their trace shapes do not carry token data.</p>
 
 <h3>5.6 Step-level resources and efficiency</h3>
 
