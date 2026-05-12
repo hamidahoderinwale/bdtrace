@@ -54,6 +54,7 @@ SUBMISSION_LABEL = {
     "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1":               "DARS+R1",
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022":               "Agentless+Claude-3.5",
     "20250111_moatless_deepseek_v3":                                   "Moatless+V3",
+    "20250526_sweagent_claude-4-sonnet-20250514":                      "Claude-4",
 }
 
 TOP_N = 15
@@ -167,6 +168,10 @@ def main() -> None:
              for m in all_motifs]
     diff_df = pd.DataFrame(diffs).sort_values("abs_diff", ascending=False).head(20)
 
+    # Sort by signed diff descending: motifs that grow most in long failures
+    # appear at top; motifs that shrink most appear at the bottom.
+    diff_df = diff_df.sort_values("diff", ascending=False).head(18)
+
     plot_rows = []
     for _, row in diff_df.iterrows():
         plot_rows.append({"motif": row["motif"], "group": "short", "rate": row["short_rate"]})
@@ -174,24 +179,67 @@ def main() -> None:
     plot_df = pd.DataFrame(plot_rows)
     motif_order = diff_df["motif"].tolist()
 
+    # Connecting-rule data: span from the lower rate to the higher rate per motif.
+    rule_rows = [
+        {"motif": row["motif"],
+         "x_lo": min(row["short_rate"], row["long_rate"]),
+         "x_hi": max(row["short_rate"], row["long_rate"])}
+        for _, row in diff_df.iterrows()
+    ]
+    rule_df = pd.DataFrame(rule_rows)
+
+    # Alternating row bands: every other motif gets a subtle gray stripe so
+    # the eye can scan a long category list without losing the row.
+    band_df = pd.DataFrame([
+        {"motif": m} for i, m in enumerate(motif_order) if i % 2 == 0
+    ])
+
     color_scale = alt.Scale(domain=["short", "long"], range=[BLUE, MAGENTA])
+    x_max = max(plot_df["rate"]) * 1.15
+    y_axis = alt.Axis(
+        title=None, domain=False, ticks=False,
+        labelFontSize=10, labelLimit=200, labelPadding=8,
+    )
+
+    bands = (
+        alt.Chart(band_df)
+        .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
+        .encode(y=alt.Y("motif:N", sort=motif_order, axis=y_axis))
+    )
+    connecting = (
+        alt.Chart(rule_df)
+        .mark_rule(color="#666666", strokeWidth=1.2, opacity=0.7)
+        .encode(
+            x=alt.X("x_lo:Q", scale=alt.Scale(domain=[0, x_max])),
+            x2="x_hi:Q",
+            y=alt.Y("motif:N", sort=motif_order, axis=y_axis),
+        )
+    )
+    dots = (
+        alt.Chart(plot_df)
+        .mark_circle(size=140, opacity=1.0, strokeWidth=0)
+        .encode(
+            x=alt.X(
+                "rate:Q",
+                title="Token frequency in post-localization segment",
+                scale=alt.Scale(domain=[0, x_max]),
+            ),
+            y=alt.Y("motif:N", sort=motif_order, axis=y_axis),
+            color=alt.Color(
+                "group:N", scale=color_scale,
+                legend=alt.Legend(title="Post-localization duration", orient="bottom"),
+            ),
+            tooltip=["motif", "group", alt.Tooltip("rate:Q", format=".3f")],
+        )
+    )
 
     chart = (
-        alt.Chart(plot_df)
-        .mark_point(filled=True, size=80)
-        .encode(
-            y=alt.Y("motif:N", sort=motif_order, axis=alt.Axis(title=None)),
-            x=alt.X("rate:Q",
-                    title="Token frequency in post-localization segment",
-                    scale=alt.Scale(domain=[0, max(plot_df['rate']) * 1.15])),
-            color=alt.Color("group:N", scale=color_scale,
-                            legend=alt.Legend(title="Post-localization duration",
-                                              orient="bottom")),
-        )
+        alt.layer(bands, connecting, dots)
+        .resolve_scale(color="independent")
         .properties(
-            width=380, height=320,
+            width=420, height=380,
             title=alt.TitleParams(
-                "Post-localization motifs (extended corpus)",
+                "Post-localization motif frequencies, short vs long Type B failures",
                 fontSize=12, color="#111111", anchor="start",
             ),
         )

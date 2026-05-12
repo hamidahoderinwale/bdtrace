@@ -195,6 +195,21 @@
 <span class="tier tier-exploratory">Exploratory</span> = produced during analysis, not paper-bound; kept here for dashboard completeness only.</p>
 </header>
 
+<section id="updates-may11" style="background:#eff6ff; border-left:3px solid #5692E5; padding:14px 18px; margin-bottom:30px;">
+<h3 style="margin:0 0 6px 0; font-size:15px; color:#1d4ed8;">Session updates, 2026-05-11</h3>
+<ul style="margin:4px 0; font-size:14px; padding-left:20px;">
+  <li><strong>CoT-action coverage analysis added.</strong> Per-trajectory alignment between stated reasoning and observed action types on 572 extended-thinking trajectories. Finding: asymmetric over-inclusion — agents announce more action types than they execute, but rarely execute action types they did not first state. Median Jaccard 0.43–0.57; forward 0.50–0.625; reverse 0.75–0.80. Regex baseline; embedding-based robustness check confirms direction at matched liberality. New figure: <code>fig_cot_matcher_barbell.png</code> (primary), <code>fig_cot_alignment_robustness.png</code> (threshold sweep).</li>
+  <li><strong>Motif ablation on 9-class probe.</strong> Drop top-K most discriminative motifs and rerun. Accuracy decays smoothly from 85.7% (K=0) to 65.9% (K=100 of 124) — never approaches 11.1% chance. Signal is distributed across the vocabulary, not concentrated. Top discriminative motifs are interpretable procedural patterns (failure markers, reproducer chains, stuck-edit-loop, cleanup-then-submit). New figure: <code>fig_motif_ablation_probe.png</code>.</li>
+  <li><strong>9-agent UMAP of procedural space.</strong> Per-trajectory UMAP from BPE motif distributions over all 2,639 trajectories, cell-colored by paradigm × scaffold. Five cells visible as separated clusters: three isolated cross-scaffold (Agentless, DARS, Moatless), and the SWE-agent base vs extended-thinking pair adjacent but distinct. Confirms the JSD three-regime structure visually. New figure: <code>fig_trajectory_umap_extended.png</code>. Per-agent UMAP (<code>fig_agent_umap_extended.png</code>) did not work — n=9 too few for UMAP.</li>
+  <li><strong>Cross-scaffold mapping construct validity.</strong> Per-scaffold OTHER-fraction analysis: under 1% of canonical atoms collapsed for 7 of 9 agents; DARS+R1 highest at 4.65%; Agentless and Moatless 0% by construction. Bounds the cross-scaffold canonicalization exposure.</li>
+  <li><strong>Per-family JSD audit.</strong> Within the SWE-agent base cell, model family (Anthropic vs OpenAI) does not explain within-cell variation. Within-family pairs mean 0.165; cross-family pairs mean 0.153. Lab identity is not a confound.</li>
+  <li><strong>Temperature audit.</strong> Extended-thinking agents (Claude-3.7-thinking, Claude-4) and Moatless+V3 confirmed at temperature 0.0 from preserved replay configurations. Older SWE-agent submissions and Agentless+DARS assumed greedy per the published scaffold defaults.</li>
+  <li><strong>Confusion-matrix title fix.</strong> <code>backbone_probe_extended.png</code> regenerated with "9-class" in the title (previously stale "8-class").</li>
+  <li><strong>Editorial decision log started.</strong> Running provenance log in agent memory; 16 decisions recorded for the LaTeX draft (CoT-action scope, "structurally decoupled" overclaim replacement, regex vs embedding numbers, barbell vs grouped-bar figure, §1 thesis paragraph, §7 selective cut + relocation, §Continuing cut, §6 cut + distribute, JSD/probe/leave-one-out/procgrep paragraphs, 9-agent UMAP add, etc.).</li>
+</ul>
+<p style="margin:6px 0 0; font-size:13px; color:#1d4ed8;">See section 0.5 for the updated paper-figures list with the new headline visuals.</p>
+</section>
+
 <section id="updates-may5" style="background:#e8f5e9; border-left:3px solid #20A380; padding:14px 18px; margin-bottom:30px;">
 <h3 style="margin:0 0 6px 0; font-size:15px; color:#187860;">Session updates, 2026-05-05</h3>
 <ul style="margin:4px 0; font-size:14px; padding-left:20px;">
@@ -346,18 +361,42 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <span style="color:#888;">EXPLORATORY</span> = produced during analysis, not paper-bound; kept here for dashboard completeness only.</p>
 
 <h2 style="color:#20A380; border-bottom:2px solid #20A380; padding-bottom:4px; margin-top:30px;">HEADLINE FIGURES (paper main body)</h2>
-<p style="font-size:13px; color:#555;">The eight figures that anchor the paper's findings. All from the extended 8-submission corpus (2,344 trajectories, 4 scaffolds, 7 backbones).</p>
+<p style="font-size:13px; color:#555;">The eight figures that anchor the paper's findings. All from the extended 9-submission corpus (2,639 trajectories, 4 scaffolds, 8 backbones — including Claude-4 added 2026-05-07).</p>
 
-<h3>Backbone probe, 8-class agent identification (Section 4)</h3>
+<h3>Backbone probe, 9-class agent identification (Section 4)</h3>
 <figure>
-  <img src="backbone_probe_extended.png" alt="Backbone probe extended to 8 submissions">
+  <img src="backbone_probe_extended.png" alt="9-class backbone-probe confusion matrix (86% accuracy)">
   <figcaption>Macro F1 = 0.83 (5-fold grouped CV, chance 12.5%). Scaffold dominates backbone: 4 distinct scaffolds at F1 ≥ 0.98; 4 within-scaffold backbones at F1 0.70–0.86.</figcaption>
 </figure>
 
 <h3>Pairwise agent JSD matrix (Section 4)</h3>
 <figure>
   <img src="fig_jsd_matrix_extended.png" alt="Pairwise JSD on extended corpus">
-  <figcaption>Three regimes: Agentless ~1.0 vs all (deterministic-pipeline disjointness), within-SWE-agent 0.11–0.20, cross-scaffold 0.54–0.78.</figcaption>
+  <figcaption>Three regimes: Agentless ~1.0 vs all (deterministic-pipeline disjointness), within-SWE-agent base 0.10–0.19, within-SWE-agent extended-thinking pair (Claude-3.7-thinking ↔ Claude-4) 0.32, cross-scaffold 0.62–1.00.</figcaption>
+</figure>
+
+<h3>Procedural space, 9-agent UMAP (Section 4) <span class="tier tier-headline">New 2026-05-11</span></h3>
+<figure>
+  <img src="fig_trajectory_umap_extended.png" alt="9-agent procedural-space UMAP">
+  <figcaption>Per-trajectory UMAP from BPE motif distributions, 2,639 trajectories, cell-colored by paradigm × scaffold. Five cells visible as separated clusters: three isolated cross-scaffold (Agentless, DARS, Moatless), and SWE-agent base vs extended-thinking adjacent but distinct. Hyperparameters: n_neighbors=15, min_dist=0.25, cosine, seed=0. Visual companion to the JSD matrix.</figcaption>
+</figure>
+
+<h3>Cross-scaffold backbone-transfer probe (Section 4)</h3>
+<figure>
+  <img src="fig_leave_one_scaffold_out.png" alt="Leave-one-scaffold-out probe predictions">
+  <figcaption>Predicted-class share when SWE-agent classifier is applied to held-out cross-scaffold submissions.</figcaption>
+</figure>
+
+<h3>Scaffold-property decomposition (Section 4)</h3>
+<figure>
+  <img src="fig_scaffold_property_decomposition.png" alt="Scaffold-property decomposition">
+  <figcaption>Mean cross-scaffold JSD when each property differs vs matches.</figcaption>
+</figure>
+
+<h3>Paradigm classifier (Section 4)</h3>
+<figure>
+  <img src="fig_paradigm_classifier.png" alt="Paradigm classifier P(extended-thinking) per submission">
+  <figcaption>Mean P(extended-thinking) per submission, classifier trained on SWE-agent.</figcaption>
 </figure>
 
 <h3>History Flow: file-touch sequences on a single instance (Section 6, case study)</h3>
@@ -384,10 +423,28 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Long Type B vs short Type B motif rates across 7 applicable submissions. Stuck-edit-loop signature generalizes.</figcaption>
 </figure>
 
+<h3>CoT-action coverage, two-matcher comparison (Section Findings) <span class="tier tier-headline">New 2026-05-11</span></h3>
+<figure>
+  <img src="fig_cot_matcher_barbell.png" alt="CoT-action coverage barbell across two matchers">
+  <figcaption>Stated vs observed action types per agent and matcher. Open circle: stated → done coverage. Filled circle: done → stated coverage. n=572 trajectories (Claude-3.7-thinking + Claude-4). All four lines slope right: agents announce more action types than they execute. Regex baseline and embedding (threshold 0.45) agree on direction.</figcaption>
+</figure>
+
+<h3>Motif ablation on 9-class probe (Section Findings) <span class="tier tier-headline">New 2026-05-11</span></h3>
+<figure>
+  <img src="fig_motif_ablation_probe.png" alt="Probe accuracy under top-K motif ablation">
+  <figcaption>Probe accuracy decays smoothly as the top-K most discriminative motifs are removed. From 85.7% (K=0) to 65.9% (K=100 of 124), never approaching chance (11.1%, dashed). Signal is distributed across the vocabulary.</figcaption>
+</figure>
+
+<h3>procgrep stuck-edit-loop rate per agent (Section 6.5 / Appendix D)</h3>
+<figure>
+  <img src="fig_procgrep_results.png" alt="procgrep stuck-edit-loop rates per agent">
+  <figcaption>Stuck-edit-loop rate per agent, procgrep CLI on 2,639 trajectories.</figcaption>
+</figure>
+
 <h3>Per-form FP-growth templates, top pattern (Section 7)</h3>
 <figure>
   <img src="fig_motif_fpgrowth_templates_extended.png" alt="FP-growth top template per FIM form">
-  <figcaption>Top pass-enriched canonical pattern per FIM form, 8-submission corpus.</figcaption>
+  <figcaption>Top pass-enriched canonical pattern per FIM form, 9-submission corpus.</figcaption>
 </figure>
 
 <h3>FP-growth stability across thresholds (Section 7)</h3>
@@ -408,8 +465,16 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
     <figcaption>Distinct motifs at 90% coverage.</figcaption>
   </figure>
   <figure style="margin:0;">
+    <img src="fig_step_count_distribution_extended.png" alt="Step count distribution per agent (extended)">
+    <figcaption>Actions per task, distribution per agent.</figcaption>
+  </figure>
+  <figure style="margin:0;">
+    <img src="fig_steps_per_resolved.png" alt="Actions per resolved task per agent">
+    <figcaption>Actions per resolved task, per agent.</figcaption>
+  </figure>
+  <figure style="margin:0;">
     <img src="fig_agg_length_extended.png" alt="Mean trajectory length (extended)">
-    <figcaption>Mean trajectory length.</figcaption>
+    <figcaption>Mean trajectory length per agent.</figcaption>
   </figure>
   <figure style="margin:0;">
     <img src="fig_agg_compression_extended.png" alt="Mean BPE compression (extended)">
@@ -459,7 +524,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 
 <h4>Backbone probe (4-agent baseline)</h4>
 <figure>
-  <img src="backbone_probe.png" alt="Backbone probe confusion matrix">
+  <img src="backbone_probe_robust.png" alt="Backbone probe confusion matrix, 4-agent baseline">
   <figcaption>4-agent: 78.9% F1 standard CV, 69.3% F1 grouped CV (chance 33%). Compare to 8-class macro F1 = 0.83 above.</figcaption>
 </figure>
 
@@ -613,11 +678,11 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <tr><td>Pass/fail (% of H removed), uncertain bins only</td><td class="num" style="color:#20A380;font-weight:600;">5–11%</td><td class="num">n/a</td><td class="num">n/a</td></tr>
 <tr><td>Trajectory length (% of H removed)</td><td class="num" style="color:#20A380;font-weight:600;">13.7%</td><td class="num">2.8%</td><td class="num">1.1%</td></tr>
 <tr><td>Compression ratio (% of H removed)</td><td class="num" style="color:#20A380;font-weight:600;">6.2%</td><td class="num">0.6%</td><td class="num">2.1%</td></tr>
-<tr><td colspan="4" style="background:#f5fbf8; font-weight:600; padding:6px 10px; color:#187860;">Extended corpus (8 submissions, 2,344 trajectories)</td></tr>
+<tr><td colspan="4" style="background:#f5fbf8; font-weight:600; padding:6px 10px; color:#187860;">Extended corpus (9 submissions, 2,639 trajectories)</td></tr>
 <tr><td>Pass/fail (% of H removed), extended</td><td class="num">6.8%</td><td class="num" style="color:#20A380;font-weight:600;">48.8%</td><td class="num">1.3%</td></tr>
 <tr><td>Trajectory length (% of H removed), extended</td><td class="num" style="color:#20A380;font-weight:600;">26.8%</td><td class="num">2.0%</td><td class="num">0.7%</td></tr>
 <tr><td>Compression ratio (% of H removed), extended</td><td class="num" style="color:#20A380;font-weight:600;">24.0%</td><td class="num">0.4%</td><td class="num">1.1%</td></tr>
-<tr><td colspan="4" style="font-size:12px; color:#666; padding:6px 10px;">Appendix: eta²(difficulty; pass/fail) = 0.560, omega² = 0.558 | Backbone probe (4-agent, 3-class): 78.9% F1 standard CV / 69.3% F1 grouped CV | Backbone probe (extended, 8-class): macro F1 = 0.83, accuracy = 0.84 (chance 12.5%); scaffold-distinct classes F1 ≥ 0.98, within-scaffold backbone F1 0.70–0.86 | Verified replication: n=996, 2 agents, 500 instances</td></tr>
+<tr><td colspan="4" style="font-size:12px; color:#666; padding:6px 10px;">Appendix: eta²(difficulty; pass/fail) = 0.560, omega² = 0.558 | Backbone probe (4-agent, 3-class): 78.9% F1 standard CV / 69.3% F1 grouped CV | Backbone probe (extended, 9-class): macro F1 = 0.85, accuracy = 0.86 (chance 11.1%); scaffold-distinct classes F1 ≥ 0.98, within-scaffold extended-thinking F1 0.99–1.00 (Claude-3.7-thinking, Claude-4), within-scaffold base F1 0.70–0.86 | Verified replication: n=996, 2 agents, 500 instances</td></tr>
 <tr><th>Agent</th><th>Resolve rate</th><th>Cost/task</th><th>Cost/resolved</th></tr>
 <tr><td>Claude-3.5</td><td class="num">23.9%</td><td class="num">$1.62</td><td class="num">$6.80</td></tr>
 <tr><td>GPT-4o</td><td class="num">20.1%</td><td class="num">$2.53</td><td class="num">$12.57</td></tr>
@@ -1139,8 +1204,13 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <figure>
-<img src="bpe_pair_levenshtein.png" alt="BPE pair Levenshtein comparison">
-<figcaption>Pairwise Levenshtein on shared instances, canonical atoms (left) vs BPE motifs (right). GPT-family pair is tightest in both representations; absolute values shift upward under BPE due to larger vocabulary.</figcaption>
+<img src="bpe_pair_levenshtein_atoms.png" alt="Within-task procedural divergence, canonical atoms">
+<figcaption>Pairwise Levenshtein on shared instances — canonical-atom representation.</figcaption>
+</figure>
+
+<figure>
+<img src="bpe_pair_levenshtein_motifs.png" alt="Within-task procedural divergence, BPE motifs">
+<figcaption>Pairwise Levenshtein on shared instances — BPE-motif representation. GPT-family pair is tightest in both representations; absolute values shift upward under BPE due to the larger vocabulary.</figcaption>
 </figure>
 
 <figure>
@@ -1164,8 +1234,23 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <p>Beyond pairwise JSD, four agent-level aggregate metrics characterise each agent's procedural style: repertoire entropy, repertoire width, trajectory length, and compression ratio. All are derivable in one pass from the BPE-expressed corpus.</p>
 
 <figure>
-<img src="aggregate_metrics.png" alt="Per-agent aggregate metrics">
-<figcaption>Per-agent aggregates. <strong>Entropy</strong>: how evenly each agent spreads usage across motifs (higher = more diverse). <strong>Distinct motifs @90%</strong>: how many motifs to cover 90% of an agent's tokens (repertoire width). <strong>Mean length</strong>: average trajectory length in canonical atoms (solid) and BPE motifs (hatched). <strong>Compression</strong>: BPE length / atom length; lower = more repeated sub-sequences.</figcaption>
+<img src="fig_agg_entropy_extended.png" alt="Per-agent motif entropy (extended corpus)">
+<figcaption>Repertoire <strong>entropy</strong> per agent (extended 9-submission corpus). Higher = more diverse motif usage.</figcaption>
+</figure>
+
+<figure>
+<img src="fig_agg_repertoire_extended.png" alt="Distinct motifs at 90% coverage (extended corpus)">
+<figcaption><strong>Repertoire width</strong>: distinct motifs needed to cover 90% of an agent's tokens.</figcaption>
+</figure>
+
+<figure>
+<img src="fig_agg_length_extended.png" alt="Mean trajectory length (extended corpus)">
+<figcaption><strong>Mean trajectory length</strong> per agent in canonical atoms.</figcaption>
+</figure>
+
+<figure>
+<img src="fig_agg_compression_extended.png" alt="BPE compression ratio (extended corpus)">
+<figcaption><strong>Compression ratio</strong> per agent (BPE length / atom length). Lower = more repeated sub-sequences.</figcaption>
 </figure>
 
 <div class="finding">
@@ -1470,8 +1555,13 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <figure>
-<img src="bpe_vocab_sweep_jsd.png" alt="BPE vocab sweep JSD curves">
-<figcaption>Pairwise JSD as a function of BPE target vocabulary size V, for full vocabulary (left) and motifs only (right). Green (GPT-4 × GPT-4o) stays lowest throughout; blue and orange (cross-family pairs) stay above.</figcaption>
+<img src="bpe_vocab_sweep_jsd_all_tokens.png" alt="Pairwise JSD vs vocab size, all tokens">
+<figcaption>Pairwise JSD vs BPE target vocabulary size V — all tokens (atoms and motifs).</figcaption>
+</figure>
+
+<figure>
+<img src="bpe_vocab_sweep_jsd_motifs.png" alt="Pairwise JSD vs vocab size, motifs only">
+<figcaption>Pairwise JSD vs BPE target vocabulary size V — motifs only. GPT-4 × GPT-4o stays lowest at every V; the heritability ordering is rank-invariant under V.</figcaption>
 </figure>
 
 <h4 style="font-size:15px; margin:22px 0 6px; color:#333;">Compression curve and V selection</h4>
@@ -1492,8 +1582,13 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <figure>
-<img src="slice_difficulty_jsd.png" alt="JSD by difficulty slice">
-<figcaption>Pairwise JSD as a function of number of agents resolved, full vocabulary (left) and motifs only (right). Motifs panel shows a clean monotone widening of the GPT-family gap as success rises from 0/3 to 3/3 (with a small dip at 2/3 likely from the smaller sample there). Full-vocabulary panel is noisier because atoms dominate token counts and are less discriminative than motifs.</figcaption>
+<img src="slice_difficulty_jsd_all_tokens.png" alt="JSD by difficulty, all tokens">
+<figcaption>Pairwise JSD vs number of agents resolved — all-tokens vocabulary. Noisier than the motifs-only panel: atoms dominate token counts and are less discriminative.</figcaption>
+</figure>
+
+<figure>
+<img src="slice_difficulty_jsd_repeated.png" alt="JSD by difficulty, motifs only">
+<figcaption>Pairwise JSD vs number of agents resolved — motifs-only vocabulary. The GPT-family gap widens monotonically from 0/3 to 3/3, with a small 2/3 dip consistent with small-sample noise.</figcaption>
 </figure>
 
 <div class="finding">
@@ -1501,8 +1596,23 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <figure>
-<img src="slice_difficulty_motifs.png" alt="Top motifs per difficulty bucket">
-<figcaption>Top 8 motifs per difficulty bucket. 0/3 bucket is dominated by exploration patterns (FIND_FILE→FIND_FILE, SEARCH→SEARCH, OPEN→SEARCH→NAV); mid buckets shift to productive patterns (EDIT→EDIT, CREATE_REPRO→EDIT_REPRO→RUN); 3/3 bucket is dominated by short locate-then-act sequences (FIND_FILE→OPEN, SHELL_RM→SUBMIT).</figcaption>
+<img src="slice_difficulty_motifs_0of3.png" alt="Top motifs, 0/3 solved">
+<figcaption>Top 8 motifs in the 0/3-solved bucket — exploration patterns dominate (FIND_FILE → FIND_FILE, SEARCH → SEARCH, OPEN → SEARCH → NAV).</figcaption>
+</figure>
+
+<figure>
+<img src="slice_difficulty_motifs_1of3.png" alt="Top motifs, 1/3 solved">
+<figcaption>Top 8 motifs in the 1/3-solved bucket — productive patterns emerge (EDIT → EDIT, CREATE_REPRO → EDIT_REPRO → RUN).</figcaption>
+</figure>
+
+<figure>
+<img src="slice_difficulty_motifs_2of3.png" alt="Top motifs, 2/3 solved">
+<figcaption>Top 8 motifs in the 2/3-solved bucket.</figcaption>
+</figure>
+
+<figure>
+<img src="slice_difficulty_motifs_3of3.png" alt="Top motifs, 3/3 solved">
+<figcaption>Top 8 motifs in the 3/3-solved bucket — short locate-then-act sequences dominate (FIND_FILE → OPEN, SHELL_RM → SUBMIT).</figcaption>
 </figure>
 
 <div class="caveat">
@@ -1514,8 +1624,28 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <p><strong>Permutation null (same-family advantage above chance):</strong> shuffle agent labels 1000 times, recompute the same-family vs cross-family dissimilarity gap each time, see where the observed gap falls in the null distribution.</p>
 
 <figure>
-<img src="permutation_null.png" alt="Permutation null per difficulty bucket">
-<figcaption>Null distributions of the same-family advantage under shuffled agent labels (grey), vs observed (red) at each difficulty bucket. Aggregate p=0.001, 0/3 p=0.002, 1/3 p=0.001, 2/3 p=0.047, 3/3 p=0.026. The same-family lead is above chance at every bucket.</figcaption>
+<img src="permutation_null_aggregate.png" alt="Permutation null, aggregate">
+<figcaption>Permutation null on the full corpus, n = 1167 trajectories. Observed same-family advantage = 0.047, p = 0.001.</figcaption>
+</figure>
+
+<figure>
+<img src="permutation_null_0of3.png" alt="Permutation null, 0/3 solved">
+<figcaption>Permutation null restricted to 0/3-solved tasks, n = 772, p = 0.003.</figcaption>
+</figure>
+
+<figure>
+<img src="permutation_null_1of3.png" alt="Permutation null, 1/3 solved">
+<figcaption>Permutation null restricted to 1/3-solved tasks, n = 177, p = 0.001.</figcaption>
+</figure>
+
+<figure>
+<img src="permutation_null_2of3.png" alt="Permutation null, 2/3 solved">
+<figcaption>Permutation null restricted to 2/3-solved tasks, n = 130, p = 0.048.</figcaption>
+</figure>
+
+<figure>
+<img src="permutation_null_3of3.png" alt="Permutation null, 3/3 solved">
+<figcaption>Permutation null restricted to 3/3-solved tasks, n = 88, p = 0.199 (smallest sample, weakest signal).</figcaption>
 </figure>
 
 <h3>5.3 Matched-pairs per-motif analysis</h3>
@@ -1523,13 +1653,33 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <p>The aggregate pairwise dissimilarity number hides which specific motifs drive the difference. To isolate per-motif agent effects, we restrict to <em>tied-outcome pairs</em> (tasks where both agents A and B resolved — 99 such pairs). For each pair and each motif, compute Δ = freq(A) − freq(B). Task is held constant by construction, so the residual is an agent effect. Per-motif Wilcoxon signed-rank test + Benjamini-Hochberg FDR correction at 5%.</p>
 
 <figure>
-<img src="matched_pairs_volcano.png" alt="Matched-pairs volcano plot">
-<figcaption>Volcano plot: x = mean per-motif frequency difference (agent A minus agent B, averaged across tied-outcome tasks), y = -log10(Wilcoxon p-value). Colored dots pass FDR at 5%. Most effects are small (|Δ| less than 0.04) and do not survive correction with n=31-35 tasks per pair.</figcaption>
+<img src="matched_pairs_volcano_Claude-3.5_vs_GPT-4.png" alt="Volcano: Claude-3.5 vs GPT-4">
+<figcaption>Volcano: Claude-3.5 vs GPT-4 (cross family). x = mean motif-frequency difference; y = −log10 p; dots passing FDR&lt;0.05 in pair color, others gray. Y-axis is unified across the three pair panels.</figcaption>
 </figure>
 
 <figure>
-<img src="matched_pairs_top_motifs.png" alt="Top differentiating motifs per pair">
-<figcaption>Top 8 most-differentiating tokens per agent pair, ranked by mean effect size (not by p-value). Star + dark border = passes FDR 5%. Colored bars favor the first-named agent; red bars favor the second. Effect directions replicate across the two cross-family pairs — SHELL_RM → SUBMIT, EDIT_SRC_PY → ... → SUBMIT, and CREATE_REPRO_PY → ... are consistently GPT-family-favored, which is the agreement signal matched-pairs is designed to surface.</figcaption>
+<img src="matched_pairs_volcano_Claude-3.5_vs_GPT-4o.png" alt="Volcano: Claude-3.5 vs GPT-4o">
+<figcaption>Volcano: Claude-3.5 vs GPT-4o (cross family).</figcaption>
+</figure>
+
+<figure>
+<img src="matched_pairs_volcano_GPT-4_vs_GPT-4o.png" alt="Volcano: GPT-4 vs GPT-4o">
+<figcaption>Volcano: GPT-4 vs GPT-4o (same family). With n=31–35 tied-outcome tasks per pair, individual Wilcoxon tests are underpowered after FDR correction.</figcaption>
+</figure>
+
+<figure>
+<img src="matched_pairs_top_motifs_Claude-3.5_vs_GPT-4.png" alt="Top differentiating motifs: Claude-3.5 vs GPT-4">
+<figcaption>Top 8 most-differentiating tokens, Claude-3.5 vs GPT-4 (cross family). Star = passes FDR 5%. Bars favoring the first agent in pair color; bars favoring the second in red.</figcaption>
+</figure>
+
+<figure>
+<img src="matched_pairs_top_motifs_Claude-3.5_vs_GPT-4o.png" alt="Top differentiating motifs: Claude-3.5 vs GPT-4o">
+<figcaption>Top 8 most-differentiating tokens, Claude-3.5 vs GPT-4o (cross family).</figcaption>
+</figure>
+
+<figure>
+<img src="matched_pairs_top_motifs_GPT-4_vs_GPT-4o.png" alt="Top differentiating motifs: GPT-4 vs GPT-4o">
+<figcaption>Top 8 most-differentiating tokens, GPT-4 vs GPT-4o (same family). SHELL_RM → SUBMIT, EDIT_SRC_PY → … → SUBMIT, and CREATE_REPRO_PY → … are consistently GPT-family-favored across both cross-family pairs — the replication signal.</figcaption>
 </figure>
 
 <div class="finding">
@@ -1545,8 +1695,13 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <p>So far we have measured similarity at the motif-distribution level. A complementary question: do entire trajectories cluster into types? Encode each of the 867 trajectories as a normalized motif-frequency vector (one value per vocabulary item), then run HDBSCAN (density-based clustering, no k to pick) in the high-dim space with cosine distance. UMAP is used for visualization only, not for clustering.</p>
 
 <figure>
-<img src="trajectory_clusters_umap.png" alt="UMAP of trajectories colored by agent and by cluster">
-<figcaption>UMAP of 867 trajectories. Left: colored by which agent ran the trajectory. Right: HDBSCAN clusters found without using agent labels. Agent structure is visible in the left panel — Claude (green) and GPT-4o (orange) occupy partially separate regions. HDBSCAN finds 11 dense pockets (22% of trajectories); the remaining 78% are "noise" — procedurally generic trajectories with no dense cluster membership.</figcaption>
+<img src="trajectory_clusters_umap_by_agent.png" alt="UMAP of trajectories colored by agent">
+<figcaption>UMAP of 867 trajectories, colored by which agent ran the trajectory. Agent structure is visible — Claude and GPT-4o occupy partially separate regions.</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_umap_by_cluster.png" alt="UMAP of trajectories colored by HDBSCAN cluster">
+<figcaption>Same UMAP layout, colored by HDBSCAN cluster membership found without using agent labels. 11 dense pockets (22% of trajectories); the remaining 78% are "noise" — procedurally generic trajectories with no dense cluster membership.</figcaption>
 </figure>
 
 <div class="finding">
@@ -1558,8 +1713,38 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <figure>
-<img src="trajectory_clusters_profile.png" alt="Per-cluster composition and top motifs">
-<figcaption>Six largest clusters (of 11). Top row: agent composition per cluster (bars total to 1.0; segment labels show agent + count). Bottom row: top 5 action patterns dominating each cluster. Reading: cluster 6 (n=39) is the largest — Claude-dominated at 56% with build-reproducer, find-then-open patterns. Cluster 1 (n=34, 55% GPT-4o) is reproducer-edit-heavy. Cluster 9 (n=25, 76% GPT-4o) is the GPT-family "cleanup" cluster: EDIT_SRC → RUN_REPRO → SHELL_RM patterns dominate.</figcaption>
+<img src="trajectory_clusters_profile_composition.png" alt="Cluster agent composition">
+<figcaption>Agent composition for the six largest clusters (of 11). Each row sums to 1.0 across agents; cluster labels include the dominant-agent fraction.</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_profile_top_motifs_edit_src_->_runthon_repro_mixed.png" alt="Top motifs: edit src to run repro (mixed)">
+<figcaption>Top 5 action patterns in the largest cluster — mixed-agent, dominated by edit-then-run-reproducer sequences.</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_profile_top_motifs_edit-test_loop_Claude-3.5-lean_56pct.png" alt="Top motifs: edit-test loop (Claude-3.5-lean 56%)">
+<figcaption>Top motifs in the edit-test-loop cluster (Claude-3.5-lean, 56%).</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_profile_top_motifs_edit_config_->_edit_config_Claude-3-lean_68pct.png" alt="Top motifs: config-editing burst (Claude-3-lean 68%)">
+<figcaption>Top motifs in the config-editing-burst cluster (Claude-3-lean, 68%).</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_profile_top_motifs_reproducer_iteration_mixed.png" alt="Top motifs: reproducer iteration (mixed)">
+<figcaption>Top motifs in the reproducer-iteration cluster (mixed).</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_profile_top_motifs_config_editing_mixed.png" alt="Top motifs: config editing (mixed)">
+<figcaption>Top motifs in the config-editing cluster (mixed).</figcaption>
+</figure>
+
+<figure>
+<img src="trajectory_clusters_profile_top_motifs_cleanup-then-submit_mixed.png" alt="Top motifs: cleanup-then-submit (mixed)">
+<figcaption>Top motifs in the cleanup-then-submit cluster (mixed) — EDIT_SRC → RUN_REPRO → SHELL_RM dominates.</figcaption>
 </figure>
 
 <div class="caveat">
@@ -1571,8 +1756,18 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <p>Each SWE-agent trajectory carries <code>model_stats</code>: tokens sent, tokens received, API calls, and dollar cost. Aggregated across 867 trajectories this gives an honest infrastructure-cost picture alongside the procedural analysis.</p>
 
 <figure>
-<img src="token_cost_per_agent.png" alt="Per-agent token and cost summary">
-<figcaption>Four per-agent metrics. Input tokens = context accumulated across the trajectory. Output tokens = what the model generated (actions + thoughts). API calls = one per decision step. Cost = what it took to run this agent on one SWE-bench task.</figcaption>
+<img src="token_cost_per_agent_tokens_sent.png" alt="Per-agent input tokens">
+<figcaption><strong>Input tokens per task</strong> — context accumulated across the trajectory.</figcaption>
+</figure>
+
+<figure>
+<img src="token_cost_per_agent_api_calls.png" alt="Per-agent API calls">
+<figcaption><strong>API calls per task</strong> — one per decision step.</figcaption>
+</figure>
+
+<figure>
+<img src="token_cost_per_agent_cost.png" alt="Per-agent dollar cost">
+<figcaption><strong>Cost per task (USD)</strong> — what it took to run this agent on one SWE-bench task.</figcaption>
 </figure>
 
 <div class="finding">
@@ -1584,8 +1779,18 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <figure>
-<img src="token_cost_by_difficulty.png" alt="Cost by difficulty bucket">
-<figcaption>Infrastructure metrics as a function of task difficulty (number of agents that solved). All three agents burn more on 0/3 tasks (nobody solved) than on 3/3 tasks (everyone solved). Cost gradients: Claude $2.17 → $1.28 (0/3 → 3/3, drop of $0.89 per task), GPT-4 $2.70 → $1.76 ($0.94 drop), GPT-4o $2.74 → $1.38 ($1.36 drop, the largest). Failing is consistently 40-60% more expensive than succeeding.</figcaption>
+<img src="token_cost_by_difficulty_tokens.png" alt="Tokens by difficulty">
+<figcaption><strong>Input tokens vs task difficulty.</strong> All three agents burn more on 0/3 tasks (nobody solved) than on 3/3 tasks (everyone solved). GPT-4o averages 564k on 0/3 vs 250k on 3/3 (2.3×); Claude 580k vs 378k (1.5×).</figcaption>
+</figure>
+
+<figure>
+<img src="token_cost_by_difficulty_api_calls.png" alt="API calls by difficulty">
+<figcaption><strong>API calls vs task difficulty.</strong> Step counts contract on solvable tasks across all agents.</figcaption>
+</figure>
+
+<figure>
+<img src="token_cost_by_difficulty_cost.png" alt="Dollar cost by difficulty">
+<figcaption><strong>Cost vs task difficulty.</strong> Cost gradients (0/3 → 3/3): Claude $2.17 → $1.28 (−$0.89), GPT-4 $2.70 → $1.76 (−$0.94), GPT-4o $2.74 → $1.38 (−$1.36, the largest drop). Failing is consistently 40–60% more expensive than succeeding.</figcaption>
 </figure>
 
 <div class="finding">
@@ -1602,14 +1807,8 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 
 <p>The aggregate cost picture hides where the spending happens. Attribute trajectory-level tokens proportionally across atoms, then roll up to each BPE motif. Now every procedural unit has a cost estimate alongside a success association (fraction of trajectories using it that resolved the task). That lets us ask: which procedures are efficient, which are wasteful?</p>
 
-<figure>
-<img src="step_resources_efficiency.png" alt="Efficiency frontier per agent">
-<figcaption>Cost vs solve rate per agent. Up-and-left is better. Annotation shows dollars per resolved task.</figcaption>
-</figure>
-
 <div class="finding">
-<strong>Claude costs ~43% less per resolved task than GPT-4 and 36% less than GPT-4o.</strong> Cost per resolved task: Claude $10.20, GPT-4o $16.00, GPT-4 $17.91. Claude and GPT-4o resolve at the same rate (16%) but Claude costs $1.62/task vs GPT-4o's $2.53. GPT-4 pays the most per resolved task despite its compact trajectories — per-token pricing and slightly lower resolve rate both hurt.
-</div>
+<strong>Claude costs ~43% less per resolved task than GPT-4 and 36% less than GPT-4o.</strong> Cost per resolved task: Claude $10.20, GPT-4o $16.00, GPT-4 $17.91. Claude and GPT-4o resolve at the same rate (16%) but Claude costs $1.62/task vs GPT-4o's $2.53. GPT-4 pays the most per resolved task despite its compact trajectories — per-token pricing and slightly lower resolve rate both hurt. (Efficiency frontier figure removed; equivalent comparison appears in <code>fig_efficiency_frontier.png</code> above.)
 
 <figure>
 <img src="step_resources_motifs.png" alt="Motif cost vs success quadrant">
