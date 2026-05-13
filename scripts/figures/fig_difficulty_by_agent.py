@@ -1,11 +1,12 @@
-"""Per-agent pass rate by difficulty bucket.
+"""Per-agent pass rate by difficulty bucket (9-agent extended corpus).
 
 Shows whether the difficulty effect is uniform across agents or whether
 some agents are disproportionately affected at certain difficulty levels.
-Each agent is a separate line; difficulty (0/4 to 4/4) is the x-axis.
+Each agent is a separate line; difficulty (0/9 to 9/9) is the x-axis.
 Wilson 95% CIs shown as error bars.
 
-Reads:  output/trajectories/lite_all_models.parquet
+Reads:  output/paper2_pilot/extended_pass_fail.json (via _extended_pass_fail_df)
+        output/paper2_pilot/bpe_sequences_extended.jsonl (trajectory inventory)
 Writes: output/figures/fig_difficulty_by_agent.png
         output/paper2_pilot/difficulty_by_agent.json
 """
@@ -18,8 +19,11 @@ import altair as alt
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from scripts.theme import register, AGENT_COLORS, AGENT_ORDER, AGENT_SHORT
+from scripts.theme import register, AGENT_COLORS, AGENT_ORDER
 register()
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _extended_pass_fail_df import load_extended_traj_pass_fail
 
 OUT     = ROOT / "output" / "paper2_pilot"
 FIG_OUT = ROOT / "output" / "figures"
@@ -39,14 +43,10 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     FIG_OUT.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_parquet(ROOT / "output/trajectories/lite_all_models.parquet")
-    df["agent"] = df["model_id"].map(AGENT_SHORT)
+    df = load_extended_traj_pass_fail()
     df = df[df["agent"].notna()].copy()
 
-    n_resolved = df.groupby("instance_id")["passed"].sum().rename("n_resolved")
-    df = df.merge(n_resolved, on="instance_id")
-
-    DIFFICULTY_LABELS = {0: "0 / 4", 1: "1 / 4", 2: "2 / 4", 3: "3 / 4", 4: "4 / 4"}
+    DIFFICULTY_LABELS = {n: f"{n} / 9" for n in range(10)}
 
     rows = []
     summary = {}
@@ -73,7 +73,7 @@ def main() -> None:
             print(f"  {agent:12s}  {label}  n={n:3d}  rate={k/n:.0%}")
 
     plot_df = pd.DataFrame(rows)
-    x_order = [DIFFICULTY_LABELS[i] for i in range(5)]
+    x_order = [DIFFICULTY_LABELS[i] for i in range(10)]
 
     color_scale = alt.Scale(
         domain=AGENT_ORDER,
@@ -82,7 +82,7 @@ def main() -> None:
 
     base = alt.Chart(plot_df).encode(
         x=alt.X("label:N", sort=x_order,
-                axis=alt.Axis(title="Difficulty (agents that solved it / 4)",
+                axis=alt.Axis(title="Difficulty (agents that solved it / 9)",
                               labelAngle=0)),
         color=alt.Color("agent:N", scale=color_scale,
                         legend=alt.Legend(title=None, orient="bottom")),
