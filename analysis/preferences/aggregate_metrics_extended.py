@@ -393,11 +393,15 @@ def save_panels(metrics: dict) -> None:
     FIG_OUT.mkdir(parents=True, exist_ok=True)
     agents_present = [a for a in AGENT_ORDER_EXT if a in metrics]
 
+    # "distinct motifs at 90% coverage" was dropped: Pearson r = 0.892 with
+    # entropy on the 9-agent corpus and PERFECT Spearman rank-order match,
+    # so it added an extra panel without adding distinct information.
+    # Entropy is the principled measure (information-theoretic, no
+    # arbitrary 90% threshold). distinct_motifs_at_90pct stays in the
+    # JSON for completeness; the panel is gone.
     panels = {
         "fig_agg_entropy_extended.png":     ("entropy_motifs_bits",
             "Motif entropy by agent", "Entropy (bits)", None),
-        "fig_agg_repertoire_extended.png":  ("distinct_motifs_at_90pct",
-            "Distinct motifs at 90% coverage", "Number of motifs", None),
         "fig_agg_length_extended.png":      ("mean_canonical_length",
             "Mean trajectory length", "Mean atoms per trajectory", None),
         "fig_agg_compression_extended.png": ("mean_compression",
