@@ -609,10 +609,10 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>JSD pair ranking invariant across V ∈ {100, 150, 200, 300, 500}. Magnitude scales; order fixed.</figcaption>
 </figure>
 
-<h4>Agent MI within difficulty bins</h4>
+<h4>Per-agent pass-rate distribution within difficulty bins</h4>
 <figure>
-  <img src="fig_per_bin_agent_mi.png" alt="MI(agent; pass/fail) by difficulty bin">
-  <figcaption>Within uncertain bins (1 to 3 of 4), agent removes 5 to 11% of outcome uncertainty (3 to 7× corpus-level).</figcaption>
+  <img src="fig_per_bin_agent_mi.png" alt="Per-agent pass-rate distribution within each n_resolved bin">
+  <figcaption>For each difficulty bucket (0/9..9/9), one dot per agent showing that agent's pass rate on the trajectories in the bucket; bracket = range across the 9 agents. Range collapses to 0 in the boundary bins (0/9 and 9/9, by construction) and peaks at 90 percentage points in 3/9 — at that difficulty the best agent passes ~90% of the time while the worst passes near 0%. The distribution view replaces the prior MI(agent; pass/fail) bar chart with the underlying quantity it was summarizing.</figcaption>
 </figure>
 
 <hr style="margin:30px 0; border:0; border-top:1px solid #ddd;">
