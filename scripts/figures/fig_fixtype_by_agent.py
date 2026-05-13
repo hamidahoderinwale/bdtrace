@@ -1,14 +1,15 @@
-"""Pass rate by fix type and agent.
+"""Pass rate by fix type and agent (9-agent extended corpus).
 
 Shows where agents systematically differ — the routing signal.
 Only fix types with n >= 10 per agent included.
 
-Reads:  output/fix_forms/form_assignments.parquet
-        output/trajectories/lite_all_models.parquet
+Reads:  output/datasets/swe_bench_lite_resolved/fix_types.json
+        output/paper2_pilot/extended_pass_fail.json (via _extended_pass_fail_df)
+        output/paper2_pilot/bpe_sequences_extended.jsonl
 Writes: output/figures/fig_fixtype_by_agent.png
 """
 from __future__ import annotations
-import sys
+import json, sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -19,17 +20,13 @@ sys.path.insert(0, str(ROOT))
 from scripts.theme import register, AGENT_COLORS, AGENT_ORDER
 register()
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _extended_pass_fail_df import load_extended_traj_pass_fail
+
 OUT = ROOT / "output" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
 
 MIN_N = 10
-
-AGENT_MAP = {
-    "20240402_sweagent_claude3opus":     "Claude-3",
-    "20240402_sweagent_gpt4":           "GPT-4",
-    "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o":           "GPT-4o",
-}
 
 FIX_TYPE_LABELS = {
     "logic_fix":           "Logic fix",
@@ -45,14 +42,18 @@ FIX_TYPE_LABELS = {
 
 
 def main():
-    fix_df  = pd.read_parquet(ROOT / "output/fix_forms/form_assignments.parquet")[
-        ["instance_id", "fix_type_hand"]
-    ].drop_duplicates()
+    # Per-instance fix type from the canonical fix_types.json (300 of 300
+    # extended-corpus instances are covered).
+    ft_data = json.loads(
+        (ROOT / "output/datasets/swe_bench_lite_resolved/fix_types.json").read_text()
+    )
+    fix_df = pd.DataFrame([
+        {"instance_id": r["instance_id"], "fix_type_hand": r["fix_type"]}
+        for r in ft_data["results"]
+    ]).drop_duplicates()
 
-    traj_df = pd.read_parquet(ROOT / "output/trajectories/lite_all_models.parquet")[
-        ["instance_id", "model_id", "passed"]
-    ]
-    traj_df["agent"] = traj_df["model_id"].map(AGENT_MAP)
+    # Per-(agent, instance) pass/fail from the 9-agent extended corpus.
+    traj_df = load_extended_traj_pass_fail()[["instance_id", "agent", "passed"]]
 
     df = traj_df.merge(fix_df, on="instance_id", how="inner")
 

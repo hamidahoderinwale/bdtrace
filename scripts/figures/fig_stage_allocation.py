@@ -1,29 +1,34 @@
 """Stage allocation: fraction of steps per behavioral stage, by agent.
 
-Maps raw action counts (n_searches, n_opens, n_nav, n_edits, n_runs)
-to five stages. Shows mean fraction per stage per agent as a stacked
-horizontal bar. Passing and failing trajectories shown separately.
+Maps canonical atom counts (SEARCH, OPEN, NAV, EDIT, CREATE, RUN, ...)
+to five behavioural stages. Shows mean fraction per stage per agent as
+a stacked horizontal bar. Passing and failing trajectories shown
+separately.
 
-Stage mapping:
-    Explore = SEARCH steps
-    Browse  = OPEN + NAV steps
-    Edit    = EDIT + CREATE steps
-    Test    = RUN steps
-    Other   = remaining steps (shell, submit, unknown)
+Stage mapping (from canonical atoms in bpe_sequences_extended.jsonl):
+    Explore = atoms starting with SEARCH
+    Browse  = atoms starting with OPEN / NAV / FIND
+    Edit    = atoms starting with EDIT / CREATE
+    Test    = atoms starting with RUN
+    Other   = remaining atoms (SHELL_*, SUBMIT, EMPTY, UNKNOWN_*, etc.)
 
-Reads:  output/trajectories/lite_all_models.parquet
+Reads:  output/paper2_pilot/bpe_sequences_extended.jsonl
+        output/paper2_pilot/extended_pass_fail.json
 Writes: output/figures/fig_stage_allocation.png
 """
 from __future__ import annotations
-import sys
+import json, sys
 from pathlib import Path
 import pandas as pd
 import altair as alt
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from scripts.theme import register, STAGE_COLORS, STAGE_ORDER, AGENT_ORDER, AGENT_SHORT
+from scripts.theme import register, STAGE_COLORS, STAGE_ORDER, AGENT_ORDER
 register()
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _extended_pass_fail_df import SUBMISSION_TO_AGENT
 
 OUT = ROOT / "output" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -31,18 +36,61 @@ OUT.mkdir(parents=True, exist_ok=True)
 OUTCOME_ORDER = ["pass", "fail"]
 
 
-def main() -> None:
-    df = pd.read_parquet(ROOT / "output/trajectories/lite_all_models.parquet")
-    df["agent"] = df["model_id"].map(AGENT_SHORT)
-    df = df[df["agent"].notna()].copy()
-    df["passed_label"] = df["passed"].map({True: "pass", False: "fail"})
+def _classify_atom(atom: str) -> str:
+    """Map a canonical atom to one of the five behavioural stages."""
+    if atom.startswith("SEARCH"):
+        return "f_explore"
+    if atom.startswith(("OPEN", "NAV", "FIND")):
+        return "f_browse"
+    if atom.startswith(("EDIT", "CREATE")):
+        return "f_edit"
+    if atom.startswith("RUN"):
+        return "f_test"
+    return "f_other"
 
-    # Stage fractions per trajectory
-    df["f_explore"] = df["n_searches"] / df["n_steps"].clip(lower=1)
-    df["f_browse"]  = (df["n_opens"] + df["n_nav"]) / df["n_steps"].clip(lower=1)
-    df["f_edit"]    = df["n_edits"] / df["n_steps"].clip(lower=1)
-    df["f_test"]    = df["n_runs"] / df["n_steps"].clip(lower=1)
-    df["f_other"]   = (1 - df["f_explore"] - df["f_browse"] - df["f_edit"] - df["f_test"]).clip(lower=0)
+
+def _per_traj_stage_fractions() -> pd.DataFrame:
+    """Build a (agent, instance_id, passed, f_*) DataFrame from the
+    extended canonical-atom sequences plus extended_pass_fail.json."""
+    pf = json.loads(
+        (ROOT / "output/paper2_pilot/extended_pass_fail.json").read_text()
+    )
+    resolved_by_agent: dict[str, set[str]] = {}
+    for sub, agent in SUBMISSION_TO_AGENT.items():
+        resolved_by_agent[agent] = set(pf.get(sub, {}).get("resolved", []))
+
+    rows: list[dict] = []
+    seq_path = ROOT / "output/paper2_pilot/bpe_sequences_extended.jsonl"
+    with seq_path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            r = json.loads(line)
+            atoms = r["canonical"]
+            n_steps = max(len(atoms), 1)
+            counts = {"f_explore": 0, "f_browse": 0, "f_edit": 0,
+                      "f_test": 0, "f_other": 0}
+            for a in atoms:
+                counts[_classify_atom(a)] += 1
+            agent = r["agent"]
+            iid = r["instance_id"]
+            rows.append({
+                "agent":   agent,
+                "instance_id": iid,
+                "passed":  iid in resolved_by_agent.get(agent, set()),
+                "f_explore": counts["f_explore"] / n_steps,
+                "f_browse":  counts["f_browse"]  / n_steps,
+                "f_edit":    counts["f_edit"]    / n_steps,
+                "f_test":    counts["f_test"]    / n_steps,
+                "f_other":   counts["f_other"]   / n_steps,
+            })
+    return pd.DataFrame(rows)
+
+
+def main() -> None:
+    df = _per_traj_stage_fractions()
+    df["passed_label"] = df["passed"].map({True: "pass", False: "fail"})
 
     stage_cols = {
         "Explore": "f_explore",

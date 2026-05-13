@@ -1,19 +1,19 @@
-"""Difficulty vs fix type as predictors of pass rate.
+"""Difficulty vs fix type as predictors of pass rate (9-agent extended corpus).
 
 Two-panel comparison: same x-axis, same CI method (Wilson 95%).
-Left: pass rate by difficulty bucket (n_resolved / 3 agents).
+Left: pass rate by difficulty bucket (n_resolved / 9 agents).
 Right: pass rate by fix type taxonomy.
 
 The visual contrast is the finding: difficulty spans 0--100% with
-non-overlapping CIs (eta2=0.62); fix type clusters near 20% with
-heavily overlapping CIs (eta2=0.01).
+non-overlapping CIs; fix type clusters with heavily overlapping CIs.
 
-Reads:  output/fix_forms/form_assignments.parquet
-        output/trajectories/lite_all_models.parquet
+Reads:  output/datasets/swe_bench_lite_resolved/fix_types.json
+        output/paper2_pilot/extended_pass_fail.json (via _extended_pass_fail_df)
+        output/paper2_pilot/bpe_sequences_extended.jsonl
 Writes: output/figures/fig_difficulty_vs_fixtype.png
 """
 from __future__ import annotations
-import sys
+import json, sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -23,6 +23,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from scripts.theme import register, BLUE, COPPER, GRAY
 register()
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _extended_pass_fail_df import load_extended_traj_pass_fail
 
 OUT = ROOT / "output" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -43,7 +46,7 @@ FIX_TYPE_LABELS = {
     "other":              "Other",
 }
 
-DIFFICULTY_LABELS = {0: "0 / 4", 1: "1 / 4", 2: "2 / 4", 3: "3 / 4", 4: "4 / 4"}
+DIFFICULTY_LABELS = {n: f"{n} / 9" for n in range(10)}
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -134,17 +137,18 @@ def build_panel(
 
 
 def main() -> None:
-    fix_df = pd.read_parquet(
-        ROOT / "output/fix_forms/form_assignments.parquet"
-    )[["instance_id", "fix_type_hand"]].drop_duplicates()
+    # Per-instance fix type (canonical fix_types.json; 300 of 300 covered).
+    ft_data = json.loads(
+        (ROOT / "output/datasets/swe_bench_lite_resolved/fix_types.json").read_text()
+    )
+    fix_df = pd.DataFrame([
+        {"instance_id": r["instance_id"], "fix_type_hand": r["fix_type"]}
+        for r in ft_data["results"]
+    ]).drop_duplicates()
 
-    traj_df = pd.read_parquet(
-        ROOT / "output/trajectories/lite_all_models.parquet"
-    )[["instance_id", "model_id", "passed"]]
-
-    n_resolved = traj_df.groupby("instance_id")["passed"].sum().rename("n_resolved")
+    # 9-agent pass/fail and n_resolved already computed by the helper.
+    traj_df = load_extended_traj_pass_fail()[["instance_id", "agent", "passed", "n_resolved"]]
     df = traj_df.merge(fix_df, on="instance_id", how="inner")
-    df = df.merge(n_resolved, on="instance_id")
     df["passed"] = df["passed"].astype(float)
 
     # ── mutual information values ─────────────────────────────────────────────

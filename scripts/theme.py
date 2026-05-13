@@ -88,26 +88,30 @@ YREF = {"grid": False}
 XREF = {"grid": False}
 
 # Canonical agent identity — single source of truth for all figure scripts.
-# Claude-3            = COPPER  (oldest Claude, lowest pass rate)
-# Claude-3.5          = GREEN   (priority 1 — best Anthropic in base cell)
-# GPT-4               = BLUE    (priority 2 — confident, targeted)
-# GPT-4o              = MAGENTA (priority 3 — exploratory, higher token cost)
-# Claude-3.7-thinking = INDIGO  (extended-thinking; slate-blue conveys "contemplative")
-# Claude-4            = VIOLET  (latest, top performer in the corpus)
-# Moatless+V3         = SIENNA  (cross-scaffold; earthy brown distinct from SWE-agent palette)
+# Claude-3              = COPPER     (oldest Claude, lowest pass rate)
+# Claude-3.5            = GREEN      (priority 1 — best Anthropic in base cell)
+# GPT-4                 = BLUE       (priority 2 — confident, targeted)
+# GPT-4o                = MAGENTA    (priority 3 — exploratory, higher token cost)
+# Claude-3.7-thinking   = INDIGO     (extended-thinking; slate-blue conveys "contemplative")
+# Claude-4              = VIOLET     (latest, top performer in the corpus)
+# Moatless+V3           = SIENNA     (cross-scaffold; earthy brown)
+# DARS+R1               = MAGENTA_D  (cross-scaffold; deep crimson, planner-tree)
+# Agentless+Claude-3.5  = BLUE_D     (cross-scaffold; deeper sky-blue, pipeline-template)
 AGENT_COLORS = {
-    "Claude-3":            COPPER,   # #CB4D20
-    "Claude-3.5":          GREEN,    # #20A380
-    "GPT-4":               BLUE,     # #5692E5
-    "GPT-4o":              MAGENTA,  # #B4184F
-    "Claude-3.7-thinking": INDIGO,   # #4658A0
-    "Claude-4":            VIOLET,   # #7A4FA8
-    "Moatless+V3":         SIENNA,   # #9C5F2E
+    "Claude-3":              COPPER,     # #CB4D20
+    "Claude-3.5":             GREEN,     # #20A380
+    "GPT-4":                  BLUE,      # #5692E5
+    "GPT-4o":                 MAGENTA,   # #B4184F
+    "Claude-3.7-thinking":    INDIGO,    # #4658A0
+    "Claude-4":               VIOLET,    # #7A4FA8
+    "Moatless+V3":            SIENNA,    # #9C5F2E
+    "DARS+R1":                MAGENTA_D, # #8C1040
+    "Agentless+Claude-3.5":   BLUE_D,    # #3D7AD8
 }
 AGENT_ORDER = [
     "Claude-3", "Claude-3.5", "GPT-4", "GPT-4o",
     "Claude-3.7-thinking", "Claude-4",
-    "Moatless+V3",
+    "DARS+R1", "Agentless+Claude-3.5", "Moatless+V3",
 ]
 
 # Canonical mapping from SWE-bench submission IDs to short agent names
@@ -118,6 +122,8 @@ AGENT_SHORT = {
     "20240728_sweagent_gpt4o":                      "GPT-4o",
     "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
     "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+    "20241202_agentless-1.5_claude-3.5-sonnet-20241022": "Agentless+Claude-3.5",
+    "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1": "DARS+R1",
     "20250111_moatless_deepseek_v3":                "Moatless+V3",
 }
 
