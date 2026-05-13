@@ -255,8 +255,19 @@ def main() -> None:
         )
     )
 
+    # Alternating row bands for motif scan-tracking across ~30 rows.
+    band_df = pd.DataFrame([
+        {"label": lbl} for i, lbl in enumerate(y_order) if i % 2 == 0
+    ])
+    bands = (
+        alt.Chart(band_df)
+        .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
+        .encode(y=alt.Y("label:N", sort=y_order,
+                        axis=alt.Axis(title=None, labelFontSize=9)))
+    )
+
     chart = (
-        (dots + sig_marks)
+        alt.layer(bands, dots, sig_marks)
         .properties(
             width=340, height=300,
             title=alt.TitleParams(
