@@ -638,10 +638,10 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Six representation types ranked by kNN pass/fail F1. Side investigation, not paper-central.</figcaption>
 </figure>
 
-<h4>Pass/fail prediction AUC ablation (irreducibility, demoted)</h4>
+<h4>Pass/fail prediction AUC ablation (9-agent corpus)</h4>
 <figure>
   <img src="fig_outcome_regression.png" alt="Pass/fail prediction AUC by feature set">
-  <figcaption>Agent alone AUC=49.9%, motifs alone 68.5%, both 68.5%. Irreducibility framing demoted; weak as standalone claim.</figcaption>
+  <figcaption>Agent identity alone AUC = 67.9%, motifs alone 69.2%, both 71.4%. The 9-agent corpus inverts the 4-agent baseline finding (which had agent AUC ≈ 0.50 because the four agents had similar baseline pass rates): with agents spanning 11.7% (Claude-3) to 56.3% (Claude-4) resolve rate, knowing which agent ran the trajectory is a strong outcome signal on its own. The 2.2 percentage-point gain from adding motifs to agent suggests procedural features carry signal beyond the agent-identity baseline, but the headline is now "agent identity dominates outcome prediction in this corpus" rather than the 4-agent "motifs predict outcome, agent doesn't."</figcaption>
 </figure>
 
 <h4>Stage allocation</h4>

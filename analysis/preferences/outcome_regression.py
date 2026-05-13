@@ -4,13 +4,18 @@ Predicts binary outcome (resolved yes/no) from per-trajectory motif
 frequency vectors, controlling for agent identity and task difficulty.
 This controls for the confounders in the unconditional step_resources
 associations — some motifs look wasteful simply because they appear in
-harder tasks or because GPT-4o uses them.
+harder tasks or because a specific agent uses them.
 
 Model:
     y = resolved (1/0)
-    X = [motif_freqs (200 cols)] + [agent_gpt4, agent_gpt4o] + [n_resolved]
+    X = [motif_freqs] + [agent_dummies (8, one-hot vs reference)] + [n_resolved_loo]
     Logistic regression, L2 regularization, class_weight='balanced'
     5-fold stratified cross-validation
+
+Operates on the 9-agent extended corpus. Agent dummies span all nine
+submissions; reference is Claude-3.5. Difficulty bin n_resolved_loo
+counts other agents (out of 8) that solved each task, so it doesn't
+leak the regressed agent's own outcome.
 
 Outputs:
     output/paper2_pilot/outcome_regression.json  — coefficients + CV scores
@@ -44,26 +49,40 @@ from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY
 register()
 
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
-SEQ_PATH = OUT / "bpe_sequences.jsonl"
-DIVERSITY_PATH = OUT / "task_diversity.csv"
-LB_PATH = PROJECT_ROOT / "output" / "leaderboard" / "lite_results.json"
+SEQ_PATH = OUT / "bpe_sequences_extended.jsonl"
+DIVERSITY_PATH = OUT / "task_diversity_extended.jsonl"
+LB_PATH = OUT / "extended_pass_fail.json"
 
+# Nine submissions, agent short names; Claude-3.5 is the dummy-encoding
+# reference (its column is dropped from the agent one-hot block).
 AGENT_LONG = {
-    "GPT-4":     "20240402_sweagent_gpt4",
-    "Claude-3.5":"20240620_sweagent_claude3.5sonnet",
-    "GPT-4o":    "20240728_sweagent_gpt4o",
+    "Claude-3":              "20240402_sweagent_claude3opus",
+    "GPT-4":                 "20240402_sweagent_gpt4",
+    "Claude-3.5":            "20240620_sweagent_claude3.5sonnet",
+    "GPT-4o":                "20240728_sweagent_gpt4o",
+    "Claude-3.7-thinking":   "20250226_sweagent_claude-3-7-sonnet-20250219",
+    "Claude-4":              "20250526_sweagent_claude-4-sonnet-20250514",
+    "Agentless+Claude-3.5":  "20241202_agentless-1.5_claude-3.5-sonnet-20241022",
+    "DARS+R1":               "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1",
+    "Moatless+V3":           "20250111_moatless_deepseek_v3",
 }
+AGENT_DUMMY_REF = "Claude-3.5"
+AGENT_DUMMY_COLS = [a for a in AGENT_LONG if a != AGENT_DUMMY_REF]
 
 
 def load_data() -> pd.DataFrame:
     seqs = [json.loads(l) for l in open(SEQ_PATH) if l.strip()]
     lb = json.load(open(LB_PATH))
 
-    # Per-agent resolved map: {instance_id: {agent: True/False}}
+    # extended_pass_fail.json shape: {sub_id: {"resolved": [iid, ...], ...}}.
+    # Convert to the per-instance per-agent True/False map the rest of
+    # load_data expects.
     per_instance: dict[str, dict[str, bool]] = {}
+    seq_instance_ids: set[str] = {s["instance_id"] for s in seqs}
     for short, long in AGENT_LONG.items():
-        for inst, passed in lb.get(long, {}).items():
-            per_instance.setdefault(inst, {})[short] = bool(passed)
+        resolved_set = set(lb.get(long, {}).get("resolved", []))
+        for inst in seq_instance_ids:
+            per_instance.setdefault(inst, {})[short] = inst in resolved_set
 
     vocab: list[str] = sorted({t for s in seqs for t in s["bpe"]})
 
@@ -92,39 +111,43 @@ def load_data() -> pd.DataFrame:
     return pd.DataFrame(rows), vocab
 
 
+def _agent_dummy_matrix(df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
+    """One-hot encoding for the 8 non-reference agents (reference is
+    AGENT_DUMMY_REF, encoded implicitly by all-zeros)."""
+    cols = []
+    names = []
+    for a in AGENT_DUMMY_COLS:
+        cols.append((df["agent"] == a).astype(float).values)
+        names.append(f"agent_{a}")
+    return np.column_stack(cols), names
+
+
 def build_features(
     df: pd.DataFrame,
     vocab: list[str],
     include_difficulty: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, list[str]]:
-    agent_gpt4  = (df["agent"] == "GPT-4").astype(float).values
-    agent_gpt4o = (df["agent"] == "GPT-4o").astype(float).values
-
-    motif_mat = df[vocab].values
-    scaler_motif = StandardScaler()
-    motif_scaled = scaler_motif.fit_transform(motif_mat)
-
+    agent_mat, agent_names = _agent_dummy_matrix(df)
+    motif_mat = StandardScaler().fit_transform(df[vocab].values)
     y = df["resolved"].values
 
     if include_difficulty:
         n_res_loo = df["n_resolved_loo"].values.astype(float)
         n_res_scaled = (n_res_loo - n_res_loo.mean()) / max(n_res_loo.std(), 1e-9)
-        X = np.column_stack([motif_scaled, agent_gpt4, agent_gpt4o, n_res_scaled])
-        feature_names = vocab + ["agent_GPT-4", "agent_GPT-4o", "n_resolved_loo"]
+        X = np.column_stack([motif_mat, agent_mat, n_res_scaled.reshape(-1, 1)])
+        feature_names = vocab + agent_names + ["n_resolved_loo"]
     else:
-        X = np.column_stack([motif_scaled, agent_gpt4, agent_gpt4o])
-        feature_names = vocab + ["agent_GPT-4", "agent_GPT-4o"]
-
+        X = np.column_stack([motif_mat, agent_mat])
+        feature_names = vocab + agent_names
     return X, y, feature_names
 
 
 def build_ablation_features(df: pd.DataFrame, vocab: list[str], mode: str) -> tuple[np.ndarray, np.ndarray]:
-    agent_gpt4  = (df["agent"] == "GPT-4").astype(float).values
-    agent_gpt4o = (df["agent"] == "GPT-4o").astype(float).values
+    agent_mat, _ = _agent_dummy_matrix(df)
     motif_mat = StandardScaler().fit_transform(df[vocab].values)
     y = df["resolved"].values
     if mode == "agent_only":
-        return np.column_stack([agent_gpt4, agent_gpt4o]), y
+        return agent_mat, y
     if mode == "motifs_only":
         return motif_mat, y
     raise ValueError(mode)
