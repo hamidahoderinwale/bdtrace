@@ -4,12 +4,14 @@ Two-panel figure:
   Left  — horizontal bar of cost per resolved task (the primary efficiency metric)
   Right — scatter of cost-per-task vs resolve rate (the tradeoff space)
 
-Reads:  output/paper2_pilot/step_resources.json (cost data)
-        output/trajectories/lite_all_models.parquet (ground-truth pass rates)
+Reads:  output/paper2_pilot/step_resources.json (cost data, 7 token-bearing agents)
+        output/paper2_pilot/extended_pass_fail.json (resolve rates, 9-agent corpus)
+        output/paper2_pilot/bpe_sequences_extended.jsonl (per-agent trajectory counts)
 Writes: output/figures/fig_efficiency_frontier.png
 """
 from __future__ import annotations
 import json, sys
+from collections import Counter
 from pathlib import Path
 import altair as alt
 import pandas as pd
@@ -22,14 +24,38 @@ register()
 OUT = ROOT / "output" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
 
+SUBMISSION_TO_AGENT_EXT = {
+    "20240402_sweagent_claude3opus":                "Claude-3",
+    "20240402_sweagent_gpt4":                       "GPT-4",
+    "20240620_sweagent_claude3.5sonnet":            "Claude-3.5",
+    "20240728_sweagent_gpt4o":                      "GPT-4o",
+    "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
+    "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+    "20241202_agentless-1.5_claude-3.5-sonnet-20241022": "Agentless+Claude-3.5",
+    "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1": "DARS+R1",
+    "20250111_moatless_deepseek_v3":                "Moatless+V3",
+}
+
 
 def main():
     sr = json.loads((ROOT / "output/paper2_pilot/step_resources.json").read_text())
     ef = sr["efficiency_frontier"]
 
-    traj = pd.read_parquet(ROOT / "output/trajectories/lite_all_models.parquet")
-    traj["agent"] = traj["model_id"].map(AGENT_SHORT)
-    pass_rates = traj.groupby("agent")["passed"].mean().to_dict()
+    # Derive per-agent pass rate from the 9-agent extended pass/fail data,
+    # not the 4-agent lite parquet. Trajectory counts (denominator) come
+    # from the extended bpe_sequences.
+    pf = json.loads((ROOT / "output/paper2_pilot/extended_pass_fail.json").read_text())
+    traj_counts: Counter = Counter()
+    with (ROOT / "output/paper2_pilot/bpe_sequences_extended.jsonl").open() as f:
+        for line in f:
+            if line.strip():
+                traj_counts[json.loads(line)["agent"]] += 1
+    pass_rates: dict[str, float] = {}
+    for sub, agent in SUBMISSION_TO_AGENT_EXT.items():
+        n_resolved = len(pf.get(sub, {}).get("resolved", []))
+        n_total = traj_counts.get(agent, 0)
+        if n_total > 0:
+            pass_rates[agent] = n_resolved / n_total
 
     rows = []
     for agent, d in ef.items():
