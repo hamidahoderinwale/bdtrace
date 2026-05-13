@@ -88,6 +88,17 @@ def main():
         color=alt.Color("agent:N", scale=color_scale, legend=None),
     )
 
+    # Alternating row bands for scan-tracking across 7 agents.
+    band_df_a = pd.DataFrame([
+        {"agent": a} for i, a in enumerate(bar_order) if i % 2 == 0
+    ])
+    bands_a = (
+        alt.Chart(band_df_a)
+        .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
+        .encode(y=alt.Y("agent:N", sort=bar_order,
+                        axis=alt.Axis(title=None, labelFontSize=11)))
+    )
+
     bars = bar_base.mark_bar(height=18).encode(
         x=alt.X("cost_per_resolved:Q",
                 title="Cost per resolved task (USD)",
@@ -106,7 +117,7 @@ def main():
     )
 
     panel_a = (
-        (bars + bar_labels)
+        alt.layer(bands_a, bars, bar_labels)
         .properties(
             width=230, height=130,
             title=alt.TitleParams("Cost per resolved task (USD)",

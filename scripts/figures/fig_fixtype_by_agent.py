@@ -101,6 +101,17 @@ def main():
         range=[AGENT_COLORS[a] for a in AGENT_ORDER],
     )
 
+    # Alternating row bands for fix-type scan-tracking.
+    band_df = pd.DataFrame([
+        {"fix_type": ft} for i, ft in enumerate(ft_order) if i % 2 == 0
+    ])
+    bands = (
+        alt.Chart(band_df)
+        .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
+        .encode(y=alt.Y("fix_type:N", sort=ft_order,
+                        axis=alt.Axis(title=None, labelFontSize=11)))
+    )
+
     base = alt.Chart(plot_df).encode(
         y=alt.Y("fix_type:N", sort=ft_order,
                 axis=alt.Axis(title=None, labelFontSize=11)),
@@ -123,7 +134,7 @@ def main():
     )
 
     chart = (
-        (points + errors)
+        alt.layer(bands, points, errors)
         .properties(
             width=340, height=260,
             title=alt.TitleParams(

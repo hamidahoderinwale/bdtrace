@@ -296,6 +296,18 @@ def plot_per_agent(per_agent: dict, out_path: Path) -> None:
         max_val = df["value"].max()
         x_max = max_val * 1.35  # room for value labels
 
+        # Alternating row bands for agent scan-tracking.
+        band_df = pd.DataFrame([
+            {"agent": a} for i, a in enumerate(agent_order) if i % 2 == 0
+        ])
+        bands = (
+            alt.Chart(band_df)
+            .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
+            .encode(y=alt.Y("agent:N", sort=agent_order,
+                            axis=alt.Axis(title=None, domain=False, ticks=False,
+                                          labelFontSize=12)))
+        )
+
         rule = (
             alt.Chart(df)
             .mark_rule(strokeWidth=2.5, opacity=0.55)
@@ -337,7 +349,7 @@ def plot_per_agent(per_agent: dict, out_path: Path) -> None:
         panel_path = out_path.parent / f"{stem}_per_agent_{metric_slug}.png"
 
         chart = (
-            (rule + pts + labels)
+            alt.layer(bands, rule, pts, labels)
             .properties(
                 title=alt.TitleParams(
                     text=x_title,

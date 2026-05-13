@@ -85,6 +85,16 @@ def main() -> None:
         range=[AGENT_COLORS[a] for a in AGENT_ORDER],
     )
 
+    # Alternating vertical column bands for bin scan-tracking.
+    band_df = pd.DataFrame([
+        {"bin": b} for i, b in enumerate(bin_order) if i % 2 == 0
+    ])
+    bands = (
+        alt.Chart(band_df)
+        .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
+        .encode(x=alt.X("bin:N", sort=bin_order))
+    )
+
     # Range bracket: thin vertical rule from min to max per bin.
     range_layer = (
         alt.Chart(range_df)
@@ -147,7 +157,7 @@ def main() -> None:
     )
 
     chart = (
-        alt.layer(range_layer, dots, spread_labels)
+        alt.layer(bands, range_layer, dots, spread_labels)
         .properties(
             width=alt.Step(56),
             height=300,
