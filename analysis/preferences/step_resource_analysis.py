@@ -37,25 +37,38 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY, NEAR_BLACK
+from scripts.theme import (
+    register, BLUE, ORANGE, GREEN, VERMILLION, SKY, GRAY, NEAR_BLACK,
+    AGENT_COLORS as CANONICAL_AGENT_COLORS,
+)
 register()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CACHE = PROJECT_ROOT / "output" / "trajectories" / ".cache"
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
-SEQ_PATH = OUT / "bpe_sequences.jsonl"
-DIVERSITY_PATH = OUT / "task_diversity.csv"
-PAIRS_PATH = OUT / "tied_outcome_pairs.csv"
+SEQ_PATH = OUT / "bpe_sequences_extended.jsonl"
+DIVERSITY_PATH = OUT / "task_diversity_extended.jsonl"
+PASS_FAIL_PATH = OUT / "extended_pass_fail.json"
 
+# All submissions that carry token-cost data via either info.model_stats
+# or the Moatless nested usage+response_cost shape. Agentless and DARS
+# are absent from per-trajectory token attribution (their trace formats
+# don't surface usage data), so they are intentionally not in this map
+# and their atoms/motifs land in the unattributed pool.
 AGENT_SHORT = {
-    "20240402_sweagent_gpt4": "GPT-4",
-    "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o": "GPT-4o",
+    "20240402_sweagent_claude3opus":                "Claude-3",
+    "20240402_sweagent_gpt4":                       "GPT-4",
+    "20240620_sweagent_claude3.5sonnet":            "Claude-3.5",
+    "20240728_sweagent_gpt4o":                      "GPT-4o",
+    "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
+    "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+    "20250111_moatless_deepseek_v3":                "Moatless+V3",
 }
+# Pull per-agent colors from the canonical palette so figures stay
+# consistent with token_cost / aggregate_metrics_extended / etc.
 AGENT_COLORS = {
-    "Claude-3.5": "#009E73",
-    "GPT-4": "#0072B2",
-    "GPT-4o": "#E69F00",
+    short: CANONICAL_AGENT_COLORS.get(short, "#888888")
+    for short in AGENT_SHORT.values()
 }
 
 
@@ -69,16 +82,62 @@ def load_sequences() -> dict[tuple[str, str], dict]:
     return out
 
 
+def _swe_agent_model_stats(d: dict) -> dict:
+    """Old SWE-agent: d.info.model_stats.
+    New SWE-agent v1.1+: d.content.info.model_stats."""
+    info = d.get("info")
+    if not isinstance(info, dict):
+        content = d.get("content")
+        if isinstance(content, dict):
+            info = content.get("info")
+    if not isinstance(info, dict):
+        return {}
+    stats = info.get("model_stats")
+    return stats if isinstance(stats, dict) else {}
+
+
+def _moatless_model_stats(d: dict) -> dict:
+    """Moatless walks `usage` and `response_cost` at varying depth across
+    the planner tree. Sum them into the standard model_stats schema."""
+    acc = {"tokens_sent": 0, "tokens_received": 0, "api_calls": 0, "instance_cost": 0.0}
+
+    def walk(node):
+        if isinstance(node, dict):
+            usage = node.get("usage")
+            if isinstance(usage, dict) and (
+                "prompt_tokens" in usage or "completion_tokens" in usage
+            ):
+                acc["api_calls"] += 1
+                acc["tokens_sent"] += int(usage.get("prompt_tokens") or 0)
+                acc["tokens_received"] += int(usage.get("completion_tokens") or 0)
+            cost = node.get("response_cost")
+            if isinstance(cost, (int, float)):
+                acc["instance_cost"] += float(cost)
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(d)
+    return acc
+
+
 def load_model_stats() -> dict[tuple[str, str], dict]:
     out = {}
     for agent_dir in sorted(CACHE.iterdir()):
         if not agent_dir.is_dir():
             continue
-        short = AGENT_SHORT.get(agent_dir.name, agent_dir.name)
+        if agent_dir.name not in AGENT_SHORT:
+            continue  # Skip Agentless/DARS/other submissions without token data.
+        short = AGENT_SHORT[agent_dir.name]
+        is_moatless = agent_dir.name == "20250111_moatless_deepseek_v3"
         for traj_file in sorted(agent_dir.glob("*.json")):
+            if traj_file.name == "manifest.json":
+                continue
             with open(traj_file) as f:
                 d = json.load(f)
-            stats = (d.get("info") or {}).get("model_stats") or {}
+            stats = _moatless_model_stats(d) if is_moatless else _swe_agent_model_stats(d)
             out[(short, traj_file.stem)] = {
                 "tokens_sent": int(stats.get("tokens_sent", 0)),
                 "tokens_received": int(stats.get("tokens_received", 0)),
@@ -89,18 +148,24 @@ def load_model_stats() -> dict[tuple[str, str], dict]:
 
 
 def load_resolved_set() -> set[tuple[str, str]]:
-    """Return set of (agent, instance_id) pairs where the agent resolved the task."""
-    resolved = set()
-    with open(PAIRS_PATH) as f:
-        r = csv.DictReader(f)
-        for row in r:
-            agent_map = {
-                "Claude 3.5 Sonnet (SWE-agent)": "Claude-3.5",
-                "GPT-4 (SWE-agent)": "GPT-4",
-                "GPT-4o (SWE-agent)": "GPT-4o",
-            }
-            resolved.add((agent_map.get(row["agent_a"], row["agent_a"]), row["instance_id"]))
-            resolved.add((agent_map.get(row["agent_b"], row["agent_b"]), row["instance_id"]))
+    """Return set of (agent, instance_id) pairs where the agent resolved the
+    task, derived from extended_pass_fail.json across all 9 submissions."""
+    pf = json.loads(PASS_FAIL_PATH.read_text())
+    submission_to_agent = {
+        "20240402_sweagent_claude3opus":                "Claude-3",
+        "20240402_sweagent_gpt4":                       "GPT-4",
+        "20240620_sweagent_claude3.5sonnet":            "Claude-3.5",
+        "20240728_sweagent_gpt4o":                      "GPT-4o",
+        "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
+        "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+        "20241202_agentless-1.5_claude-3.5-sonnet-20241022": "Agentless+Claude-3.5",
+        "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1": "DARS+R1",
+        "20250111_moatless_deepseek_v3":                "Moatless+V3",
+    }
+    resolved: set[tuple[str, str]] = set()
+    for sub, agent in submission_to_agent.items():
+        for iid in pf.get(sub, {}).get("resolved", []):
+            resolved.add((agent, iid))
     return resolved
 
 

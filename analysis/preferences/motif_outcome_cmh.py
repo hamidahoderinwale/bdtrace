@@ -2,8 +2,8 @@
 
 For each BPE compound motif, tests whether its presence in a trajectory
 predicts pass/fail after stratifying by instance difficulty (n_resolved
-bucket). Only strata 1-3 are informative — 0/4 is all-fail, 4/4 is
-all-pass by definition.
+bucket out of 9 agents). Informative strata exclude 0/9 (all-fail) and
+9/9 (all-pass); the in-between strata carry the signal.
 
 Method: Mantel-Haenszel CMH test across difficulty strata.
 For each stratum k: 2x2 table (motif present/absent x pass/fail).
@@ -11,8 +11,8 @@ CMH combines tables into a single difficulty-adjusted OR and chi-square.
 FDR correction (Benjamini-Hochberg) over all tested motifs.
 
 Reads:
-    output/paper2_pilot/bpe_sequences.jsonl
-    output/trajectories/lite_all_models.parquet
+    output/paper2_pilot/bpe_sequences_extended.jsonl
+    output/paper2_pilot/extended_pass_fail.json
 Writes:
     output/paper2_pilot/motif_outcome_cmh.json
     output/figures/fig_motif_cmh.png
@@ -32,9 +32,22 @@ register()
 
 OUT     = ROOT / "output" / "paper2_pilot"
 FIG_OUT = ROOT / "output" / "figures"
-INFORMATIVE_STRATA = {1, 2, 3}
+N_AGENTS_FULL = 9
+INFORMATIVE_STRATA = set(range(1, N_AGENTS_FULL))  # 1..8 (out of 9)
 MIN_MOTIF_COUNT = 20   # minimum total appearances to test
 TOP_N = 15             # motifs to show in figure
+
+SUBMISSION_TO_AGENT = {
+    "20240402_sweagent_claude3opus":                "Claude-3",
+    "20240402_sweagent_gpt4":                       "GPT-4",
+    "20240620_sweagent_claude3.5sonnet":            "Claude-3.5",
+    "20240728_sweagent_gpt4o":                      "GPT-4o",
+    "20250226_sweagent_claude-3-7-sonnet-20250219": "Claude-3.7-thinking",
+    "20250526_sweagent_claude-4-sonnet-20250514":   "Claude-4",
+    "20241202_agentless-1.5_claude-3.5-sonnet-20241022": "Agentless+Claude-3.5",
+    "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1": "DARS+R1",
+    "20250111_moatless_deepseek_v3":                "Moatless+V3",
+}
 
 
 def mantel_haenszel(tables: list[tuple[int, int, int, int]]) -> tuple[float, float, float]:
@@ -82,18 +95,27 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     FIG_OUT.mkdir(parents=True, exist_ok=True)
 
-    # Load BPE sequences
+    # Load BPE sequences (9-agent extended corpus)
     records = []
-    with open(ROOT / "output/paper2_pilot/bpe_sequences.jsonl") as f:
+    with open(ROOT / "output/paper2_pilot/bpe_sequences_extended.jsonl") as f:
         for line in f:
             if line.strip():
                 records.append(json.loads(line))
 
-    # Load pass/fail + n_resolved
-    traj = pd.read_parquet(ROOT / "output/trajectories/lite_all_models.parquet")[
-        ["instance_id", "model_id", "passed"]
-    ]
-    traj["agent"] = traj["model_id"].map(AGENT_SHORT)
+    # Load pass/fail from extended_pass_fail.json instead of the 4-agent
+    # parquet. Build (agent, instance_id, passed) rows by checking each
+    # submission's resolved-instance set.
+    pf = json.loads((ROOT / "output/paper2_pilot/extended_pass_fail.json").read_text())
+    resolved_by_agent: dict[str, set[str]] = {}
+    for sub, agent in SUBMISSION_TO_AGENT.items():
+        resolved_by_agent[agent] = set(pf.get(sub, {}).get("resolved", []))
+
+    traj_rows = []
+    for r in records:
+        a, iid = r["agent"], r["instance_id"]
+        passed = iid in resolved_by_agent.get(a, set())
+        traj_rows.append({"agent": a, "instance_id": iid, "passed": bool(passed)})
+    traj = pd.DataFrame(traj_rows)
     n_res = traj.groupby("instance_id")["passed"].sum().rename("n_resolved")
     traj = traj.merge(n_res, on="instance_id")
 
