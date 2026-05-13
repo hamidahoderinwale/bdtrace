@@ -27,39 +27,38 @@ import pandas as pd
 from scipy.spatial.distance import jensenshannon
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.theme import register, BLUE, ORANGE, GREEN, GRAY, NEAR_BLACK
+from scripts.theme import register, BLUE, ORANGE, GREEN, MAGENTA, COPPER, OLIVE, GRAY, NEAR_BLACK
 register()
 
 from analysis.preferences.bpe import train_bpe
-from analysis.preferences.canonicalize import canonicalize_trajectory
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CACHE = PROJECT_ROOT / "output" / "trajectories" / ".cache"
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
-
-AGENT_SHORT = {
-    "20240402_sweagent_gpt4": "GPT-4",
-    "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o": "GPT-4o",
-}
+SEQ_PATH = OUT / "bpe_sequences_extended.jsonl"
 
 SWEEP_V = [100, 150, 200, 300, 500]
 
 
 def load_all_records() -> list[dict]:
-    records = []
-    for agent_dir in sorted(CACHE.iterdir()):
-        if not agent_dir.is_dir():
-            continue
-        for traj_file in sorted(agent_dir.glob("*.json")):
-            with open(traj_file) as f:
-                raw = json.load(f)
-            seq = canonicalize_trajectory(raw.get("trajectory", []))
+    """Load already-canonicalized atom sequences for all 9 agents.
+
+    Uses bpe_sequences_extended.jsonl rather than re-canonicalizing from
+    the cache, so the sweep covers Moatless / DARS / Agentless / the new
+    Claude variants without needing per-scaffold trajectory adapters here.
+    """
+    records: list[dict] = []
+    with SEQ_PATH.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            r = json.loads(line)
+            seq = r.get("canonical") or []
             if not seq:
                 continue
             records.append({
-                "agent": AGENT_SHORT.get(agent_dir.name, agent_dir.name),
-                "instance_id": traj_file.stem,
+                "agent": r["agent"],
+                "instance_id": r["instance_id"],
                 "canonical": seq,
             })
     return records
@@ -132,63 +131,58 @@ def run_sweep(records: list[dict], sweep_V: list[int]) -> list[dict]:
 
 
 def plot_jsd_sweep(results: list[dict], out_path: Path) -> None:
-    pair_colors = {
-        "Claude-3.5__GPT-4":  BLUE,
-        "Claude-3.5__GPT-4o": ORANGE,
-        "GPT-4__GPT-4o":      GREEN,
-    }
+    # Theme palette, in priority order. One color per pair, deterministic.
+    PALETTE = [GREEN, BLUE, MAGENTA, COPPER, OLIVE, "#187860", "#3D7AD8"]
     pair_names = list(results[0]["jsd_full"].keys())
     pair_labels = [p.replace("__", " x ") for p in pair_names]
+    pair_colors = {p: PALETTE[i % len(PALETTE)] for i, p in enumerate(pair_names)}
     panel_specs = [
-        ("jsd_full",   "All tokens (atoms and patterns)"),
-        ("jsd_motifs", "Repeated sequences only"),
+        ("jsd_full",   "All tokens (atoms and patterns)",  out_path.parent / (out_path.stem + "_all_tokens.png")),
+        ("jsd_motifs", "Repeated sequences only",           out_path.parent / (out_path.stem + "_motifs.png")),
     ]
 
-    rows = []
-    for r in results:
-        for jsd_key, panel_label in panel_specs:
+    for jsd_key, panel_title, panel_path in panel_specs:
+        rows = []
+        for r in results:
             for pair, plabel in zip(pair_names, pair_labels):
                 rows.append({
                     "V":     r["V"],
                     "jsd":   r[jsd_key][pair],
                     "pair":  plabel,
-                    "panel": panel_label,
                 })
-    df = pd.DataFrame(rows)
+        df = pd.DataFrame(rows)
 
-    cscale = alt.Scale(domain=pair_labels,
-                       range=[pair_colors[p] for p in pair_names])
+        # Tighten y-axis to data range with small headroom; avoids 0-1 wasted space.
+        y_max = max(0.05, float(df["jsd"].max()) * 1.10)
 
-    base = alt.Chart(df).encode(
-        x=alt.X("V:O", axis=alt.Axis(title="BPE vocabulary size",
-                                      domain=False, ticks=False, labelFontSize=10)),
-        y=alt.Y("jsd:Q", scale=alt.Scale(domain=[0, 1]),
-                axis=alt.Axis(title="Jensen-Shannon divergence",
-                              domain=False, ticks=False)),
-        color=alt.Color("pair:N", scale=cscale,
-                        legend=alt.Legend(orient="bottom", title=None, symbolSize=80)),
-    )
+        cscale = alt.Scale(domain=pair_labels,
+                           range=[pair_colors[p] for p in pair_names])
 
-    chart = (
-        (base.mark_line(strokeWidth=2) + base.mark_point(size=55, filled=True))
-        .facet(
-            column=alt.Column("panel:N",
-                              sort=[s[1] for s in panel_specs],
-                              header=alt.Header(title=None, labelFontSize=11)),
-            spacing=60,
+        base = alt.Chart(df).encode(
+            x=alt.X("V:O", axis=alt.Axis(title="BPE vocabulary size",
+                                          domain=False, ticks=False, labelFontSize=10)),
+            y=alt.Y("jsd:Q", scale=alt.Scale(domain=[0, y_max]),
+                    axis=alt.Axis(title="Jensen-Shannon divergence",
+                                  domain=False, ticks=False)),
+            color=alt.Color("pair:N", scale=cscale,
+                            legend=alt.Legend(orient="bottom", title=None, symbolSize=80,
+                                              columns=min(3, len(pair_labels)))),
         )
-        .properties(
-            title=alt.TitleParams(
-                text="Pairwise divergence by BPE vocabulary size",
-                fontSize=13, color="#111111", anchor="start",
+
+        chart = (
+            (base.mark_line(strokeWidth=2) + base.mark_point(size=55, filled=True))
+            .properties(
+                title=alt.TitleParams(
+                    text=panel_title,
+                    fontSize=13, color="#111111", anchor="start",
+                ),
+                width=380, height=240,
             )
+            .configure_view(strokeWidth=0)
         )
-        .resolve_scale(y="shared")
-        .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-    )
 
-    chart.save(str(out_path), scale_factor=2)
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def plot_compression_curve(results: list[dict], out_path: Path) -> None:

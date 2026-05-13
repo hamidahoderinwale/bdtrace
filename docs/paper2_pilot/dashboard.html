@@ -603,10 +603,10 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>Mean canonical-atom length per agent vs how many of the 9 agents solved each task (buckets coarsened: 0/9, 1-2/9, 3-4/9, 5-6/9, 7-8/9, 9/9). Macro pattern holds: length decreases as more agents pass. Claude-4 dominates raw-atom length (70+ on 0/9 tasks, dropping to ~45 on 9/9) — the SHELL_CD storm signature surfaces here as raw volume; in the BPE-grouped right panel the gap compresses sharply (Claude-4's repetitive shell sequences collapse into few motifs).</figcaption>
 </figure>
 
-<h4>JSD ranking stability across vocabulary size</h4>
+<h4>JSD ranking stability across vocabulary size (9-agent corpus)</h4>
 <figure>
   <img src="fig_jsd_stability.png" alt="JSD by agent pair across vocabulary sizes">
-  <figcaption>JSD pair ranking invariant across V ∈ {100, 150, 200, 300, 500}. Magnitude scales; order fixed.</figcaption>
+  <figcaption>All 36 agent-pair JSDs (motifs) plotted against BPE vocabulary size V ∈ {100, 125, 150, 175, 200, 225, 250, 300, 500}, colored by cell-pair (within-cell pairs in cool tones at the bottom band; cross-cell pairs in warm tones higher). Lines never cross: pair ranking is invariant to V; magnitudes amplify with V. The methodology argument (qualitative findings survive vocabulary-size choice) holds at 9-agent scale as it did at 3-agent.</figcaption>
 </figure>
 
 <h4>Per-agent pass-rate distribution within difficulty bins</h4>
@@ -1568,7 +1568,7 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 
 <figure>
 <img src="bpe_vocab_sweep_compression.png" alt="BPE compression curve">
-<figcaption>Corpus compression ratio vs V. Diminishing returns set in around V=175–200; additional merges past V=200 contribute less than 0.1% compression per additional vocabulary slot.</figcaption>
+<figcaption>Corpus compression ratio vs V on the 9-agent extended corpus (2,639 trajectories). Diminishing returns set in around V=150–200; additional merges past V=200 contribute small marginal compression per additional vocabulary slot. The elbow location is preserved going from the 3-agent baseline (1,167 trajectories) to the 9-agent corpus.</figcaption>
 </figure>
 
 <p><strong>V selection:</strong> V=200 by compression-elbow rule of thumb (first V where marginal compression gain per unit V drops below 0.001). The principled defense is the V-sweep itself: the heritability ordering holds across V ∈ [100, 500], so the finding does not hinge on the specific V chosen.</p>
