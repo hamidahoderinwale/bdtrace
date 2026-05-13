@@ -591,16 +591,16 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figcaption>n=1000 permutations. p&lt;0.001 for GPT-4/GPT-4o within-family advantage.</figcaption>
 </figure>
 
-<h4>Motif-outcome CMH test</h4>
+<h4>Motif-outcome CMH test (9-agent extended corpus)</h4>
 <figure>
   <img src="fig_motif_cmh.png" alt="Cochran-Mantel-Haenszel test per motif">
-  <figcaption>0/28 motifs significant after FDR (q=0.05). Within difficulty strata, no motif predicts outcome.</figcaption>
+  <figcaption>Difficulty-adjusted log-odds per BPE motif (strata 1-8 out of 9 agents). Multiple motifs are significant after FDR in the extended corpus: <strong>SHELL_CD-containing motifs are strongly pass-enriched</strong> (OR up to +4 log-odds for OPEN_OTHER+OPEN_OTHER+OPEN_SRC_PY, +3 for CREATE_TEST_PY+SHELL_CD and SHELL_CD ×4), <strong>repetitive EDIT_SRC_PY and EDIT_CONFIG_PY chains are fail-enriched</strong> (OR down to −4 log-odds). The 4-agent baseline corpus had no significant pass-direction signal; Claude-4 and Claude-3.7-thinking's shell-navigation style is what introduces it.</figcaption>
 </figure>
 
-<h4>Trajectory length by difficulty bucket, per agent</h4>
+<h4>Trajectory length by difficulty bucket, per agent (9-agent corpus)</h4>
 <figure>
   <img src="length_by_difficulty.png" alt="Trajectory length by task difficulty">
-  <figcaption>Length decreases as more agents pass; macro pattern only (within-bin r = −0.12 to −0.17).</figcaption>
+  <figcaption>Mean canonical-atom length per agent vs how many of the 9 agents solved each task (buckets coarsened: 0/9, 1-2/9, 3-4/9, 5-6/9, 7-8/9, 9/9). Macro pattern holds: length decreases as more agents pass. Claude-4 dominates raw-atom length (70+ on 0/9 tasks, dropping to ~45 on 9/9) — the SHELL_CD storm signature surfaces here as raw volume; in the BPE-grouped right panel the gap compresses sharply (Claude-4's repetitive shell sequences collapse into few motifs).</figcaption>
 </figure>
 
 <h4>JSD ranking stability across vocabulary size</h4>
@@ -1138,17 +1138,17 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </div>
 
 <div class="finding">
-<strong>Pluralism dominates: 47% of tasks are procedurally permissive, only 5% are constrained.</strong> Mean pairwise action-sequence divergence across 300 tasks is 0.58 (median 0.59). All-resolved tasks diverge less (median 0.48) than mixed-outcome tasks (0.60).
+<strong>Pluralism dominates: across 9 agents, mean pairwise canonical-atom divergence per task is 0.82 (median 0.83).</strong> All-resolved tasks diverge less (median 0.73) than mixed-outcome (0.83) or none-resolved (0.85). The pattern is monotonic: as tasks get harder, agents flail in more divergent ways. The 4-agent baseline showed a softer version of this; the 9-agent corpus sharpens it because the extended-thinking and cross-scaffold agents (Claude-4, Moatless, DARS, Agentless) carry procedural signatures unlike anything in the original four.
 </div>
 
 <figure>
 <img src="task_diversity_distribution.png" alt="Task diversity distribution">
-<figcaption>Distribution of per-task procedural divergence across 300 tasks. Bimodal-ish with mass around 0.5–0.7; few tasks force convergence.</figcaption>
+<figcaption>Distribution of per-task procedural divergence across the 9-agent corpus (300 tasks). Unimodal around 0.83 with a left tail toward 0.6. The shape is consistent with a corpus where most tasks elicit substantially different procedures across agents, and only a small fraction force convergence on a single approach.</figcaption>
 </figure>
 
 <figure>
 <img src="task_diversity_by_resolved.png" alt="Task diversity by outcome">
-<figcaption>Divergence split by outcome category. Tasks where all agents succeed exhibit tighter procedural agreement than tasks with mixed or no success.</figcaption>
+<figcaption>Divergence split by outcome bucket (all 9 resolved / mixed / none resolved). Tasks where every agent succeeds exhibit measurably tighter procedural agreement (median 0.73) than tasks with mixed (0.83) or no success (0.85). The "all resolved" bucket is narrow because only 10 of 300 instances are solved by all 9 agents.</figcaption>
 </figure>
 
 <div class="caveat">
@@ -1254,21 +1254,21 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 </figure>
 
 <div class="finding">
-<strong>Agents have distinctive length profiles.</strong> GPT-4 is the most concise (21.4 atoms / 8.2 motifs per trajectory) — roughly half the length of the others. GPT-4o is the longest (39 atoms / 14 motifs) with the widest repertoire (84 motifs to cover 90% vs 66 for Claude and GPT-4) and the lowest compression (0.37, meaning heavy repeat structure). Claude is in between on length but compresses least (0.50, more varied sub-sequences).
+<strong>Length profiles span an order of magnitude across the 9-agent corpus.</strong> Claude-4 is the longest by raw-atom count (44 atoms mean, peaking above 70 on the hardest tasks) — its SHELL_CD storm inflates the raw-atom volume. Claude-3.5 and GPT-4o sit around 30-40 raw atoms; GPT-4, Claude-3, Agentless, and Moatless cluster at 13-21. Claude-3.7-thinking is conspicuously the shortest of the SWE-agent runs (~15 atoms) despite being an extended-thinking model — SWE-agent v1.1+ trims its emitted reasoning out of the captured atom stream.
 </div>
 
 <figure>
 <img src="length_by_difficulty.png" alt="Length by difficulty">
-<figcaption>Mean trajectory length per agent as a function of task difficulty (number of agents that resolved). All agents trend shorter as tasks become solvable, but the shape differs: GPT-4o is dramatically longer on 0/3 tasks (44 atoms vs 36 for Claude and 22 for GPT-4), suggesting it "flails longer" before giving up.</figcaption>
+<figcaption>Mean trajectory length per agent vs how many of the 9 agents resolved the task (buckets coarsened from 0/9 to 9/9). All agents trend shorter on easier tasks, but the magnitudes differ sharply: Claude-4 averages 70+ atoms on 0/9 tasks vs ~45 on 9/9 (its raw-atom volume comes from a heavily repetitive shell-navigation pattern that BPE collapses to far fewer motifs in the right panel). Agentless and Moatless stay nearly flat across difficulty buckets because their scaffolds enforce a fixed pipeline shape regardless of how hard the task turns out to be.</figcaption>
 </figure>
 
 <div class="finding">
-<strong>Novelty index reveals nameable per-agent signatures.</strong> For each agent, per-motif log-odds of this-agent's usage vs the corpus mean. Positive = this agent over-uses the motif. The top over-used motifs are clean style fingerprints.
+<strong>Novelty index reveals nameable per-agent signatures, now visible for all 9 agents.</strong> For each agent, per-motif log-odds of this-agent's usage vs the 9-agent corpus mean. Positive = this agent over-uses the motif. Each panel reads as a procedural fingerprint.
 </div>
 
 <figure>
 <img src="novelty_top_motifs.png" alt="Top distinctive motifs per agent">
-<figcaption>Top 6 distinctively over-used motifs per agent (log2 odds vs corpus mean; positive = over-used). <strong>Claude-3.5</strong>: test-driven (RUN_PYTHON_TEST → RUN_PYTHON_TEST, OPEN_REPRO → RUN, EDIT_SRC → RUN_PYTEST). <strong>GPT-4</strong>: heavy in-file scrolling (NAV_SRC × 4, NAV_SRC × 8) and SEARCH → OPEN. <strong>GPT-4o</strong>: long repetition bursts (EDIT_SRC × 32, EDIT_CONFIG × 16, SHELL_EXPORT × 2, long edit-run loops). Three distinct procedural styles nameable from the numbers alone.</figcaption>
+<figcaption>Top 6 distinctively over-used motifs per agent (log2 odds vs 9-agent corpus mean). <strong>Claude-3 / Claude-3.5</strong>: reproducer-heavy (CREATE_REPRO_PY, EDIT_REPRO_PY chains). <strong>Claude-3.7-thinking</strong>: SUBMIT-anchored short motifs (SUBMIT, EDIT_REPRO_PY → SUBMIT). <strong>Claude-4</strong>: shell-navigation cluster (SHELL_GREP, SHELL_SED, SHELL_CD prefixes). <strong>GPT-4 / GPT-4o</strong>: NAV_SRC_PY repetition (file-scrolling) and EDIT_CONFIG_PY runs. <strong>DARS+R1</strong>: planner-style RUN_PYTHON_REPRO + NAV interleaving. <strong>Agentless+Claude-3.5</strong>: FIND_FILE × N (extremely deterministic pipeline-template signature; log-odds reaches +7 on a single motif). <strong>Moatless+V3</strong>: tree-search NAV_SRC_PY + SEARCH patterns. Nine distinct procedural styles, each nameable from the numbers alone.</figcaption>
 </figure>
 </section>
 
@@ -1821,7 +1821,7 @@ The "comparable token budget" framing (Moatless 422K input ≈ Claude-3.5 516K) 
 <p>The aggregate cost picture hides where the spending happens. Attribute trajectory-level tokens proportionally across atoms, then roll up to each BPE motif. Now every procedural unit has a cost estimate alongside a success association (fraction of trajectories using it that resolved the task). That lets us ask: which procedures are efficient, which are wasteful?</p>
 
 <div class="finding">
-<strong>Claude costs ~43% less per resolved task than GPT-4 and 36% less than GPT-4o.</strong> Cost per resolved task: Claude $10.20, GPT-4o $16.00, GPT-4 $17.91. Claude and GPT-4o resolve at the same rate (16%) but Claude costs $1.62/task vs GPT-4o's $2.53. GPT-4 pays the most per resolved task despite its compact trajectories — per-token pricing and slightly lower resolve rate both hurt. (Efficiency frontier figure removed; equivalent comparison appears in <code>fig_efficiency_frontier.png</code> above.)
+<strong>Cost-per-resolved-task spans nearly four orders of magnitude across the 7 token-bearing agents.</strong> Moatless+V3 = $0.01/resolved, Claude-3.7-thinking = $1.62, Claude-4 = $2.12, Claude-3.5 = $6.80, GPT-4o = $12.80, GPT-4 = $13.93, Claude-3 = $29.31. Three multiplicative effects stack: (1) DeepSeek-V3 base pricing (~10-15× cheaper per token than Claude Sonnet), (2) heavy prompt-caching in Moatless's planner-tree (29% cache hits corpus-wide), (3) SWE-agent v1.1+ context-trimming on the new Claude runs. Agentless and DARS are excluded because their trace formats carry no token data. (Efficiency frontier figure removed; equivalent comparison appears in <code>fig_efficiency_frontier.png</code> above.)
 
 <figure>
 <img src="step_resources_motifs.png" alt="Motif cost vs success quadrant">
@@ -1838,7 +1838,7 @@ The "comparable token budget" framing (Moatless 422K input ≈ Claude-3.5 516K) 
 </figure>
 
 <div class="finding">
-<strong>Long edit bursts are catastrophically wasteful.</strong> The top five wasteful motifs are all repetitive EDIT_SRC or NAV_SRC sequences of length 8-16+, costing 100-440k tokens per occurrence and resolving 0-9% of the time (vs 15.2% base rate). These are GPT-4o's characteristic "edit × 32" signature showing up as an anti-pattern: when the agent falls into a long repetitive edit burst, the odds of a solve drop sharply.
+<strong>Long edit bursts are catastrophically wasteful in the 9-agent corpus too.</strong> The top wasteful motifs are repetitive EDIT_SRC_PY sequences of length 8-16+, with mean cost per use in the 150-350k token range and resolve rates of 3-16% (below the 32% corpus base). The pattern that surfaced in the 4-agent baseline as a GPT-4o signature now appears across the older SWE-agent runs in general. The CMH test confirms it: long-edit motifs are fail-enriched in difficulty-adjusted odds.
 </div>
 
 <figure>

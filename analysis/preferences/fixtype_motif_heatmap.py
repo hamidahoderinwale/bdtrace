@@ -33,7 +33,11 @@ from scripts.theme import register, BLUE, ORANGE, GREEN, NEAR_BLACK, GRAY, VERMI
 register()
 
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
-SEQ_PATH = OUT / "bpe_sequences.jsonl"
+# Switched from the 3-agent baseline bpe_sequences.jsonl to the 9-agent
+# extended corpus. The fix_types.json file covers all 300 SWE-bench
+# instances regardless of which agents attempted them, so the heatmap
+# extends cleanly to the full 9-agent motif vocabulary.
+SEQ_PATH = OUT / "bpe_sequences_extended.jsonl"
 FIX_TYPES_PATH = PROJECT_ROOT / "output" / "datasets" / "swe_bench_lite_resolved" / "fix_types.json"
 
 TOP_N_MOTIFS = 25
