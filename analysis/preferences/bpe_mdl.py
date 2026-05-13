@@ -41,32 +41,29 @@ from analysis.preferences.bpe import train_bpe
 from analysis.preferences.canonicalize import canonicalize_trajectory
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CACHE = PROJECT_ROOT / "output" / "trajectories" / ".cache"
 OUT = PROJECT_ROOT / "output" / "paper2_pilot"
-
-AGENT_SHORT = {
-    "20240402_sweagent_gpt4": "GPT-4",
-    "20240620_sweagent_claude3.5sonnet": "Claude-3.5",
-    "20240728_sweagent_gpt4o": "GPT-4o",
-}
+SEQ_PATH = OUT / "bpe_sequences_extended.jsonl"
 
 V_SWEEP = [100, 125, 150, 175, 200, 225, 250, 300, 500]
 
 
 def load_canonical() -> tuple[list[list[str]], list[str]]:
-    sequences = []
-    agents = []
-    for agent_dir in sorted(CACHE.iterdir()):
-        if not agent_dir.is_dir():
-            continue
-        short = AGENT_SHORT.get(agent_dir.name, agent_dir.name)
-        for traj_file in sorted(agent_dir.glob("*.json")):
-            with open(traj_file) as f:
-                raw = json.load(f)
-            seq = canonicalize_trajectory(raw.get("trajectory", []))
-            if seq:
-                sequences.append(seq)
-                agents.append(short)
+    """Read already-canonicalized atom sequences for all 9 agents from
+    bpe_sequences_extended.jsonl. Avoids per-scaffold re-canonicalization
+    and covers Moatless / DARS / Agentless / Claude-4 etc."""
+    sequences: list[list[str]] = []
+    agents: list[str] = []
+    with SEQ_PATH.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            r = json.loads(line)
+            seq = r.get("canonical") or []
+            if not seq:
+                continue
+            sequences.append(seq)
+            agents.append(r["agent"])
     return sequences, agents
 
 
