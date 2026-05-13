@@ -1,11 +1,15 @@
 """Phase 9: R10 stuck-loop signature on the extended corpus.
 
-Same as scripts/analysis/r10_post_localization_motifs.py but on the
-8-submission cross-scaffold corpus. Splits Type B failures (reached gold,
-still failed) into short vs long post-localization segments at the
-median, and reports the most diverging canonical-atom motifs.
+Post-localization motif rates as a function of steps_after, plotted
+as the full distribution rather than a median split. For each top
+diverging motif (selected by the same procedure as before), shows
+per-trajectory proportion of that motif across the entire steps_after
+distribution -- with per-decile median + IQR band and individual
+trajectory dots overlaid. The reader sees the gradient (or threshold)
+shape directly instead of trusting a two-number short/long summary.
 
-Excludes Agentless (Type A/B not applicable; sections are deterministic).
+Excludes Agentless (reach/no-reach not applicable; sections are
+deterministic).
 
 Reads:
     output/paper2_pilot/bpe_sequences_extended.jsonl
@@ -28,6 +32,7 @@ from collections import Counter
 from pathlib import Path
 
 import altair as alt
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,7 +40,7 @@ sys.path.insert(0, str(ROOT))
 
 from analysis.preferences.localization import load_gold_files
 from analysis.preferences.localization_extended import first_localization_step_extended
-from scripts.theme import register, BLUE, MAGENTA
+from scripts.theme import register, BLUE, COPPER, GREEN, MAGENTA, OLIVE
 register()
 
 OUT_FIG = ROOT / "output" / "figures"
@@ -131,12 +136,12 @@ def main() -> None:
     q75 = float(df["steps_after"].quantile(0.75))
     print(f"\nsteps_after median={median_steps:.0f}  IQR=[{q25:.0f}, {q75:.0f}]")
 
-    df["duration_group"] = df["steps_after"].apply(
-        lambda x: "short" if x <= median_steps else "long"
-    )
-
-    def top_motifs(seqs, n=TOP_N):
-        counts = Counter()
+    # ── Motif selection ──────────────────────────────────────────────────────
+    # Pick the top diverging motifs the same way the median-split version
+    # did (used only to choose which curves to draw; the curves themselves
+    # use no splits). Below-median = "short", above-median = "long".
+    def top_atoms(seqs, n=TOP_N):
+        counts: Counter = Counter()
         total = 0
         for s in seqs:
             counts.update(s)
@@ -145,102 +150,175 @@ def main() -> None:
             return []
         return [(t, c / total) for t, c in counts.most_common(n)]
 
-    short_df = df[df["duration_group"] == "short"]
-    long_df = df[df["duration_group"] == "long"]
-    short_motifs = top_motifs(short_df["post_canonical"].tolist())
-    long_motifs = top_motifs(long_df["post_canonical"].tolist())
-
-    print(f"\nShort post-loc (n={len(short_df)}, <= {median_steps:.0f} steps):")
-    for tok, rate in short_motifs[:10]:
-        print(f"  {tok:35s}  {rate:.3f}")
-    print(f"\nLong post-loc (n={len(long_df)}, > {median_steps:.0f} steps):")
-    for tok, rate in long_motifs[:10]:
-        print(f"  {tok:35s}  {rate:.3f}")
-
-    short_dict = dict(short_motifs)
-    long_dict = dict(long_motifs)
-    all_motifs = list(set(short_dict) | set(long_dict))
-    diffs = [{"motif": m,
-              "short_rate": short_dict.get(m, 0.0),
-              "long_rate":  long_dict.get(m, 0.0),
-              "diff":       long_dict.get(m, 0.0) - short_dict.get(m, 0.0),
-              "abs_diff":   abs(long_dict.get(m, 0.0) - short_dict.get(m, 0.0))}
-             for m in all_motifs]
-    diff_df = pd.DataFrame(diffs).sort_values("abs_diff", ascending=False).head(20)
-
-    # Sort by signed diff descending: motifs that grow most in long failures
-    # appear at top; motifs that shrink most appear at the bottom.
-    diff_df = diff_df.sort_values("diff", ascending=False).head(18)
-
-    plot_rows = []
-    for _, row in diff_df.iterrows():
-        plot_rows.append({"motif": row["motif"], "group": "short", "rate": row["short_rate"]})
-        plot_rows.append({"motif": row["motif"], "group": "long",  "rate": row["long_rate"]})
-    plot_df = pd.DataFrame(plot_rows)
-    motif_order = diff_df["motif"].tolist()
-
-    # Connecting-rule data: span from the lower rate to the higher rate per motif.
-    rule_rows = [
-        {"motif": row["motif"],
-         "x_lo": min(row["short_rate"], row["long_rate"]),
-         "x_hi": max(row["short_rate"], row["long_rate"])}
-        for _, row in diff_df.iterrows()
-    ]
-    rule_df = pd.DataFrame(rule_rows)
-
-    # Alternating row bands: every other motif gets a subtle gray stripe so
-    # the eye can scan a long category list without losing the row.
-    band_df = pd.DataFrame([
-        {"motif": m} for i, m in enumerate(motif_order) if i % 2 == 0
-    ])
-
-    color_scale = alt.Scale(domain=["short", "long"], range=[BLUE, MAGENTA])
-    x_max = max(plot_df["rate"]) * 1.15
-    y_axis = alt.Axis(
-        title=None, domain=False, ticks=False,
-        labelFontSize=10, labelLimit=200, labelPadding=8,
+    short_seqs = df[df["steps_after"] <= median_steps]["post_canonical"].tolist()
+    long_seqs  = df[df["steps_after"]  > median_steps]["post_canonical"].tolist()
+    short_top = dict(top_atoms(short_seqs))
+    long_top  = dict(top_atoms(long_seqs))
+    all_motifs = set(short_top) | set(long_top)
+    diffs = sorted(
+        ({"motif": m,
+          "short_rate": short_top.get(m, 0.0),
+          "long_rate":  long_top.get(m, 0.0),
+          "diff":       long_top.get(m, 0.0) - short_top.get(m, 0.0)}
+         for m in all_motifs),
+        key=lambda d: abs(d["diff"]), reverse=True,
     )
+    # Keep up to 8 motifs for small-multiples; signed-sort so growers and
+    # shrinkers are both represented.
+    selected = sorted(diffs[:8], key=lambda d: -d["diff"])
+    motif_order = [d["motif"] for d in selected]
+    print("\nSelected motifs for distribution panels (top |diff|, signed):")
+    for d in selected:
+        print(f"  {d['motif']:35s}  short={d['short_rate']:.3f}  long={d['long_rate']:.3f}  Δ={d['diff']:+.3f}")
 
-    bands = (
-        alt.Chart(band_df)
-        .mark_rect(fill="#F1F1EE", opacity=1.0, stroke=None)
-        .encode(y=alt.Y("motif:N", sort=motif_order, axis=y_axis))
-    )
-    connecting = (
-        alt.Chart(rule_df)
-        .mark_rule(color="#666666", strokeWidth=1.2, opacity=0.7)
-        .encode(
-            x=alt.X("x_lo:Q", scale=alt.Scale(domain=[0, x_max])),
-            x2="x_hi:Q",
-            y=alt.Y("motif:N", sort=motif_order, axis=y_axis),
+    # ── Per-trajectory per-motif proportion ─────────────────────────────────
+    rows: list[dict] = []
+    for _, r in df.iterrows():
+        post = r["post_canonical"]
+        n_post = len(post)
+        if n_post == 0:
+            continue
+        for motif in motif_order:
+            rows.append({
+                "instance_id": r["instance_id"],
+                "agent":       r["agent"],
+                "steps_after": r["steps_after"],
+                "motif":       motif,
+                "proportion":  post.count(motif) / n_post,
+            })
+    long_df = pd.DataFrame(rows)
+
+    # ── Decile binning on steps_after ────────────────────────────────────────
+    # 10 quantile bins; midpoint of each bin used as the x-position for the
+    # per-decile summary line.
+    decile_edges = np.quantile(df["steps_after"], np.linspace(0, 1, 11))
+    decile_edges[0] = decile_edges[0] - 0.5
+    decile_edges[-1] = decile_edges[-1] + 0.5
+    decile_mids = [(decile_edges[i] + decile_edges[i + 1]) / 2 for i in range(10)]
+
+    def decile_of(x: float) -> int:
+        for i in range(10):
+            if x <= decile_edges[i + 1]:
+                return i
+        return 9
+
+    long_df["decile"] = long_df["steps_after"].map(decile_of)
+    long_df["decile_mid"] = long_df["decile"].map(lambda i: decile_mids[i])
+
+    summary_rows: list[dict] = []
+    for motif in motif_order:
+        for d in range(10):
+            sub = long_df[(long_df["motif"] == motif) & (long_df["decile"] == d)]["proportion"]
+            if len(sub) == 0:
+                continue
+            summary_rows.append({
+                "motif":  motif,
+                "decile": d,
+                "decile_mid": decile_mids[d],
+                "median": float(sub.median()),
+                "q25":    float(sub.quantile(0.25)),
+                "q75":    float(sub.quantile(0.75)),
+                "n":      int(len(sub)),
+            })
+    summary_df = pd.DataFrame(summary_rows)
+
+    # ── Small-multiples plot ────────────────────────────────────────────────
+    # For each selected motif: scatter of per-trajectory proportions, an IQR
+    # band per decile, and a median line connecting decile midpoints.
+    # X-axis: steps_after (raw value, log scale to handle the long tail).
+    x_min = max(1, float(df["steps_after"].min()))
+    x_max = float(df["steps_after"].max())
+
+    def short_label(m: str, n: int = 30) -> str:
+        return m if len(m) <= n else m[: n - 2] + ".."
+
+    # Build one panel per motif via hconcat (altair's facet can't combine
+    # layered charts that pull from different DataFrames).
+    panel_palette = [BLUE, COPPER, GREEN, MAGENTA, OLIVE, BLUE, COPPER, GREEN]
+
+    def make_panel(motif: str, color: str) -> alt.LayerChart:
+        traj = long_df[long_df["motif"] == motif]
+        summ = summary_df[summary_df["motif"] == motif]
+        scatter = (
+            alt.Chart(traj)
+            .mark_circle(size=14, opacity=0.18, color="#666666", strokeWidth=0)
+            .encode(
+                x=alt.X("steps_after:Q",
+                        scale=alt.Scale(type="log", domain=[x_min, x_max * 1.1]),
+                        axis=alt.Axis(title="steps after localization",
+                                      domain=False, ticks=False, labelFontSize=8)),
+                y=alt.Y("proportion:Q",
+                        scale=alt.Scale(domain=[0, 1]),
+                        axis=alt.Axis(title="proportion",
+                                      format=".0%", domain=False, ticks=False, labelFontSize=8)),
+            )
         )
-    )
-    dots = (
-        alt.Chart(plot_df)
-        .mark_circle(size=140, opacity=1.0, strokeWidth=0)
-        .encode(
-            x=alt.X(
-                "rate:Q",
-                title="Token frequency in post-localization segment",
-                scale=alt.Scale(domain=[0, x_max]),
-            ),
-            y=alt.Y("motif:N", sort=motif_order, axis=y_axis),
-            color=alt.Color(
-                "group:N", scale=color_scale,
-                legend=alt.Legend(title="Post-localization duration", orient="bottom"),
-            ),
-            tooltip=["motif", "group", alt.Tooltip("rate:Q", format=".3f")],
+        band = (
+            alt.Chart(summ)
+            .mark_area(opacity=0.25, color=color)
+            .encode(
+                x=alt.X("decile_mid:Q",
+                        scale=alt.Scale(type="log", domain=[x_min, x_max * 1.1])),
+                y=alt.Y("q25:Q", scale=alt.Scale(domain=[0, 1])),
+                y2=alt.Y2("q75:Q"),
+            )
         )
-    )
+        median_line = (
+            alt.Chart(summ)
+            .mark_line(strokeWidth=2, color=color)
+            .encode(
+                x=alt.X("decile_mid:Q",
+                        scale=alt.Scale(type="log", domain=[x_min, x_max * 1.1])),
+                y=alt.Y("median:Q", scale=alt.Scale(domain=[0, 1])),
+            )
+        )
+        median_points = (
+            alt.Chart(summ)
+            .mark_point(size=40, filled=True, color=color)
+            .encode(
+                x=alt.X("decile_mid:Q",
+                        scale=alt.Scale(type="log", domain=[x_min, x_max * 1.1])),
+                y=alt.Y("median:Q", scale=alt.Scale(domain=[0, 1])),
+                tooltip=[alt.Tooltip("decile:Q", title="decile"),
+                         alt.Tooltip("decile_mid:Q", title="steps_after midpoint", format=".0f"),
+                         alt.Tooltip("median:Q", format=".1%"),
+                         alt.Tooltip("q25:Q", format=".1%"),
+                         alt.Tooltip("q75:Q", format=".1%"),
+                         alt.Tooltip("n:Q", title="n trajectories")],
+            )
+        )
+        return (
+            alt.layer(scatter, band, median_line, median_points)
+            .properties(
+                width=180, height=140,
+                title=alt.TitleParams(short_label(motif), fontSize=10,
+                                      color="#111111", anchor="start"),
+            )
+        )
 
+    panels = [make_panel(m, panel_palette[i % len(panel_palette)])
+              for i, m in enumerate(motif_order)]
+
+    # Arrange in rows of 4 panels.
+    per_row = 4
+    rows_of_panels = [panels[i:i + per_row] for i in range(0, len(panels), per_row)]
+    grid = alt.vconcat(
+        *[alt.hconcat(*row, spacing=18) for row in rows_of_panels],
+        spacing=22,
+    )
     chart = (
-        alt.layer(bands, connecting, dots)
-        .resolve_scale(color="independent")
+        grid
         .properties(
-            width=420, height=380,
             title=alt.TitleParams(
-                "Post-localization motif frequencies, short vs long Type B failures",
-                fontSize=12, color="#111111", anchor="start",
+                "Post-localization motif proportion vs steps after first localization",
+                subtitle=(
+                    f"Per-trajectory proportions (grey dots), per-decile median "
+                    f"(coloured line) and IQR (coloured band) across "
+                    f"{len(df)} reached-but-failed trajectories. X log-scaled. "
+                    "Replaces the prior short-vs-long median split."
+                ),
+                fontSize=12, subtitleFontSize=10,
+                color="#111111", subtitleColor="#666666", anchor="start",
             ),
         )
         .configure_view(strokeWidth=0)
@@ -251,16 +329,14 @@ def main() -> None:
     print(f"\nSaved {out_fig}")
 
     payload = {
-        "n_type_b":           int(len(df)),
-        "n_short":            int(len(short_df)),
-        "n_long":             int(len(long_df)),
-        "median_steps_after": median_steps,
-        "q25_steps_after":    q25,
-        "q75_steps_after":    q75,
-        "by_agent_n_typeB":   df.groupby("agent").size().to_dict(),
-        "short_top_motifs":   [(t, float(r)) for t, r in short_motifs[:10]],
-        "long_top_motifs":    [(t, float(r)) for t, r in long_motifs[:10]],
-        "top_diverging_motifs": diff_df.to_dict(orient="records"),
+        "n_reached_but_failed": int(len(df)),
+        "median_steps_after":   median_steps,
+        "q25_steps_after":      q25,
+        "q75_steps_after":      q75,
+        "by_agent_n":           df.groupby("agent").size().to_dict(),
+        "selected_motifs":      motif_order,
+        "median_split_diffs":   selected,
+        "per_decile_summary":   summary_df.to_dict(orient="records"),
     }
     out_json = OUT_DAT / "r10_postloc_motifs_extended.json"
     out_json.write_text(json.dumps(payload, indent=2, default=float))

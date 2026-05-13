@@ -407,20 +407,20 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 
 <h3>Failure types per agent (Section 6)</h3>
 <figure>
-  <img src="fig_failure_types_extended.png" alt="Type A vs Type B per agent">
-  <figcaption>Type A (never reached gold) vs Type B (reached but failed). Claude-3.7-thinking lowest Type A at 9%.</figcaption>
+  <img src="fig_localization_outcome_extended.png" alt="Failure breakdown per agent: never reached gold file vs reached but failed">
+  <figcaption>Per-agent breakdown of failing trajectories into never-reached-gold-file (the failed-to-localize cohort) vs reached-but-failed. Claude-3.7-thinking has the lowest never-reached share at ~9%, meaning when it fails, it almost always failed AFTER finding the right file. Claude-3 and GPT-4o have the highest never-reached shares.</figcaption>
 </figure>
 
-<h3>Steps after localization, Type B failures (Section 6)</h3>
+<h3>Steps after reaching the gold file (Section 6)</h3>
 <figure>
-  <img src="fig_failure_steps_extended.png" alt="Post-localization steps">
-  <figcaption>Median steps after localization. Claude-3.7-thinking highest at 28; over-deliberation pattern.</figcaption>
+  <img src="fig_steps_after_localization_extended.png" alt="Steps after reaching the gold file, reached-but-failed cohort">
+  <figcaption>Per-agent distribution of steps from first reaching the gold file to trajectory end, across reached-but-failed trajectories. Claude-3.7-thinking is highest at median 28 steps; an over-deliberation pattern.</figcaption>
 </figure>
 
-<h3>Stuck-edit-loop signature (Section 6)</h3>
+<h3>Post-localization motif distribution (Section 6)</h3>
 <figure>
-  <img src="fig_postloc_motifs_extended.png" alt="Post-localization motif rates extended">
-  <figcaption>Long Type B vs short Type B motif rates across 7 applicable submissions. Stuck-edit-loop signature generalizes.</figcaption>
+  <img src="fig_postloc_motifs_extended.png" alt="Post-localization motif proportion as a function of steps after localization">
+  <figcaption>For each of 8 top-diverging canonical-atom motifs, per-trajectory proportion plotted against steps after first reaching the gold file (log x-scale). Grey dots are individual trajectories; colored line and band are per-decile median and IQR across the 1,156 reached-but-failed trajectories. Replaces the prior short-vs-long median split with the full distribution shape. <strong>SHELL_CD rises from near-zero to ~20% of long-trajectory atoms</strong> — the dominant stuck-loop signature in the 9-agent corpus, driven by Claude-4. EDIT_SRC_PY DECREASES with trajectory length (29% → 20%); the original "stuck edit-loop" claim from the 3-agent baseline is replaced by a stuck-shell-cd-loop in the extended corpus.</figcaption>
 </figure>
 
 <h3>CoT-action coverage, two-matcher comparison (Section Findings) <span class="tier tier-headline">New 2026-05-11</span></h3>
@@ -459,10 +459,6 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figure style="margin:0;">
     <img src="fig_agg_entropy_extended.png" alt="Per-agent motif entropy (extended)">
     <figcaption>Motif entropy by agent.</figcaption>
-  </figure>
-  <figure style="margin:0;">
-    <img src="fig_agg_repertoire_extended.png" alt="Distinct motifs at 90% (extended)">
-    <figcaption>Distinct motifs at 90% coverage.</figcaption>
   </figure>
   <figure style="margin:0;">
     <img src="fig_step_count_distribution_extended.png" alt="Step count distribution per agent (extended)">
@@ -655,10 +651,6 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
   <figure style="margin:0;">
     <img src="fig_agg_entropy.png" alt="Per-agent motif entropy">
     <figcaption>Motif entropy per agent. Claude agents more diverse than GPT.</figcaption>
-  </figure>
-  <figure style="margin:0;">
-    <img src="fig_agg_repertoire.png" alt="Distinct motifs at 90% coverage">
-    <figcaption>Per-trajectory distinct motifs at 90% coverage.</figcaption>
   </figure>
   <figure style="margin:0;">
     <img src="fig_agg_length.png" alt="Per-agent trajectory length">
@@ -1236,11 +1228,6 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <figure>
 <img src="fig_agg_entropy_extended.png" alt="Per-agent motif entropy (extended corpus)">
 <figcaption>Repertoire <strong>entropy</strong> per agent (extended 9-submission corpus). Higher = more diverse motif usage.</figcaption>
-</figure>
-
-<figure>
-<img src="fig_agg_repertoire_extended.png" alt="Distinct motifs at 90% coverage (extended corpus)">
-<figcaption><strong>Repertoire width</strong>: distinct motifs needed to cover 90% of an agent's tokens.</figcaption>
 </figure>
 
 <figure>

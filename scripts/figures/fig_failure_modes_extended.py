@@ -1,17 +1,17 @@
 """Phase 8: failure-mode anatomy on the 8-submission extended corpus.
 
 Extends fig_failure_modes.py to scaffolds beyond legacy SWE-agent. Type
-A = "never reached gold file" / Type B = "reached but failed". Steps-after-
+A = "never reached gold file" / reached-but-failed = "reached but failed". Steps-after-
 localization is reported in canonical-sequence units (same units across
 scaffolds).
 
 Per-submission applicability:
-  SWE-agent legacy 4         Type A/B applicable
-  Claude-3.7 SWE-agent       Type A/B applicable
-  DARS+R1                    Type A/B applicable (action regex over file paths)
+  SWE-agent legacy 4         never-reached/B applicable
+  Claude-3.7 SWE-agent       never-reached/B applicable
+  DARS+R1                    never-reached/B applicable (action regex over file paths)
   Agentless+Claude-3.5       NOT APPLICABLE — section-level only; localization
                               N/A. Reported with marker.
-  Moatless+V3                Type A/B applicable (walks action_steps tree)
+  Moatless+V3                never-reached/B applicable (walks action_steps tree)
 
 Reads:
     output/trajectories/.cache/<sub>/<iid>.json
@@ -19,8 +19,8 @@ Reads:
     output/resolved_traces_lite_full.jsonl   (gold-file lookup)
     output/paper2_pilot/bpe_sequences_extended.jsonl  (canonical-length per traj)
 Writes:
-    output/figures/fig_failure_types_extended.png
-    output/figures/fig_failure_steps_extended.png
+    output/figures/fig_localization_outcome_extended.png   (renamed from fig_failure_types_extended.png)
+    output/figures/fig_steps_after_localization_extended.png (renamed from fig_failure_steps_extended.png)
     output/paper2_pilot/failure_modes_extended.json
 
 Usage:
@@ -62,12 +62,13 @@ SUBMISSION_LABEL = {
     "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1":               "DARS+R1",
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022":               "Agentless+Claude-3.5",
     "20250111_moatless_deepseek_v3":                                   "Moatless+V3",
+    "20250526_sweagent_claude-4-sonnet-20250514":                      "Claude-4",
 }
 
 # Display order: legacy SWE-agent first, then new scaffolds
 AGENT_ORDER = [
     "Claude-3", "Claude-3.5", "GPT-4", "GPT-4o",
-    "Claude-3.7-thinking", "DARS+R1", "Moatless+V3", "Agentless+Claude-3.5",
+    "Claude-3.7-thinking", "Claude-4", "DARS+R1", "Moatless+V3", "Agentless+Claude-3.5",
 ]
 AGENT_COLORS = {
     "Claude-3":              COPPER,
@@ -171,7 +172,7 @@ def main() -> None:
               f"median_steps_after={steps_after.median():.0f}" if len(steps_after) else
               f"  {agent:23s}  n_fail={n_total}  applicable={n_app}")
 
-    # Panel A: Type A vs B (only for applicable agents)
+    # Panel A: never-reached vs B (only for applicable agents)
     bar_rows = []
     for agent in AGENT_ORDER:
         s = summary.get(agent, {})
@@ -203,18 +204,19 @@ def main() -> None:
         )
         .properties(
             width=300, height=180,
-            title=alt.TitleParams("Failure types by agent",
-                                  fontSize=12, color="#111111", anchor="start"),
+            title=alt.TitleParams(
+                "Failure breakdown per agent: never reached gold file vs reached but failed",
+                fontSize=12, color="#111111", anchor="start"),
         )
     )
 
-    out_a = OUT_FIG / "fig_failure_types_extended.png"
+    out_a = OUT_FIG / "fig_localization_outcome_extended.png"
     (panel_a.configure_view(strokeWidth=0).configure_axis(grid=False)).save(
         str(out_a), scale_factor=2
     )
     print(f"\nSaved {out_a}")
 
-    # Panel B: steps-after for Type B failures
+    # Panel B: steps-after for reached-but-failed failures
     b_df = fails[fails["localized"]].copy()
     box_rows = []
     for agent in applicable_agents:
@@ -266,12 +268,12 @@ def main() -> None:
             .properties(
                 width=280, height=180,
                 title=alt.TitleParams(
-                    "Steps after localization (Type B failures)",
+                    "Steps after reaching the gold file (reached-but-failed trajectories)",
                     fontSize=12, color="#111111", anchor="start",
                 ),
             )
         )
-        out_b = OUT_FIG / "fig_failure_steps_extended.png"
+        out_b = OUT_FIG / "fig_steps_after_localization_extended.png"
         (panel_b.configure_view(strokeWidth=0).configure_axis(grid=False)).save(
             str(out_b), scale_factor=2
         )
