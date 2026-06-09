@@ -137,14 +137,14 @@ Across all models, passing behavior includes a higher ratio of browsing to other
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.82\linewidth]{figures/fig_step_vs_token_cost.png}
-    \caption{Cost breakdown of agents by action type and tokens.}
+    \caption{\textcolor{blue}{Per-agent cost decomposed by action type and by token volume. Because per-step cost is dominated by inference calls, agents that route work through cheaper shell/orchestration steps before invoking the model spend less per step (cf.\ the \$/step column of Table~\ref{tab:per-agent-megatable}).}}
     \label{fig:step_token_cost}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\linewidth]{figures/fig_steps_per_resolved.png}
-    \caption{Average number of steps per resolved tasks across agents.}
+    \caption{\textcolor{blue}{Mean trajectory length on resolved tasks, per agent. Deterministic and constrained scaffolds (Agentless, Moatless: ${\sim}13$ steps) resolve in a fraction of the steps that open-ended model-driven SWE-agent runs take (e.g.\ Claude-4 at 64.8), a length difference that drives the cost-per-resolved gap in Table~\ref{tab:per-agent-megatable}.}}
     \label{fig:steps_resolved}
 \end{figure}
 
@@ -258,6 +258,8 @@ Neither passes  & 157 & 0.69 & 36.8 & 13.0 \\
 \caption{Outcomes of two agent scaffolds on 289 tasks.}
 \label{tab:scaffold_outcomes}
 \end{table}
+
+\textcolor{blue}{The traces show \emph{why} the scaffolds diverge on these tasks. On the 63 instances Agentless solves but SWE-agent does not, SWE-agent's failing runs are long and edit-heavy: they average 33 steps (vs.\ Agentless's 13) and are over twice as likely to contain a streak of five or more consecutive edits (30\% vs.\ 13\% of SWE-agent's own successful runs). Agentless instead localizes, patches, and validates in a tight ${\sim}13$-step loop. The failure signature here is edit-thrashing and length, not browsing.}
 
 \begin{figure}[H]
 \centering
