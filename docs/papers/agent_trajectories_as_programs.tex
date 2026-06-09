@@ -490,6 +490,28 @@ Weighted mean  & 745 & 0.253 & -- & -- \\
 \label{tab:divergence_by_model}
 \end{table}
 
+\subsection{\textcolor{blue}{Classifier prompt}}
+\textcolor{blue}{The four judges were prompted with the following reference-grounded rubric; the \%-compositional and $\kappa$ in Table~\ref{tab:divergence_by_model} are computed over its \texttt{divergence\_level} output.}
+\begin{tcolorbox}[colback=black!3, colframe=black!30, boxrule=0.4pt, left=10pt, right=10pt, top=8pt, bottom=8pt, fontupper=\small]
+\textcolor{blue}{
+\textbf{Judge prompt (divergence classifier).}\\[2pt]
+You are evaluating a software engineer's response to a bug report. You are given the reference patch---the actual fix---and use it as ground truth.\\[3pt]
+\texttt{Bug report: \{problem\_statement\}}\\
+\texttt{Reference patch: \{gold\_patch\}}\\
+\texttt{Response being evaluated: \{response\}}\\[3pt]
+Reason briefly about each dimension, then score it $0$--$3$ ($0$ = wrong, $3$ = exact match to the reference): \emph{localization} (same file/function as the patch?), \emph{edit\_type} (right kind of change?), \emph{plan\_quality} (would this plan reproduce the patch?), \emph{explanation} (grounded in what the patch does?).\\[3pt]
+Identify the first plan step where the response diverges ($-1$ if fully aligned) and its level:\\
+\quad\emph{surface} --- wrong file/function name (token-level mismatch)\\
+\quad\emph{compositional} --- right location, wrong operation or order (syntactic-level)\\
+\quad\emph{relational} --- right operations, wrong dependency or interaction (graph-level)\\
+\quad\emph{none} --- no divergence\\[3pt]
+Output per-dimension reasoning, then:\\
+\texttt{\{"localization":int, "edit\_type":int, "plan\_quality":int,}\\
+\texttt{~~"explanation":int, "first\_deviation\_step":int,}\\
+\texttt{~~"divergence\_level":"surface|compositional|relational|none"\}}
+}
+\end{tcolorbox}
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\linewidth]{figures/fig_regression_length.png}
