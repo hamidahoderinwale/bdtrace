@@ -234,6 +234,50 @@ The frontier claim is strongest where difficulty is controlled: forms where all 
 
 ---
 
+### 12. Procedural fingerprints identify the agent (leakage-controlled)
+
+A logistic-regression probe over BPE motifs identifies which of **9 agents** produced a trajectory at **85.7%** accuracy (macro-F1 0.85) vs an 11.1% chance baseline (~7.7x), **leakage-controlled** via GroupKFold by task (leakage Δ=−0.007 vs standard CV, so it is style not task memorization). Per-agent F1 is bimodal: deterministic scaffolds (Agentless, DARS F1=1.00; Moatless 0.97) and extended-thinking models (Claude-4, Claude-3.7-thinking F1=0.99) are near-perfectly identifiable; older RLHF-dense models are the most confusable (GPT-4 0.62, Claude-3 0.65, GPT-4o 0.65). Closed-set over known agents. Contrast with code stylometry, which attributes the *artifact* (Bisztray 2025, 97.6%/95.4% over generated C programs); we attribute the *process*, at the step level.
+
+**Reference:** `scripts/backbone_probe_extended.py`, `output/paper2_pilot/backbone_probe_extended.json`
+
+---
+
+### 13. Failure is predictable from a short action prefix, enabling cheap early-abort
+
+A probe on the first *k* canonical actions predicts resolution at **AUC 0.69 from just 3 actions**, rising to 0.72 by step 20 (GroupKFold by task; base resolve rate 0.33). Not a length artifact (resolved/unresolved median length 19 vs 20). A **sequential policy** (re-score the prefix every step, abort at first P(resolve)<τ) **saves ~12% of total compute while retaining ~95% of resolved tasks**, and dominates any fixed decision-step gate across the frontier. Grounds task-aware early-abort / cost control (FrugalGPT/RouteLLM analog at the procedural level).
+
+**Reference:** `scripts/agent_trajectories_paper/early_abort_sequential.py`, `docs/papers/figures/fig_early_abort_frontier.png`
+
+---
+
+### 14. Forward >> reverse faithfulness; thinking models narrate least of what they do
+
+Across families, forward coverage (says→does) is high but reverse coverage (did→says) is not, and it is **lowest for extended-thinking models** (Claude-3.7-thinking, Claude-4 ≈0.20–0.25 median reverse coverage, vs 0.50–0.71 for older models). Many actions thinking models take are never mentioned in their reasoning. (Corrects an earlier "complete reverse faithfulness" reading.)
+
+**Reference:** `output/paper2_pilot/cot_action_alignment_embedding_6agents_summary.json`, `docs/papers/figures/cot_alignment_6agents.png`
+
+---
+
+### 15. The procedural reward is a weak-but-real selector whose headline milestone is empirically inert
+
+The procgrep reward spec (`proc_score`) scored via the shipped library scorer reproduces an inline reference to **within 0.01** (a `from procgrep.reward import load_spec, score` reproducibility check). proc_score weakly predicts resolution (resolved 0.428 vs unresolved 0.396; proc_score best-of-N selection +5.4pp over random). **But its largest component — the `test_verification` milestone (edit→run_test, +0.25) — does not carry that signal:** self-verification is scaffold-determined (Simpson's paradox; within-agent flat-to-negative). proc_score also **misranks capability** across agents — Claude-4, the strongest resolver, scores near-lowest because the canonicalizer under-detects its shell-invoked test runs. So proc_score is a within-scaffold procedural-*style* measure, not a cross-agent capability ranking.
+
+**Reference:** `scripts/agent_trajectories_paper/{proc_score_via_library,test_driven_vs_patchfirst}.py`, `reward_spec.yaml`
+
+---
+
+## Grounding audit (2026-06-08): claims that did NOT reproduce
+
+A pass over the *Agent trajectories as programs* draft separated reproducible results from unsourced ones. The following were flagged and removed/marked-pending in the draft:
+- **Prompt-based divergence judges:** the study is real (`output/prompting_study/`, 4 judges, 17–38% "compositionally divergent", κ<0.05), but the exact κ/% table numbers are **not traceable to any κ-computing code** — recompute or cite carefully.
+- **Distillation case study numbers** (entropy 2.31→1.99, Jaccard 0.64/0.52, conditional JSD, 0.795/0.940/87.8%-`stuck_reading`): described child trajectories that had not been collected — now being regenerated from public trajectories (see below).
+- **Figure 7 V-measure** (canonical 0.290 / native 0.410): no sweep data on disk, contradicts `bpe_vs_prefixspan`'s 0.606/0.626, and there is no native-alphabet field — unsupported as written.
+- **Reward YAML / `stuck_reading`:** the printed spec referenced a `think` action absent from the canonicalization, so two of its rules could never fire — reconciled to the validated `reward_spec.yaml`.
+
+**Reference:** `scripts/agent_trajectories_paper/REFERENCES.md` (per-run inspiration/hypothesis/result log)
+
+---
+
 ## Design Decisions Not Taken
 
 **Why not GumTree directly:** Requires AST-level alignment across versions (move tracking). Across a cross-repository benchmark like SWE-bench, "move" in django and "move" in sympy have no meaningful correspondence. The complexity isn't worth it.
@@ -285,3 +329,7 @@ SWE-smith has 1,217 instances matching the hardest pattern (vs 39 in Lite) but p
 | Keysers et al. 2020 (CFQ) | Compound divergence metric for compositional generalization | Adaptable to measure compositional novelty of unsolved instances vs agent library |
 | Hagele et al. 2026 (Hot Mess of AI) | Bias-variance decomposition of AI errors; variance dominates on hard tasks | Our within-form agent spread (up to 0.42) is a procedural version of their variance finding; grounding failure (F1=0.20) supports incoherence |
 | Widyasari et al. 2020 (BugsInPy) | 493 Python bugs with oracle patches across 17 projects | Natural extension dataset; same language, same patch format, directly pipeline-compatible |
+| Bisztray et al. 2025 (I Know Which LLM Wrote Your Code) | Code stylometry attributes generated *source* to its author LLM (97.6%/95.4% over 32k C programs) | They fingerprint the artifact; we fingerprint the *process* (trajectory), step-level + leakage-controlled (Finding 12) |
+| Chen, Zaharia & Zou 2023 (FrugalGPT) / Ong et al. 2024 (RouteLLM) | Cost-aware LLM cascades / learned routing; cost-vs-quality frontier | Procedural analog: early-abort from a short action prefix (Finding 13) |
+| Zheng et al. 2023 (MT-Bench, LLM-as-judge) | Reference-guided, chain-of-thought judging; documents judge instability/bias | Justifies our prompt-classifier baseline design and corroborates its κ<0.05 instability (motivates the structural vocabulary) |
+| Yang et al. 2025 (SWE-smith) | SWE-agent-LM-32B distilled from Claude-3.7 trajectories | The teacher→student pair for the distillation case study (Finding pending) |

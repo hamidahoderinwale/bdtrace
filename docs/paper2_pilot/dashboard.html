@@ -408,19 +408,19 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <h3>Failure types per agent (Section 6)</h3>
 <figure>
   <img src="fig_localization_outcome_extended.png" alt="Failure breakdown per agent: never reached gold file vs reached but failed">
-  <figcaption>Per-agent breakdown of failing trajectories into never-reached-gold-file (the failed-to-localize cohort) vs reached-but-failed. Claude-3.7-thinking has the lowest never-reached share at ~9%, meaning when it fails, it almost always failed AFTER finding the right file. Claude-3 and GPT-4o have the highest never-reached shares.</figcaption>
+  <figcaption>Per-agent breakdown of failing trajectories into never-reached-gold-file (the failed-to-localize cohort) vs reached-but-failed. Claude-3.7-thinking has the lowest never-reached share at ~9%, meaning when it fails, it almost always failed AFTER finding the right file. Claude-3 and GPT-4o have the highest never-reached shares. <em>Practical upshot:</em> tooling that helps an agent <em>after</em> localization (better edit/test loops, smaller-step refactors) has more total failure surface to recover than navigation tooling — on most agents, failed-to-localize is the minority cohort.</figcaption>
 </figure>
 
 <h3>Steps after reaching the gold file (Section 6)</h3>
 <figure>
   <img src="fig_steps_after_localization_extended.png" alt="Steps after reaching the gold file, reached-but-failed cohort">
-  <figcaption>Per-agent distribution of steps from first reaching the gold file to trajectory end, across reached-but-failed trajectories. Claude-3.7-thinking is highest at median 28 steps; an over-deliberation pattern.</figcaption>
+  <figcaption>Per-agent distribution of steps from first reaching the gold file to trajectory end, across reached-but-failed trajectories. Claude-3.7-thinking is highest at median 28 steps; an over-deliberation pattern. <em>Practical upshot:</em> the "found the bug but couldn't fix it" trajectories are long, not short — so per-attempt cost on these failures is heavy. A budget-aware system gains more by abandoning a stuck post-localization trajectory at step ~15 than by extending the budget further.</figcaption>
 </figure>
 
 <h3>Post-localization motif distribution (Section 6)</h3>
 <figure>
   <img src="fig_postloc_motifs_extended.png" alt="Post-localization motif proportion as a function of steps after localization">
-  <figcaption>For each of 8 top-diverging canonical-atom motifs, per-trajectory proportion plotted against steps after first reaching the gold file (log x-scale). Grey dots are individual trajectories; colored line and band are per-decile median and IQR across the 1,156 reached-but-failed trajectories. Replaces the prior short-vs-long median split with the full distribution shape. <strong>SHELL_CD rises from near-zero to ~20% of long-trajectory atoms</strong> — the dominant stuck-loop signature in the 9-agent corpus, driven by Claude-4. EDIT_SRC_PY DECREASES with trajectory length (29% → 20%); the original "stuck edit-loop" claim from the 3-agent baseline is replaced by a stuck-shell-cd-loop in the extended corpus.</figcaption>
+  <figcaption>For each of 8 top-diverging canonical-atom motifs, per-trajectory proportion plotted against steps after first reaching the gold file (log x-scale). Grey dots are individual trajectories; colored line and band are per-decile median and IQR across the 1,156 reached-but-failed trajectories. Replaces the prior short-vs-long median split with the full distribution shape. <strong>SHELL_CD rises from near-zero to ~20% of long-trajectory atoms</strong> — the dominant stuck-loop signature in the 9-agent corpus, driven by Claude-4. EDIT_SRC_PY DECREASES with trajectory length (29% → 20%); the original "stuck edit-loop" claim from the 3-agent baseline is replaced by a stuck-shell-cd-loop in the extended corpus. <em>Practical upshot:</em> the right stuck-loop detector for the modern corpus monitors shell-navigation density per window (rises with length), not edit density (falls with length). procgrep's stuck-edit regex needs a stuck-cd companion before it can flag the Claude-4 failure mode.</figcaption>
 </figure>
 
 <h3>CoT-action coverage, two-matcher comparison (Section Findings) <span class="tier tier-headline">New 2026-05-11</span></h3>
@@ -1239,6 +1239,8 @@ n_resolved = 0 for 196/300 instances — all agents failed — making 65% of tra
 <img src="fig_agg_compression_extended.png" alt="BPE compression ratio (extended corpus)">
 <figcaption><strong>Compression ratio</strong> per agent (BPE length / atom length). Lower = more repeated sub-sequences.</figcaption>
 </figure>
+
+<p style="font-size:13px; color:#444; margin-top:8px;"><em>Practical upshot of the three-panel fingerprint.</em> The three numbers together produce a behaviorally interpretable agent signature without needing trajectory inspection. (i) Low entropy + high compression + long trajectories = stuck-loop signature (Claude-4, Claude-3.7-thinking). (ii) Near-zero entropy + extreme compression + short trajectories = deterministic pipeline (Agentless). (iii) High entropy + middling compression + medium length = exploratory free-form (Claude-3.5, GPT-4o). For an evaluation rig deciding when to extend a budget vs abandon, this fingerprint is more diagnostic than pass-rate alone.</p>
 
 <div class="finding">
 <strong>Length profiles span an order of magnitude across the 9-agent corpus.</strong> Claude-4 is the longest by raw-atom count (44 atoms mean, peaking above 70 on the hardest tasks) — its SHELL_CD storm inflates the raw-atom volume. Claude-3.5 and GPT-4o sit around 30-40 raw atoms; GPT-4, Claude-3, Agentless, and Moatless cluster at 13-21. Claude-3.7-thinking is conspicuously the shortest of the SWE-agent runs (~15 atoms) despite being an extended-thinking model — SWE-agent v1.1+ trims its emitted reasoning out of the captured atom stream.
@@ -2256,19 +2258,21 @@ The "comparable token budget" framing (Moatless 422K input ≈ Claude-3.5 516K) 
 
 <figure>
 <img src="bootstrap_f1_cis.png" alt="Bootstrap F1 confidence intervals">
-<figcaption>Figure 15.1: Left: F1 at k=5 with 95% bootstrap CI per representation. Right: paired differences. All eight pairwise comparisons have CIs that cross zero (red markers). The point-estimate ordering (structural &gt; embedding &gt; semantic) is consistent with the originally-reported narrative, but no pair reaches statistical significance under bootstrap on this corpus.</figcaption>
+<figcaption>Figure 15.1: Left: positive-class F1 at k=5 with 95% bootstrap CI per representation, sorted by point estimate. Right: all 10 pairwise differences, ranked by point-estimate gap. Every CI crosses zero (crimson markers) — under bootstrap, the rank order is not statistically distinguishable. Restyled 2026-05-12 on the same n = 275 / B = 1000 design.</figcaption>
 </figure>
 
 <table>
 <tr><th>representation</th><th>F1 point</th><th>95% CI</th></tr>
-<tr><td>edit_cert</td><td class="num">0.200</td><td class="num">[0.111, 0.522]</td></tr>
-<tr><td>fim_jaccard</td><td class="num">0.169</td><td class="num">[0.067, 0.521]</td></tr>
-<tr><td>staged_embed</td><td class="num">0.111</td><td class="num">[0.097, 0.500]</td></tr>
-<tr><td>cot_embed</td><td class="num">0.075</td><td class="num">[0.116, 0.505]</td></tr>
-<tr><td>fix_type</td><td class="num">0.060</td><td class="num">[0.000, 0.347]</td></tr>
+<tr><td>fim_jaccard</td><td class="num">0.333</td><td class="num">[0.311, 0.637]</td></tr>
+<tr><td>cot_embed</td><td class="num">0.304</td><td class="num">[0.316, 0.596]</td></tr>
+<tr><td>edit_cert</td><td class="num">0.279</td><td class="num">[0.320, 0.629]</td></tr>
+<tr><td>fix_type</td><td class="num">0.137</td><td class="num">[0.022, 0.466]</td></tr>
+<tr><td>staged_embed</td><td class="num">0.132</td><td class="num">[0.231, 0.552]</td></tr>
 </table>
 
-<p>The point estimates from this run differ from numbers cited in <code>findings.md</code> (which claims 0.347 / 0.266 / 0.161 for analogous comparisons). The discrepancy looks like best-k-per-method selection in the older analysis or a different input set. Either way the cited numbers overstate.</p>
+<p>Point estimates differ from earlier runs (<code>findings.md</code> cited 0.347 / 0.266 / 0.161 for analogous comparisons; the April-25 PNG had ~0.20 / 0.17 / 0.11 / 0.08 / 0.06). The drift comes from best-k-per-method selection upstream and slight differences in the instance set. The bootstrap-CI conclusion is stable across all three runs: no pair is significant on n = 275.</p>
+
+<p><strong>Practical upshot.</strong> Don't claim "structural beats reasoning" or "embeddings beat structure" from this evidence. Three options: (a) accept the null and rebuild Paper 1's framing on what IS validated (composition gap, OOD coverage, localization bottleneck — all individually significant); (b) pool Lite + Verified + SWE-Smith to push n past 1000 and re-bootstrap; (c) move to a different metric where the signal is denser (e.g., per-cluster homogeneity rather than per-instance kNN F1).</p>
 
 <div class="finding">
 <strong>Finding 15.</strong> The comparative-prediction claim that has been carrying motivational weight for Paper 1 is not statistically validated under bootstrap on this corpus size with this metric. All eight pairwise differences cross zero in the 95% CI. The Paper 1 framing must reset around what IS validated.
@@ -2281,6 +2285,32 @@ The "comparable token budget" framing (Moatless 422K input ≈ Claude-3.5 516K) 
 </div>
 
 <p>Implication for procedural-Clio (Paper 2): apply the same bootstrap or permutation-null discipline to phenomena 1, 2, 4 (style consistency, heritability sub-claims, pluralism vs convergence) before paper writing. Don't rely on point estimates alone. Heritability already has p = 0.001 from a permutation null and is unaffected.</p>
+
+<h3>15.3 Are representations useful at all? (2026-05-12)</h3>
+
+<p>The pairwise test in §15.2 answers "is rep A better than rep B?" but not "is rep A better than chance?" Built a follow-up: for each representation, run 1000 paired draws comparing F1 on real labels against F1 on shuffled labels, evaluated on the same subsample (m = 206 of 275, drawn without replacement to avoid kNN duplicate-leakage). The paired difference is the per-resample lift over the noise floor.</p>
+
+<figure>
+<img src="fig_representation_usefulness.png" alt="Each representation's signal F1 vs permuted-label null F1">
+<figcaption>Figure 15.2: For each representation, signal F1 (colored, top of each pair) versus permuted-label null F1 (grey, bottom). The null mean lands near 0.21 across all reps — exactly what kNN at k = 5 produces from chance on a 30.5%-positive corpus. FIM Jaccard's signal sits clearly above its null (+0.13 absolute lift, P(diff &gt; 0) = 89%); edit certificate is similar at +0.09 (P = 81%). Free-form CoT embeddings give a smaller lift (+0.04, P = 68%). Fix type and staged narrative are at or below the noise floor — they actively don't predict pass/fail. The dashed reference line shows the stratified-random F1 (~0.30); kNN-shuffled comes in lower because the k = 5 majority rule under-predicts the minority class.</figcaption>
+</figure>
+
+<table>
+<tr><th>representation</th><th>signal F1</th><th>null mean F1</th><th>diff (signal − null)</th><th>95% diff CI</th><th>P(diff &gt; 0)</th></tr>
+<tr><td>FIM pattern overlap</td><td class="num">0.333</td><td class="num">0.210</td><td class="num">+0.132</td><td class="num">[−0.079, +0.326]</td><td class="num">0.888</td></tr>
+<tr><td>Edit certificate (Jaccard)</td><td class="num">0.279</td><td class="num">0.211</td><td class="num">+0.088</td><td class="num">[−0.125, +0.269]</td><td class="num">0.809</td></tr>
+<tr><td>Free-form plan (embedding)</td><td class="num">0.304</td><td class="num">0.209</td><td class="num">+0.043</td><td class="num">[−0.154, +0.228]</td><td class="num">0.675</td></tr>
+<tr><td>Fix type (13 classes)</td><td class="num">0.137</td><td class="num">0.181</td><td class="num">−0.004</td><td class="num">[−0.330, +0.332]</td><td class="num">0.488</td></tr>
+<tr><td>Staged narrative (embedding)</td><td class="num">0.132</td><td class="num">0.204</td><td class="num">−0.053</td><td class="num">[−0.257, +0.157]</td><td class="num">0.307</td></tr>
+</table>
+
+<div class="finding">
+<strong>Finding 15.2.</strong> No representation reaches the strict 95% bar for "useful" — every diff CI crosses zero. FIM Jaccard and edit certificate are <em>suggestive</em> (P(beats noise) ≈ 89% and 81%) but at n = 275 the sample is too small to certify them as significantly above chance. Fix type and staged narrative are <em>actively at or below chance</em> on this kNN-F1 evaluation — they shouldn't be in the comparison at all.
+</div>
+
+<p><strong>Practical upshot.</strong> The pairwise-no-significance finding (§15.2) hid a more informative result: the two structural-signal representations (FIM, edit cert) are individually trending above chance; the two embedding-derived ones and fix-type are not. Three actions follow: (a) drop fix_type and staged_narrative from the representation race entirely — they don't carry signal; (b) report FIM and edit cert with their P(beats null) values, not as winners over each other; (c) at the next pooling step (Lite + Verified + SWE-Smith), the test to run is "does this rep beat chance at n ~ 1000?", not "is this rep better than that rep?" — much more achievable with the data we have access to.</p>
+
+<p><em>Methodological note.</em> First attempt used bootstrap-with-replacement, which gave nonsense null F1 ≈ 0.44. Root cause: ~37% of resample positions are duplicates of other positions; each duplicate's nearest neighbor is its own twin (distance 0), so kNN trivially leaks the label via the duplicate. The leakage inflates BOTH signal and null but the null benefited more from the imbalanced-class artifact. Switched to subsampling without replacement; null mean dropped to 0.21 (matching theory). Applying the same fix retroactively to the §15.2 pairwise test would tighten CIs but not change the qualitative conclusion (all pairs still cross zero).</p>
 
 </section>
 

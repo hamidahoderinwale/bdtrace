@@ -1,0 +1,145 @@
+% Missing citations for the Procedural Grep paper.
+% Add these entries to main.bib.
+%
+% === NEW (added for §5 controlled evaluations, May 2026) ===
+
+% Process mining — conformance checking is the direct ancestor of vocabulary controls
+@book{vanderaalst2016process,
+  author    = {Wil M. P. van der Aalst},
+  title     = {Process Mining: Data Science in Action},
+  edition   = {2},
+  publisher = {Springer},
+  year      = {2016},
+}
+
+% Spectrum-based fault localization — parallel to phase controls (test presence ≠ fault found)
+@inproceedings{jones2002visualization,
+  author    = {James A. Jones and Mary Jean Harrold and John Stasko},
+  title     = {Visualization of Test Information to Assist Fault Localization},
+  booktitle = {Proceedings of the 24th International Conference on Software Engineering (ICSE)},
+  pages     = {467--477},
+  year      = {2002},
+}
+
+% Runtime verification — temporal controls as predictive monitoring
+@article{leucker2009brief,
+  author    = {Martin Leucker and Christian Schallhart},
+  title     = {A Brief Account of Runtime Verification},
+  journal   = {The Journal of Logic and Algebraic Programming},
+  volume    = {78},
+  number    = {5},
+  pages     = {293--303},
+  year      = {2009},
+}
+
+% Halstead software science — entropy/compression as behavioral analog of Halstead metrics
+@book{halstead1977elements,
+  author    = {Maurice Howard Halstead},
+  title     = {Elements of Software Science},
+  publisher = {Elsevier North-Holland},
+  year      = {1977},
+}
+
+% OverCode — direct ancestor: clusters final submissions; we extend to dynamic trajectories
+@inproceedings{glassman2015overcode,
+  author    = {Elena L. Glassman and Jeremy Scott and Rishabh Singh and Philip J. Guo
+               and Robert C. Miller},
+  title     = {{OverCode}: Visualizing Variation in Student Solutions to Programming
+               Problems at Scale},
+  booktitle = {ACM Transactions on Computer-Human Interaction (TOCHI)},
+  volume    = {22},
+  number    = {2},
+  pages     = {1--35},
+  year      = {2015},
+}
+
+% === END NEW ===
+
+% SCAN: compositional generalization benchmark — cite for the 43.8% composition failure finding
+@inproceedings{lake2018scan,
+  author    = {Brenden M. Lake and Marco Baroni},
+  title     = {Generalization without Systematicity: On the Compositional Skills of Sequence-to-Sequence Recurrent Networks},
+  booktitle = {Proceedings of the 35th International Conference on Machine Learning (ICML)},
+  year      = {2018},
+  pages     = {2873--2882},
+  publisher = {PMLR},
+}
+
+% CFQ: compound divergence metric for compositional generalization — cite when discussing
+% the composition failure analysis and as the precedent for measuring compositional novelty
+% relative to an agent's solved library.
+@inproceedings{keysers2020cfq,
+  author    = {Daniel Keysers and Nathanael Sch\"{a}rli and Nathan Scales and Hylke Buisman
+               and Daniel Sherburn and Sebastien Puigdom\`{e}nech Badia and L\'{i}na Roark
+               and Donald Gaffney and Manoj Kumar and Cl\'{e}ment Fantini and Abhijit Mahabal
+               and Dilip George and Remi Tachet des Combes and Tao Wang and Abigail See
+               and Denny Zhou and Jeffrey Pennington and Slav Petrov},
+  title     = {Measuring Compositional Generalization: A Comprehensive Method on Realistic Data},
+  booktitle = {Proceedings of the 8th International Conference on Learning Representations (ICLR)},
+  year      = {2020},
+}
+
+% FixMiner: FIM on AST edit sequences for automated repair pattern mining —
+% the direct methodological precedent for using FIM on edit operations to find canonical forms.
+@inproceedings{koyuncu2020fixminer,
+  author    = {Anil Koyuncu and Tegawend\'{e} F. Bissyand\'{e} and Dongsun Kim
+               and Jacques Klein and Martin Monperrus and Yves Le Traon},
+  title     = {{FixMiner}: Mining Relevant Fix Patterns for Automated Program Repair},
+  journal   = {Empirical Software Engineering},
+  volume    = {25},
+  pages     = {1980--2024},
+  year      = {2020},
+}
+
+% Defects4J Dissection: 9 repair patterns cover 95% of 395 bugs —
+% validates that a small set of structural patterns covers most fixes.
+@inproceedings{sobreira2018defects4j,
+  author    = {V\'{\i}tor Sobreira and Tegawend\'{e} F. Bissyand\'{e} and Dongsun Kim
+               and Martin Monperrus and Yves Le Traon},
+  title     = {Dissection of a Bug Dataset: Anatomy of 395 Patches from {Defects4J}},
+  booktitle = {Proceedings of the 25th International Conference on Software Analysis,
+               Evolution and Reengineering (SANER)},
+  pages     = {130--140},
+  year      = {2018},
+}
+
+% Lanham et al. 2023: faithfulness of CoT — cite alongside boppana2026 in the faithfulness
+% analysis section. Lanham et al. show that truncating CoT can produce unfaithful reasoning;
+% our finding (GPT has perfect reverse faithfulness, Claude is verbose) extends their framework.
+@article{lanham2023faithfulness,
+  author    = {Tamera Lanham and Anna Chen and Ansh Radhakrishnan and Benoit Steiner
+               and Carson Denison and Danny Hernandez and Dustin Li and Esin Durmus
+               and Evan Hubinger and Jackson Kernion and Kamil\.{e} Luk\.{s}ait\.{e}
+               and Newton Liu and Shannon Yang and Zac Hatfield-Dodds and Deep Ganguli
+               and Nicholas Schiefer and Sam Bowman and Jared Kaplan},
+  title     = {Measuring Faithfulness in Chain-of-Thought Reasoning},
+  journal   = {arXiv preprint arXiv:2307.13702},
+  year      = {2023},
+}
+
+% DreamCoder: library learning over primitives — the composition failure framing is the
+% code-repair analog of DreamCoder's "primitives you have vs. combinations you don't."
+@inproceedings{ellis2021dreamcoder,
+  author    = {Kevin Ellis and Catherine Wong and Maxwell Nye and Mathias Sabl\'{e}-Meyer
+               and Lucas Morales and Luke Hewitt and Luc Cates and Armando Solar-Lezama
+               and Joshua B. Tenenbaum},
+  title     = {{DreamCoder}: Bootstrapping Inductive Program Synthesis with
+               Wake-Sleep Library Learning},
+  booktitle = {Proceedings of the 42nd ACM SIGPLAN International Conference on
+               Programming Language Design and Implementation (PLDI)},
+  pages     = {835--850},
+  year      = {2021},
+}
+
+% GumTree / Falleri et al. 2014 — the paper already cites this as GumTree2014 and
+% yin-neubig-2017-syntactic, but may be missing a clean BibTeX entry.
+% Use this if GumTree2014 is not already in main.bib:
+@inproceedings{falleri2014gumtree,
+  author    = {Jean-R\'{e}my Falleri and Flor\'{e}al Morandat and Xavier Blanc
+               and Matias Martinez and Martin Monperrus},
+  title     = {Fine-Grained and Accurate Source Code Differencing},
+  booktitle = {Proceedings of the 29th ACM/IEEE International Conference on
+               Automated Software Engineering (ASE)},
+  pages     = {313--324},
+  year      = {2014},
+}
