@@ -480,7 +480,7 @@ Llama 3.3 70B  &  87 & 0.000 & 21.8\% & 0.123 \\
 Weighted mean  & 745 & 0.253 & -- & -- \\
 \bottomrule
 \end{tabular}
-\caption{Classification results per judge model and divergence. Near-zero inter-model agreement ($\kappa < 0.05$) motivates the structural vocabulary approach.}
+\caption{\textcolor{blue}{Classification results per judge model. The \textbf{Mean $\kappa$} column is the mean pairwise inter-judge agreement on divergence level; the high same-family pairs (GPT-4o vs.\ GPT-4o mini $\kappa=0.38$, Qwen vs.\ Llama $0.31$) lift it to ${\approx}0.13$, but \emph{cross-family} agreement is near zero ($\kappa<0.05$: e.g.\ GPT-4o vs.\ Llama $0.001$, vs.\ Qwen $0.031$), motivating the structural vocabulary approach.}}
 \label{tab:divergence_by_model}
 \end{table}
 
