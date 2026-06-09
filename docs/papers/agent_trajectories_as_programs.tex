@@ -326,7 +326,7 @@ Next, developers make a number of decisions to train and scaffold their models. 
 \section{Controlled evaluations with procedural controls}
 In agent programming and benchmarking, an engineer can specify parameters such as the number of tool use turns and response lengths in the form of tokens, but there is little control over how a task is done. Controlling for behavior at the level of actions is an under-explored way of assessing capabilities---while ablations are possible at different levels of abstraction, it is not possible to say a model can only retrieve context via grep or when, or run a certain number of tests and after what actions.
 
-Fingerprints give us behavioral trends that form the basis for predicting which actions a given agent is most likely to take, useful for next-action prediction and anomaly detection. We batch trajectories into five groups, training models on four and leaving one as a held-out control. As shown in Table~\ref{tab:trajectory_holdouts}, agents fall into three regimes: deterministic scaffolds like Agentless, which are nearly fully predictable (82\% accuracy, $+$51 points over baseline); constrained scaffolds like Moatless, where the scaffold drives behavior and the baseline is already high (73\% accuracy, $+$8 points); and open-ended model-driven agents like Claude and GPT, where predictions are stronger at the single-action level (e.g., Claude-3.5 at 50\% accuracy, $+$33 points). This makes the case for procedural representations as a basis for prediction. We also find that edit streaks are a strong failure signal: for Moatless+DeepSeek-V3, 43\% of trajectories have edit streaks of 5 or more, and of those, the fail rate is 80\%, compared to 59\% for no-streak trajectories. For Claude-3.5 the signal is weaker, with pass rate dropping from 26\% to 11\% with a streak $\geq$5, though the magnitude is comparable.
+Fingerprints give us behavioral trends that form the basis for predicting which actions a given agent is most likely to take, useful for next-action prediction and anomaly detection. We batch trajectories into five groups, training models on four and leaving one as a held-out control. As shown in Table~\ref{tab:trajectory_holdouts}, agents fall into three regimes: deterministic scaffolds like Agentless, which are nearly fully predictable (83\% accuracy, $+$50 points over baseline); constrained scaffolds like Moatless, where the scaffold drives behavior and the baseline is already high (68\% accuracy, $+$2 points); and open-ended model-driven agents like Claude and GPT, where predictions are stronger at the single-action level (e.g., Claude-3.5 at 45\% accuracy, $+$27 points). This makes the case for procedural representations as a basis for prediction. We also find that edit streaks are a strong failure signal: for Moatless+DeepSeek-V3, 43\% of trajectories have edit streaks of 5 or more, and of those, the fail rate is 80\%, compared to 59\% for no-streak trajectories. For Claude-3.5 the signal is weaker, with pass rate dropping from 26\% to 11\% with a streak $\geq$5, though the magnitude is comparable.
 
 \begin{table}[H]
 \centering\small\setlength{\tabcolsep}{4pt}
@@ -336,17 +336,17 @@ Fingerprints give us behavioral trends that form the basis for predicting which 
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 \textbf{Agent} & Base & Acc. & $\Delta$ & Base & Acc. & $\Delta$ \\
 \midrule
-\rowcolor{claudebg} Claude-3              & 13\% & 46\% & $+$33 & 33\% & 47\% & $+$14 \\
-\rowcolor{claudebg} Claude-3.5            & 18\% & 50\% & $+$33 & 35\% & 51\% & $+$16 \\
-\rowcolor{claudebg} Claude-3.7-thinking   & 23\% & 54\% & $+$31 & 44\% & 65\% & $+$21 \\
-\rowcolor{claudebg} Claude-4              & 51\% & 61\% & $+$10 & 51\% & 67\% & $+$16 \\
+\rowcolor{claudebg} Claude-3              & 13\% & 42\% & $+$29 & 33\% & 50\% & $+$17 \\
+\rowcolor{claudebg} Claude-3.5            & 18\% & 45\% & $+$27 & 33\% & 52\% & $+$19 \\
+\rowcolor{claudebg} Claude-3.7-thinking   & 24\% & 50\% & $+$26 & 33\% & 59\% & $+$26 \\
+\rowcolor{claudebg} Claude-4              & 52\% & 58\% & $+$6  & 62\% & 65\% & $+$3  \\
 \midrule
-\rowcolor{gptbg} GPT-4                 & 20\% & 57\% & $+$37 & 50\% & 56\% & $+$6  \\
-\rowcolor{gptbg} GPT-4o                & 27\% & 60\% & $+$34 & 50\% & 62\% & $+$12 \\
+\rowcolor{gptbg} GPT-4                 & 21\% & 53\% & $+$32 & 43\% & 65\% & $+$22 \\
+\rowcolor{gptbg} GPT-4o                & 27\% & 49\% & $+$22 & 49\% & 62\% & $+$14 \\
 \midrule
-\rowcolor{owbg} DARS+DeepSeek-R1      & 30\% & 46\% & $+$17 & 37\% & 49\% & $+$12 \\
-\rowcolor{owbg} Agentless+Claude-3.5  & 31\% & 82\% & $+$51 & 31\% & 82\% & $+$51 \\
-\rowcolor{owbg} Moatless+DeepSeek-V3  & 65\% & 73\% & \textbf{$+$8} & 65\% & 73\% & \textbf{$+$8} \\
+\rowcolor{owbg} DARS+DeepSeek-R1      & 31\% & 41\% & $+$10 & 37\% & 54\% & $+$17 \\
+\rowcolor{owbg} Agentless+Claude-3.5  & 33\% & 83\% & $+$50 & 42\% & 75\% & $+$33 \\
+\rowcolor{owbg} Moatless+DeepSeek-V3  & 66\% & 68\% & $+$2  & 66\% & 69\% & $+$3  \\
 \bottomrule
 \end{tabular}
 \caption{Next-action and next-stage prediction accuracy across agent trajectories.}

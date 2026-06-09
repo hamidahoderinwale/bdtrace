@@ -21,7 +21,7 @@ python scripts/agent_trajectories_paper/<script>.py
 | `bpe_vs_prefixspan.py` | prints V-measure: BPE vs PrefixSpan | §3 sentence + `fig:bpe_vs_prefixspan` | grounded (BPE 0.606/0.626 vs PrefixSpan 0.505) |
 | `make_figs.py` | `fig_jsd_matrix_full_canonical.png`, `fig_regression_length.png` | JSD matrix + length appendix | grounded; length recaptioned 45%→29% (non-monotonic) |
 | `make_edittest.py` | `fig_regression_edit_test.png` | edit/test appendix | grounded; recaptioned pass 0.79 vs fail 0.67 |
-| `probe_refit.py` | prints next-action / next-stage probe accuracy by agent | representation table (`tab:*`) | grounded (re-fit reproduces probe table) |
+| `probe_refit.py` | prints next-action / next-stage probe accuracy by agent (first-order Markov, 5-fold) | `tab:trajectory_holdouts` | grounded (table regenerated from this script 2026-06-08; the prior table's higher numbers were from an unversioned computation and had a scaffold next-action/next-stage copy artifact) |
 | `reward_verifier.py` | prints `proc_score` best-of-N selection resolve-rates vs random/worst/best-agent/oracle | §reward (test-time verification) | grounded; **not** a reward-hacking run |
 | `reward_fig.py` | `docs/papers/figures/fig_reward_selection.png` | §reward figure | grounded |
 | `sodp.py` | `docs/papers/figures/fig12_tier1b_sodp.png` | — | **null result** (both cats ≈0.75); figure CUT from tex, kept for the record |
