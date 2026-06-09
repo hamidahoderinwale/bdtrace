@@ -1,10 +1,10 @@
-"""Per-agent megatable on extended 8-submission corpus.
+"""Per-agent megatable on extended 9-submission corpus.
 
 Combines:
   - aggregate_metrics_extended.json  (length, repertoire, compression, entropy)
   - failure_modes_extended.json      (Type A/B fractions, post-loc steps)
-  - extended_pass_fail.json          (resolved sets for 4 new submissions)
-  - lite_all_models.parquet          (resolved per instance for original 4)
+  - extended_pass_fail.json          (resolved sets for all 9 submissions)
+  - cost_per_agent.json              (per-task and per-resolved cost)
 
 Outputs:
   output/paper2_pilot/per_agent_megatable.json
@@ -23,6 +23,8 @@ LITE = ROOT / "output" / "trajectories" / "lite_all_models.parquet"
 AGG = json.load((PILOT / "aggregate_metrics_extended.json").open())["metrics"]
 FM  = json.load((PILOT / "failure_modes_extended.json").open())["by_agent"]
 PF  = json.load((PILOT / "extended_pass_fail.json").open())
+COST_RAW = json.load((PILOT / "cost_per_agent.json").open())
+COST = {r["agent"]: r for r in COST_RAW}
 
 SUB_TO_AGENT = {
     "20240402_sweagent_claude3opus":                          "Claude-3",
@@ -30,21 +32,23 @@ SUB_TO_AGENT = {
     "20240620_sweagent_claude3.5sonnet":                      "Claude-3.5",
     "20240728_sweagent_gpt4o":                                "GPT-4o",
     "20250226_sweagent_claude-3-7-sonnet-20250219":           "Claude-3.7-thinking",
+    "20250526_sweagent_claude-4-sonnet-20250514":             "Claude-4",
     "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1":      "DARS+R1",
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022":      "Agentless+Claude-3.5",
     "20250111_moatless_deepseek_v3":                          "Moatless+V3",
 }
 AGENT_META = {
-    "Claude-3":              ("SWE-agent",  "Claude-3 (Opus)",        "RLHF dense"),
-    "Claude-3.5":            ("SWE-agent",  "Claude-3.5 (Sonnet)",    "RLHF dense"),
-    "Claude-3.7-thinking":   ("SWE-agent",  "Claude-3.7 (thinking)",  "Extended-thinking"),
-    "GPT-4":                 ("SWE-agent",  "GPT-4",                  "RLHF dense"),
-    "GPT-4o":                ("SWE-agent",  "GPT-4o",                 "RLHF dense"),
-    "DARS+R1":               ("DARS",       "DeepSeek-R1",            "RL-only reasoning"),
-    "Agentless+Claude-3.5":  ("Agentless",  "Claude-3.5 (Sonnet)",    "RLHF dense"),
-    "Moatless+V3":           ("Moatless",   "DeepSeek-V3",            "MoE pretrain"),
+    "Claude-3":              ("SWE-agent",  "Claude-3 Opus",       "RLHF dense"),
+    "Claude-3.5":            ("SWE-agent",  "Claude-3.5",          "RLHF dense"),
+    "Claude-3.7-thinking":   ("SWE-agent",  "Claude-3.7-thinking", "Extended-thinking"),
+    "Claude-4":              ("SWE-agent",  "Claude-4",            "Extended-thinking"),
+    "GPT-4":                 ("SWE-agent",  "GPT-4",               "RLHF dense"),
+    "GPT-4o":                ("SWE-agent",  "GPT-4o",              "RLHF dense"),
+    "DARS+R1":               ("DARS",       "DeepSeek-R1",         "RL reasoning"),
+    "Agentless+Claude-3.5":  ("Agentless",  "Claude-3.5",          "RLHF dense"),
+    "Moatless+V3":           ("Moatless",   "DeepSeek-V3",         "MoE pretrain"),
 }
-ORDER = ["Claude-3", "Claude-3.5", "Claude-3.7-thinking", "GPT-4", "GPT-4o",
+ORDER = ["Claude-3", "Claude-3.5", "Claude-3.7-thinking", "Claude-4", "GPT-4", "GPT-4o",
          "DARS+R1", "Agentless+Claude-3.5", "Moatless+V3"]
 SCAFFOLD_ORDER = ["SWE-agent", "DARS", "Agentless", "Moatless"]
 
@@ -82,6 +86,11 @@ def build_records():
         else:
             type_a = type_b = postloc = None
 
+        cost = COST.get(a, {})
+        cost_per_task     = cost.get("cost_mean_usd")
+        cost_per_resolved = cost.get("cost_per_resolved_usd")
+        cost_estimated    = "estimate" in (cost.get("source") or "")
+
         rows.append({
             "agent": a,
             "scaffold": scaffold,
@@ -98,6 +107,9 @@ def build_records():
             "type_a_pct":       type_a,
             "type_b_pct":       type_b,
             "postloc_median":   postloc,
+            "cost_per_task":      cost_per_task,
+            "cost_per_resolved":  cost_per_resolved,
+            "cost_estimated":     cost_estimated,
         })
     return rows
 
@@ -141,7 +153,7 @@ def to_latex(rows) -> str:
     }
 
     lines = []
-    lines.append(r"% Megatable: per-agent fingerprint, extended 8-submission corpus.")
+    lines.append(r"% Megatable: per-agent fingerprint and efficiency, 9-agent corpus.")
     lines.append(r"% Requires \usepackage{booktabs,xcolor,colortbl} in preamble.")
     lines.append(r"% Define palette colors before the table:")
     lines.append(r"%   \definecolor{swecol}{HTML}{F2F8F4}     % SWE-agent rows")
@@ -150,19 +162,19 @@ def to_latex(rows) -> str:
     lines.append(r"%   \definecolor{moatlesscol}{HTML}{F7F6F0}  % Moatless row")
     lines.append(r"\begin{table*}[t]")
     lines.append(r"\centering")
-    lines.append(r"\small")
-    lines.append(r"\setlength{\tabcolsep}{4pt}")
-    lines.append(r"\begin{tabular}{llllrrrrrrrrr}")
+    lines.append(r"\footnotesize")
+    lines.append(r"\setlength{\tabcolsep}{3pt}")
+    lines.append(r"\resizebox{\linewidth}{!}{%")
+    lines.append(r"\begin{tabular}{lllrrrrrrrr}")
     lines.append(r"\toprule")
     lines.append(
-        r"\textbf{Scaffold} & \textbf{Backbone} & \textbf{Paradigm} & \textbf{Agent label} "
+        r"\textbf{Scaffold} & \textbf{Model} & \textbf{Paradigm} "
         r"& \textbf{$n$} & \textbf{Resolve} & \textbf{Mean} & \textbf{Repertoire} "
-        r"& \textbf{Compr.} & \textbf{Entropy} & \textbf{Type A} & \textbf{Type B} "
-        r"& \textbf{Post-loc} \\"
+        r"& \textbf{Compr.} & \textbf{Entropy} & \textbf{Cost/} & \textbf{Cost/} \\"
     )
     lines.append(
-        r" & & & & & \textbf{rate} & \textbf{atoms} & \textbf{@90\%} "
-        r"& \textbf{ratio} & \textbf{(bits)} & & & \textbf{median} \\"
+        r" & & & & \textbf{rate} & \textbf{atoms} & \textbf{@90\%} "
+        r"& \textbf{ratio} & \textbf{(bits)} & \textbf{task} & \textbf{resolved} \\"
     )
     lines.append(r"\midrule")
 
@@ -175,41 +187,33 @@ def to_latex(rows) -> str:
             lines.append(r"\midrule")
         for r in by_scaffold[scaffold]:
             a = r["agent"]
+            est_mark = "*" if r["cost_estimated"] else ""
+            cost_task = (f"\\${r['cost_per_task']:.2f}{est_mark}"
+                         if r["cost_per_task"] is not None else "—")
+            cost_res  = (f"\\${r['cost_per_resolved']:.2f}{est_mark}"
+                         if r["cost_per_resolved"] is not None else "—")
             lines.append(
                 f"{SCAFFOLD_COLOR[scaffold]} "
                 f"{r['scaffold']} & "
                 f"{r['backbone']} & "
                 f"{r['paradigm']} & "
-                f"{a} & "
                 f"{fmt(r['n_trajectories'], 'd')} & "
                 f"{cell(a, 'resolve_rate_pct',   r['resolve_rate_pct'],   '.1f')}\\% & "
                 f"{cell(a, 'mean_atoms',         r['mean_atoms'],         '.1f')} & "
                 f"{cell(a, 'repertoire_90',      r['repertoire_90'],      'd')} & "
                 f"{cell(a, 'compression',        r['compression'],        '.3f')} & "
                 f"{cell(a, 'entropy_bits',       r['entropy_bits'],       '.2f')} & "
-                f"{cell(a, 'type_a_pct',         r['type_a_pct'],         '.1f') + ('\\%' if r['type_a_pct'] is not None else '')} & "
-                f"{cell(a, 'type_b_pct',         r['type_b_pct'],         '.1f') + ('\\%' if r['type_b_pct'] is not None else '')} & "
-                f"{cell(a, 'postloc_median',     r['postloc_median'],     '.0f')} \\\\"
+                f"{cost_task} & "
+                f"{cost_res} \\\\"
             )
 
     lines.append(r"\bottomrule")
-    lines.append(r"\end{tabular}")
+    lines.append(r"\end{tabular}%")
+    lines.append(r"}")
+    lines.append(r"\\[0.4em]")
+    lines.append(r"{\footnotesize *Cost estimated.}")
     lines.append(
-        r"\caption{Per-agent procedural fingerprint and outcome summary across the "
-        r"extended 8-submission corpus (4 scaffolds, 7 backbones, 3 vendors, 4 training "
-        r"paradigms). Rows grouped and shaded by scaffold. Bolded cells mark the three "
-        r"headline observations: (i) Agentless's deterministic-pipeline behavior "
-        r"(entropy 0, repertoire 1, extreme compression); (ii) Claude-3.7-thinking's "
-        r"long-but-stuck fingerprint (longest mean atoms among SWE-agent, lowest Type A, "
-        r"highest post-localization step median); (iii) within-scaffold backbone effects "
-        r"that survive within-paradigm but break under paradigm change. "
-        r"Resolve rate from \texttt{lite\_all\_models.parquet} (original 4) and "
-        r"\texttt{extended\_pass\_fail.json} (4 new submissions). Type A/B and "
-        r"post-localization metrics computed from canonicalized trajectories; "
-        r"Agentless is a section-level deterministic pipeline so Type A/B classification "
-        r"is not applicable. Repertoire@90\% is the number of distinct BPE motifs "
-        r"required to cover 90\% of the agent's tokens. Entropy is computed over the "
-        r"motif-only sub-vocabulary.}"
+        r"\caption{Per-agent fingerprint and efficiency, 9-agent corpus.}"
     )
     lines.append(r"\label{tab:per-agent-megatable}")
     lines.append(r"\end{table*}")

@@ -214,9 +214,9 @@ def plot_umap(
     summaries: list[dict],
     out_path: Path,
 ) -> None:
+    """Two separate PNGs: UMAP colored by agent, UMAP colored by cluster."""
     label_by_id = {s["cluster_id"]: s["label"] for s in summaries}
 
-    # Build one row per trajectory
     rows = []
     for i, r in enumerate(records):
         cid = int(labels[i])
@@ -230,16 +230,15 @@ def plot_umap(
         })
     df = pd.DataFrame(rows)
 
-    # --- Panel 1: colored by agent ---
     agent_domain = sorted(AGENT_COLORS.keys())
     agent_range = [AGENT_COLORS[a] for a in agent_domain]
 
-    panel1 = (
+    by_agent = (
         alt.Chart(df)
         .mark_point(size=20, filled=True, opacity=0.55, strokeWidth=0)
         .encode(
-            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1")),
-            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2")),
+            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1", domain=False, ticks=False, labelFontSize=10)),
+            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2", domain=False, ticks=False, labelFontSize=10)),
             color=alt.Color(
                 "agent:N",
                 scale=alt.Scale(domain=agent_domain, range=agent_range),
@@ -247,13 +246,16 @@ def plot_umap(
             ),
         )
         .properties(
-            width=360,
-            height=300,
-            title=alt.TitleParams(text="Colored by agent", fontSize=13, color="#111111", anchor="start"),
+            width=420, height=340,
+            title=alt.TitleParams(text="Trajectory clusters  ·  colored by agent",
+                                   fontSize=12, color="#111111", anchor="start"),
         )
+        .configure_view(strokeWidth=0)
     )
+    by_agent_path = out_path.parent / (out_path.stem + "_by_agent.png")
+    by_agent.save(str(by_agent_path), scale_factor=2)
+    print(f"  Saved: {by_agent_path.name}")
 
-    # --- Panel 2: colored by cluster ---
     unique_real_cluster_ids = sorted(set(labels[labels != -1].tolist()))
     cluster_labels_ordered = [label_by_id.get(c, f"cluster {c}") for c in unique_real_cluster_ids]
     palette = [SKY, ORANGE, GREEN, VERMILLION, BLUE, "#CC79A7", "#F0E442", NEAR_BLACK]
@@ -266,49 +268,35 @@ def plot_umap(
         alt.Chart(df_noise)
         .mark_point(size=10, opacity=0.2, color=GRAY, strokeWidth=0, filled=True)
         .encode(
-            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1")),
-            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2")),
+            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1", domain=False, ticks=False, labelFontSize=10)),
+            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2", domain=False, ticks=False, labelFontSize=10)),
         )
     )
-
     cluster_layer = (
         alt.Chart(df_cluster)
         .mark_point(size=30, opacity=0.85, filled=True, strokeWidth=0.5)
         .encode(
-            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1")),
-            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2")),
+            x=alt.X("umap1:Q", axis=alt.Axis(title="UMAP-1", domain=False, ticks=False, labelFontSize=10)),
+            y=alt.Y("umap2:Q", axis=alt.Axis(title="UMAP-2", domain=False, ticks=False, labelFontSize=10)),
             color=alt.Color(
                 "cluster_label:N",
                 scale=alt.Scale(domain=cluster_labels_ordered, range=cluster_colors),
-                legend=alt.Legend(orient="bottom", title=None),
+                legend=alt.Legend(orient="bottom", title=None, columns=2),
             ),
         )
     )
-
-    panel2 = (
+    by_cluster = (
         (noise_layer + cluster_layer)
         .properties(
-            width=360,
-            height=300,
-            title=alt.TitleParams(text="Colored by cluster", fontSize=13, color="#111111", anchor="start"),
-        )
-    )
-
-    chart = (
-        alt.hconcat(panel1, panel2)
-        .properties(
-            title=alt.TitleParams(
-                text="Trajectory clusters (UMAP + HDBSCAN)",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
-            )
+            width=420, height=340,
+            title=alt.TitleParams(text="Trajectory clusters  ·  colored by cluster",
+                                   fontSize=12, color="#111111", anchor="start"),
         )
         .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
     )
-
-    chart.save(str(out_path), scale_factor=2)
+    by_cluster_path = out_path.parent / (out_path.stem + "_by_cluster.png")
+    by_cluster.save(str(by_cluster_path), scale_factor=2)
+    print(f"  Saved: {by_cluster_path.name}")
 
 
 def plot_cluster_profile(
@@ -316,6 +304,7 @@ def plot_cluster_profile(
     out_path: Path,
     top_n: int = 5,
 ) -> None:
+    """One PNG for cluster composition; one PNG per cluster for top motifs."""
     real_clusters = sorted(
         [s for s in summaries if not s["is_noise"]],
         key=lambda s: -s["n_trajectories"],
@@ -325,35 +314,36 @@ def plot_cluster_profile(
         chart = (
             alt.Chart(pd.DataFrame([{"text": "No dense clusters found"}]))
             .mark_text(fontSize=13, color="#111111")
-            .encode(
-                x=alt.value(200),
-                y=alt.value(60),
-                text="text:N",
-            )
+            .encode(x=alt.value(200), y=alt.value(60), text="text:N")
             .properties(width=400, height=120)
             .configure_view(strokeWidth=0)
         )
-        chart.save(str(out_path), scale_factor=2)
+        composition_path = out_path.parent / (out_path.stem + "_composition.png")
+        chart.save(str(composition_path), scale_factor=2)
+        print(f"  Saved: {composition_path.name}")
         return
 
-    def abbrev(m: str, maxl: int = 22) -> str:
+    def fmt(m: str) -> str:
         parts = m.split("+")
-        if len(parts) <= 2:
-            sstr = " -> ".join(parts)
-        else:
-            sstr = f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)})"
-        return sstr if len(sstr) <= maxl else sstr[: maxl - 1] + "..."
+        if len(parts) <= 3:
+            return " → ".join(parts)
+        return f"{parts[0]} → ... → {parts[-1]}  ({len(parts)} atoms)"
 
-    # --- Chart 1: agent composition (stacked bar, one row per cluster) ---
+    def slug(label: str) -> str:
+        return (
+            label.replace(" ", "_").replace("(", "").replace(")", "")
+                 .replace(",", "").replace("/", "-").replace("→", "to").replace("%", "pct")
+        )
+
+    # --- Composition PNG ---
     comp_rows = []
-    cluster_order = [s["label"] for s in real_clusters]  # largest-first order
+    cluster_order = [s["label"] for s in real_clusters]
     for s in real_clusters:
         total = s["n_trajectories"] or 1
         for agent, count in s["agent_composition"].items():
             comp_rows.append({
                 "cluster_label": s["label"],
                 "agent": agent,
-                "count": count,
                 "fraction": count / total,
             })
     df_comp = pd.DataFrame(comp_rows)
@@ -361,19 +351,20 @@ def plot_cluster_profile(
     agent_domain = sorted(AGENT_COLORS.keys())
     agent_range = [AGENT_COLORS[a] for a in agent_domain]
 
-    chart1 = (
+    composition = (
         alt.Chart(df_comp)
         .mark_bar()
         .encode(
             y=alt.Y(
                 "cluster_label:N",
                 sort=cluster_order,
-                axis=alt.Axis(title=None, labelLimit=300),
+                axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=10, labelLimit=360),
             ),
             x=alt.X(
                 "fraction:Q",
                 stack="normalize",
-                axis=alt.Axis(title="agent share", format=".0%"),
+                axis=alt.Axis(title="Agent share", format=".0%",
+                              domain=False, ticks=False, labelFontSize=10),
             ),
             color=alt.Color(
                 "agent:N",
@@ -383,64 +374,63 @@ def plot_cluster_profile(
             order=alt.Order("agent:N", sort="ascending"),
         )
         .properties(
-            width=500,
-            height=max(len(real_clusters) * 25, 60),
+            width=520,
+            height=max(len(real_clusters) * 28, 80),
+            title=alt.TitleParams(
+                text="Trajectory clusters  ·  agent composition",
+                fontSize=12, color="#111111", anchor="start",
+            ),
         )
+        .configure_view(strokeWidth=0)
     )
+    composition_path = out_path.parent / (out_path.stem + "_composition.png")
+    composition.save(str(composition_path), scale_factor=2)
+    print(f"  Saved: {composition_path.name}")
 
-    # --- Chart 2: top motifs per cluster (faceted horizontal bar) ---
-    motif_rows = []
+    # --- One top-motifs PNG per cluster ---
     for s in real_clusters:
-        for m in s["top_motifs"][:top_n]:
-            motif_rows.append({
-                "cluster_label": s["label"],
-                "motif_label": abbrev(m["motif"]),
-                "share": m["share"],
-            })
-    df_motifs = pd.DataFrame(motif_rows)
+        if not s["top_motifs"]:
+            continue
+        rows = [
+            {"motif_label": fmt(m["motif"]), "share": m["share"]}
+            for m in s["top_motifs"][:top_n]
+        ]
+        df_motifs = pd.DataFrame(rows)
+        order = df_motifs.sort_values("share", ascending=False)["motif_label"].tolist()
 
-    if not df_motifs.empty:
-        chart2 = (
+        chart = (
             alt.Chart(df_motifs)
             .mark_bar(color=BLUE)
             .encode(
                 y=alt.Y(
                     "motif_label:N",
-                    sort=alt.EncodingSortField(field="share", op="sum", order="descending"),
-                    axis=alt.Axis(title=None, labelLimit=200),
+                    sort=order,
+                    axis=alt.Axis(title=None, domain=False, ticks=False,
+                                  labelFontSize=10, labelLimit=440),
                 ),
                 x=alt.X(
                     "share:Q",
-                    axis=alt.Axis(title="share of cluster actions", format=".1%"),
-                ),
-                facet=alt.Facet(
-                    "cluster_label:N",
-                    sort=cluster_order,
-                    header=alt.Header(title=None, labelFontSize=10),
+                    axis=alt.Axis(title="Share of cluster actions", format=".1%",
+                                  domain=False, ticks=False, labelFontSize=10),
                 ),
             )
-            .properties(width=130, height=top_n * 22)
-            .resolve_scale(y="independent")
-        )
-        combined = alt.vconcat(chart1, chart2)
-    else:
-        combined = chart1
-
-    chart = (
-        combined
-        .properties(
-            title=alt.TitleParams(
-                text="Cluster composition by agent",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
+            .properties(
+                width=440,
+                height=max(top_n * 30, 100),
+                title=alt.TitleParams(
+                    text=[
+                        f"Top motifs  ·  {s['label']}",
+                        f"n = {s['n_trajectories']} trajectories",
+                    ],
+                    fontSize=12, color="#111111", anchor="start",
+                    subtitleFontSize=10, subtitleColor="#666666",
+                ),
             )
+            .configure_view(strokeWidth=0)
         )
-        .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-    )
-
-    chart.save(str(out_path), scale_factor=2)
+        panel_path = out_path.parent / (out_path.stem + "_top_motifs_" + slug(s["label"]) + ".png")
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def main() -> int:

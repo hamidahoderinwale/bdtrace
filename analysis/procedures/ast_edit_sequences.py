@@ -87,32 +87,83 @@ class EditChunk:
         return "\n".join(lines)
 
 
+def _try_parse(src: str) -> list[str] | None:
+    """Return AST node names if src parses cleanly, else None."""
+    try:
+        return [
+            type(n).__name__
+            for n in ast.walk(ast.parse(src))
+            if type(n).__name__ not in _SKIP_NODES
+        ]
+    except SyntaxError:
+        return None
+
+
 def _lines_to_ast_nodes(lines: list[str]) -> list[str]:
     """
     Parse a list of code lines and return AST node type names in walk order.
 
-    Dedents before parsing. Falls back to leading-keyword scanning for
-    fragments that remain unparseable after dedent.
+    Uses a tiered strategy before falling back to keyword scanning:
+      1. Direct parse after dedent.
+      2. Append a dummy body when the fragment ends with ':' (handles if/for/
+         while/def/class/with headers that appear without their body in the hunk).
+      3. Prepend a dummy predecessor for elif/else (needs a preceding if-block).
+      4. Prepend a dummy try-block for except/finally.
+      5. Wrap in a function body for return/yield/raise/del at module scope.
+      6. Keyword scan as last resort.
     """
     if not lines:
         return []
+
     src = textwrap.dedent("\n".join(lines))
-    try:
-        tree = ast.parse(src)
-        return [
-            type(n).__name__
-            for n in ast.walk(tree)
-            if type(n).__name__ not in _SKIP_NODES
-        ]
-    except SyntaxError:
-        tokens: list[str] = []
-        for line in lines:
-            stripped = line.strip()
-            for kw in _FALLBACK_KEYWORDS:
-                if stripped.startswith(kw) or stripped == kw.rstrip():
-                    tokens.append(kw.strip().rstrip(":"))
-                    break
-        return tokens
+    stripped = src.strip()
+
+    # Tier 1: direct
+    result = _try_parse(src)
+    if result is not None:
+        return result
+
+    # Tier 2: compound-statement header missing its body
+    if stripped.endswith(":"):
+        result = _try_parse(stripped + "\n    pass")
+        if result is not None:
+            return result
+
+    # Tier 3: elif / else — needs a preceding if-block (and possibly a body)
+    if stripped.startswith(("elif ", "else:")):
+        candidate = "if True:\n    pass\n" + stripped
+        if stripped.endswith(":"):
+            candidate += "\n    pass"
+        result = _try_parse(candidate)
+        if result is not None:
+            return result
+
+    # Tier 4: except / finally — needs a preceding try-block
+    if stripped.startswith(("except", "finally")):
+        candidate = "try:\n    pass\n" + stripped
+        if stripped.endswith(":"):
+            candidate += "\n    pass"
+        result = _try_parse(candidate)
+        if result is not None:
+            return result
+
+    # Tier 5: return / yield / raise / del outside a function scope
+    if any(stripped.startswith(kw) for kw in ("return", "yield", "raise", "del ")):
+        indented = "\n".join(f"    {l}" for l in textwrap.dedent("\n".join(lines)).splitlines())
+        result = _try_parse(f"def _f():\n{indented}")
+        if result is not None:
+            # Drop the synthetic FunctionDef scaffolding from the result
+            return [n for n in result if n not in {"FunctionDef", "arguments", "arg"}]
+
+    # Tier 6: keyword scan (last resort)
+    tokens: list[str] = []
+    for line in lines:
+        s = line.strip()
+        for kw in _FALLBACK_KEYWORDS:
+            if s.startswith(kw) or s == kw.rstrip():
+                tokens.append(kw.strip().rstrip(":"))
+                break
+    return tokens
 
 
 def patch_to_chunks(patch: str) -> list[EditChunk]:
@@ -179,12 +230,73 @@ def patch_to_chunks(patch: str) -> list[EditChunk]:
     return chunks
 
 
-def patch_to_ast_sequence(patch: str) -> list[str]:
+_FALLBACK_KW_STEMS = frozenset({
+    'elif', 'else', 'except', 'assert', 'lambda', 'yield', 'return',
+    'raise', 'import', 'while', 'class', 'with', 'async', 'for',
+    'def', 'try', 'if',
+})
+
+
+def _is_keyword_fallback(token: str) -> bool:
+    """True when token was produced by keyword scanning, not AST parsing."""
+    stem = token[4:]  # strip ADD_ / DEL_
+    return stem.lower() in _FALLBACK_KW_STEMS and stem[0].islower()
+
+
+def _fullfile_cert(before: str, after: str) -> list[str]:
     """
-    Flat sequence for the whole patch (backwards-compatible).
-    Concatenates chunk sequences in hunk order.
+    Full-file Counter diff: parse complete before/after source, return
+    ADD_X / DEL_X for node types whose count changed.  Zero fallback.
     """
-    return [tok for chunk in patch_to_chunks(patch) for tok in chunk.sequence]
+    from collections import Counter as _Counter
+
+    def _count(src: str) -> _Counter:
+        try:
+            return _Counter(
+                type(n).__name__
+                for n in ast.walk(ast.parse(src))
+                if type(n).__name__ not in _SKIP_NODES
+            )
+        except SyntaxError:
+            return _Counter()
+
+    b, a = _count(before or ''), _count(after or '')
+    tokens = (
+        [f'ADD_{t}' for t in sorted(a - b)]
+        + [f'DEL_{t}' for t in sorted(b - a)]
+    )
+    return tokens
+
+
+def patch_to_ast_sequence(
+    patch: str,
+    before_content: str = '',
+    after_content: str = '',
+) -> list[str]:
+    """
+    Flat AST token sequence for a patch.
+
+    Primary path: tiered fragment parser (hunk-local, captures replacements).
+    Fallback path: full-file Counter diff (zero fallback tokens) used when
+    the fragment parser produces only keyword-scanned tokens for every hunk.
+
+    Pass ``before_content`` and ``after_content`` (full file source) to
+    enable the full-file fallback; without them the function behaves as
+    before (fragment-only).
+    """
+    tokens = [tok for chunk in patch_to_chunks(patch) for tok in chunk.sequence]
+
+    # If the fragment parser produced anything beyond keyword tokens, use it.
+    if any(not _is_keyword_fallback(t) for t in tokens):
+        return tokens
+
+    # All tokens are keyword fallbacks (or empty): try full-file diff.
+    if before_content or after_content:
+        ff = _fullfile_cert(before_content, after_content)
+        if ff:
+            return ff
+
+    return tokens  # last resort: return whatever the fragment parser found
 
 
 def corpus_ast_sequences(patches: dict[str, str]) -> dict[str, list[str]]:

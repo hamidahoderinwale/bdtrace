@@ -182,11 +182,6 @@ def plot_volcano(results: list[dict], out_path: Path) -> None:
             f"{r['agent_a']} vs {r['agent_b']}  "
             f"({'same family' if r['same_family'] else 'cross family'})"
         )
-        panel_title = (
-            f"{pair_label} | "
-            f"{r['n_tied_outcome_tasks']} tasks, "
-            f"{r['n_significant_fdr_5']}/{r['n_motifs_tested']} motifs significant"
-        )
         pair_color = PAIR_COLORS.get((r["agent_a"], r["agent_b"]), GRAY)
         for mr in r["motif_results"]:
             pval = mr["p_value"]
@@ -194,7 +189,6 @@ def plot_volcano(results: list[dict], out_path: Path) -> None:
                 continue
             rows.append({
                 "pair_label": pair_label,
-                "panel_title": panel_title,
                 "mean_delta": mr["mean_delta"],
                 "neg_log_p": -np.log10(pval + 1e-12),
                 "significant": mr["significant_fdr_5"],
@@ -203,18 +197,22 @@ def plot_volcano(results: list[dict], out_path: Path) -> None:
             })
     df = pd.DataFrame(rows)
 
-    panels = []
+    # Unified y-axis across all panels for visual comparability.
+    y_max = max(2.0, float(df["neg_log_p"].max()) * 1.10)
+
+    def slug(s: str) -> str:
+        return s.replace(" ", "_").replace("(", "").replace(")", "").replace(",", "")
+
     for r in results:
         pair_label = (
             f"{r['agent_a']} vs {r['agent_b']}  "
             f"({'same family' if r['same_family'] else 'cross family'})"
         )
-        panel_title = (
-            f"{pair_label} | "
-            f"{r['n_tied_outcome_tasks']} tasks, "
-            f"{r['n_significant_fdr_5']}/{r['n_motifs_tested']} motifs significant"
+        panel_caption = (
+            f"{r['n_tied_outcome_tasks']} tied tasks  ·  "
+            f"{r['n_significant_fdr_5']}/{r['n_motifs_tested']} motifs FDR<0.05"
         )
-        sub = df[df["panel_title"] == panel_title]
+        sub = df[df["pair_label"] == pair_label]
 
         points = (
             alt.Chart(sub)
@@ -222,63 +220,49 @@ def plot_volcano(results: list[dict], out_path: Path) -> None:
             .encode(
                 x=alt.X(
                     "mean_delta:Q",
-                    axis=alt.Axis(title="mean delta (agent_a - agent_b)", domain=False, ticks=False),
+                    axis=alt.Axis(title="mean motif-frequency difference  (agent_a − agent_b)",
+                                  domain=False, ticks=False, labelFontSize=10),
                 ),
                 y=alt.Y(
                     "neg_log_p:Q",
-                    axis=alt.Axis(title="-log10(p-value)", domain=False, ticks=False),
+                    scale=alt.Scale(domain=[0, y_max]),
+                    axis=alt.Axis(title="−log10(p-value)",
+                                  domain=False, ticks=False, labelFontSize=10),
                 ),
-                color=alt.Color("point_color:N", scale=None),
+                color=alt.Color("point_color:N", scale=None, legend=None),
                 size=alt.Size("point_size:Q", scale=None, legend=None),
             )
             .properties(
-                width=280,
-                height=240,
+                width=380,
+                height=280,
                 title=alt.TitleParams(
-                    text=pair_label,
-                    fontSize=11,
+                    text=[pair_label, panel_caption],
+                    fontSize=12,
                     color="#111111",
                     anchor="start",
+                    subtitleFontSize=10,
+                    subtitleColor="#666666",
                 ),
             )
+            .configure_view(strokeWidth=0)
         )
 
-        rule = (
-            alt.Chart(pd.DataFrame({"x": [0]}))
-            .mark_rule(color="#555555", strokeWidth=0.8)
-            .encode(x=alt.X("x:Q"))
-        )
-
-        panels.append(alt.layer(points, rule))
-
-    chart = (
-        alt.hconcat(*panels)
-        .properties(
-            title=alt.TitleParams(
-                text="Matched-pair action pattern divergence",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
-            )
-        )
-        .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-    )
-
-    chart.save(str(out_path), scale_factor=2)
+        panel_path = out_path.parent / (out_path.stem + "_" + slug(f"{r['agent_a']}_vs_{r['agent_b']}") + ".png")
+        points.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None:
-    def abbrev(m: str, max_len: int = 30) -> str:
+    # No truncation: render full motif names with extra label width.
+    def fmt(m: str) -> str:
         parts = m.split("+")
-        if len(parts) <= 2:
-            s = m.replace("+", " -> ")
-        else:
-            s = f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} atoms)"
-        return s if len(s) <= max_len else s[: max_len - 1] + "..."
+        if len(parts) <= 3:
+            return m.replace("+", " → ")
+        return f"{parts[0]} → ... → {parts[-1]}  ({len(parts)} atoms)"
 
-    panels = []
+    def slug(a: str, b: str) -> str:
+        return f"{a}_vs_{b}".replace(" ", "_").replace("(", "").replace(")", "")
+
     for r in results:
         pair_color = PAIR_COLORS.get((r["agent_a"], r["agent_b"]), GRAY)
         family_tag = "same family" if r["same_family"] else "cross family"
@@ -287,8 +271,10 @@ def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None
         all_tested.sort(key=lambda mr: abs(mr["mean_delta"]), reverse=True)
         top = all_tested[:top_n]
 
+        panel_path = out_path.parent / (out_path.stem + "_" + slug(r["agent_a"], r["agent_b"]) + ".png")
+
         if not top:
-            panels.append(
+            chart = (
                 alt.Chart(pd.DataFrame({"x": [0], "y": [0], "label": ["no testable tokens"]}))
                 .mark_text(fontSize=11, color=GRAY)
                 .encode(
@@ -297,21 +283,24 @@ def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None
                     text="label:N",
                 )
                 .properties(
-                    width=260,
-                    height=top_n * 28,
+                    width=440,
+                    height=top_n * 32,
                     title=alt.TitleParams(
                         text=f"{r['agent_a']} vs {r['agent_b']}  ({family_tag})",
-                        fontSize=11,
+                        fontSize=12,
                         color="#111111",
                         anchor="start",
                     ),
                 )
+                .configure_view(strokeWidth=0)
             )
+            chart.save(str(panel_path), scale_factor=2)
+            print(f"  Saved: {panel_path.name}")
             continue
 
         rows = []
         for pos, mr in enumerate(top):
-            label = abbrev(mr["motif"])
+            label = fmt(mr["motif"])
             if mr["significant_fdr_5"]:
                 label = label + "  *"
             direction = "favors_a" if mr["mean_delta"] > 0 else "favors_b"
@@ -325,8 +314,6 @@ def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None
         df = pd.DataFrame(rows)
         motif_order = df.sort_values("sort_pos")["motif_label"].tolist()
 
-        n_sig = int(df["significant"].sum())
-
         bars = (
             alt.Chart(df)
             .mark_bar()
@@ -334,11 +321,13 @@ def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None
                 y=alt.Y(
                     "motif_label:N",
                     sort=motif_order,
-                    axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=9, labelLimit=300),
+                    axis=alt.Axis(title=None, domain=False, ticks=False,
+                                  labelFontSize=10, labelLimit=420),
                 ),
                 x=alt.X(
                     "mean_delta:Q",
-                    axis=alt.Axis(title=None, domain=False, ticks=False),
+                    axis=alt.Axis(title="mean motif-frequency difference  (agent_a − agent_b)",
+                                  domain=False, ticks=False, labelFontSize=10),
                 ),
                 color=alt.Color(
                     "direction:N",
@@ -349,44 +338,21 @@ def plot_top_motifs(results: list[dict], out_path: Path, top_n: int = 8) -> None
                     legend=None,
                 ),
             )
-        )
-
-        rule = (
-            alt.Chart(pd.DataFrame({"x": [0]}))
-            .mark_rule(color="#444444", strokeWidth=0.8)
-            .encode(x=alt.X("x:Q"))
-        )
-
-        panel = (
-            alt.layer(bars, rule)
             .properties(
-                width=260,
-                height=top_n * 28,
+                width=440,
+                height=top_n * 32,
                 title=alt.TitleParams(
                     text=f"{r['agent_a']} vs {r['agent_b']}  ({family_tag})",
-                    fontSize=11,
+                    fontSize=12,
                     color="#111111",
                     anchor="start",
                 ),
             )
+            .configure_view(strokeWidth=0)
         )
-        panels.append(panel)
 
-    chart = (
-        alt.hconcat(*panels)
-        .properties(
-            title=alt.TitleParams(
-                text=f"Top {top_n} most-differentiating action patterns per agent pair",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
-            )
-        )
-        .configure_view(strokeWidth=0)
-        .configure_axisX(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-    )
-
-    chart.save(str(out_path), scale_factor=2)
+        bars.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def main() -> int:
