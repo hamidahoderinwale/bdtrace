@@ -259,7 +259,7 @@ Neither passes  & 157 & 0.69 & 36.8 & 13.0 \\
 \label{tab:scaffold_outcomes}
 \end{table}
 
-\textcolor{blue}{We can also use our framework to understand trajectory anomalies, offering developers useful signal for when their agents are failing. The traces show \emph{why} the scaffolds diverge on these tasks. On the 63 instances where Agentless ``wins'' (successfully passing a task that SWE-agent did not), SWE-agent's failing runs are long and edit-heavy: they average 33 steps (vs.\ Agentless's 13) and are over twice as likely to contain a streak of five or more consecutive edits (30\% vs.\ 13\% of SWE-agent's own successful runs). Agentless instead localizes the error, patches the problem, and validates in a tight ${\sim}13$-step loop. The failure signature here is edit-thrashing and length, not browsing.}
+\textcolor{blue}{We can also use our framework to understand trajectory anomalies to offer developers useful signal for when their agents are failing. For instance, out of all 63 times that Agentless ``wins''---where it successfully passes a task that SWE-agent does not---SWE-agent's failures are marked by long edit streaks: it is over twice as likely to make five or more edits in a row when it fails as when it succeeds. Agentless is an overall more efficient agent, as it will require an average of 13 steps, where it will localize the error, patch the problem, and validate in a clean loop, compared to SWE-agent's average of 33.}
 
 \begin{figure}[H]
 \centering
