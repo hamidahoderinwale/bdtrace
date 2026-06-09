@@ -44,13 +44,14 @@ OUT_JSON = OUT_DIR / "backbone_probe.json"
 # Style
 # ---------------------------------------------------------------------------
 COLORS = {
-    "GPT-4":     "#59A3CC",
-    "Claude-3.5": "#59BFA4",
-    "GPT-4o":    "#E39659",
+    "Claude-3":   "#CB4D20",
+    "Claude-3.5": "#20A380",
+    "GPT-4":      "#5692E5",
+    "GPT-4o":     "#B4184F",
 }
 BG      = "#f5f5f5"
 BORDER  = "#dddddd"
-CLASSES = ["GPT-4", "Claude-3.5", "GPT-4o"]  # fixed order
+CLASSES = ["Claude-3", "Claude-3.5", "GPT-4", "GPT-4o"]  # fixed order
 
 # ---------------------------------------------------------------------------
 # 1. Load data

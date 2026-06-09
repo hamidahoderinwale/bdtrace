@@ -57,6 +57,7 @@ SUBMISSION_LABEL = {
     "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1":               "DARS+R1",
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022":               "Agentless+Claude-3.5",
     "20250111_moatless_deepseek_v3":                                   "Moatless+V3",
+    "20250526_sweagent_claude-4-sonnet-20250514":                      "Claude-4",
 }
 
 PRED_COLORS = {"Agent": GREEN, "Difficulty": BLUE, "Fix type": COPPER}
