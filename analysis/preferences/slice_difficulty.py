@@ -207,80 +207,82 @@ def plot_top_motifs_by_bucket(results: list[dict], out_path: Path, top_n: int = 
         for item in r["top_motifs"][:top_n]:
             all_motifs[item["motif"]] += item["count"]
     panel_motifs = [m for m, _ in all_motifs.most_common(top_n)]
-    motif_order = list(reversed(panel_motifs))  # Altair sorts ascending; reversed gives top-first
+    motif_order_top_first = list(reversed(panel_motifs))
 
-    def abbrev(m: str) -> str:
+    def fmt(m: str) -> str:
         parts = m.split("+")
-        if len(parts) <= 2:
-            return m.replace("+", " -> ")
-        return f"{parts[0]} -> ... -> {parts[-1]} ({len(parts)} atoms)"
+        if len(parts) <= 3:
+            return m.replace("+", " → ")
+        return f"{parts[0]} → ... → {parts[-1]}  ({len(parts)} atoms)"
 
-    bucket_order = [r["bucket"] for r in results]
+    abbrev_order = [fmt(m) for m in motif_order_top_first]
 
-    rows = []
+    # Compute global x-axis max so all per-bucket panels share the same scale.
+    bucket_max_share = []
     for r in results:
+        total = sum(r["per_agent_total_tokens"].values()) or 1
         motif_counts = {item["motif"]: item["count"] for item in r["top_motifs"]}
-        total = sum(r["per_agent_total_tokens"].values())
         for m in panel_motifs:
-            share = motif_counts.get(m, 0) / total if total else 0.0
-            rows.append({
-                "motif": abbrev(m),
+            bucket_max_share.append(motif_counts.get(m, 0) / total)
+    x_max = max(0.005, max(bucket_max_share) * 1.10)
+
+    for r in results:
+        bucket_slug = r["bucket"].replace("/", "of")  # 0/3 -> 0of3
+        panel_path = out_path.parent / (out_path.stem + "_" + bucket_slug + ".png")
+
+        motif_counts = {item["motif"]: item["count"] for item in r["top_motifs"]}
+        total = sum(r["per_agent_total_tokens"].values()) or 1
+        rows = [
+            {
+                "motif": fmt(m),
                 "motif_key": m,
-                "share": share,
-                "share_pct": f"{share * 100:.1f}%",
-                "bucket": f"{r['bucket']} solved ({r['n_trajectories']} trajectories)",
-            })
+                "share": motif_counts.get(m, 0) / total,
+                "share_pct": f"{motif_counts.get(m, 0) / total * 100:.1f}%",
+            }
+            for m in panel_motifs
+        ]
+        df = pd.DataFrame(rows)
+        panel_title = f"{r['bucket']} solved  ·  {r['n_trajectories']} trajectories"
 
-    df = pd.DataFrame(rows)
-    abbrev_order = [abbrev(m) for m in motif_order]
-    bucket_label_order = [
-        f"{r['bucket']} solved ({r['n_trajectories']} trajectories)"
-        for r in results
-    ]
-
-    chart = (
-        alt.Chart(df)
-        .mark_bar(color=BLUE)
-        .encode(
-            y=alt.Y(
-                "motif:N",
-                sort=abbrev_order,
-                axis=alt.Axis(title=None, domain=False, ticks=False, labelFontSize=9),
-            ),
-            x=alt.X(
-                "share:Q",
-                axis=alt.Axis(
-                    title="share of this bucket's actions",
-                    domain=False,
-                    ticks=False,
-                    labelFontSize=10,
-                    format=".1%",
+        chart = (
+            alt.Chart(df)
+            .mark_bar(color=BLUE)
+            .encode(
+                y=alt.Y(
+                    "motif:N",
+                    sort=abbrev_order,
+                    axis=alt.Axis(title=None, domain=False, ticks=False,
+                                  labelFontSize=10, labelLimit=480),
                 ),
-            ),
-            tooltip=["motif:N", "share_pct:N", "bucket:N"],
-        )
-        .facet(
-            column=alt.Column(
-                "bucket:N",
-                sort=bucket_label_order,
-                header=alt.Header(title=None, labelFontSize=10),
-            ),
-            spacing=24,
-        )
-        .properties(
-            title=alt.TitleParams(
-                text=f"Top {top_n} repeated action sequences by task difficulty",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
+                x=alt.X(
+                    "share:Q",
+                    scale=alt.Scale(domain=[0, x_max]),
+                    axis=alt.Axis(
+                        title="share of bucket's actions",
+                        domain=False,
+                        ticks=False,
+                        labelFontSize=10,
+                        format=".1%",
+                        values=[0, x_max / 2, x_max],
+                    ),
+                ),
+                tooltip=["motif:N", "share_pct:N"],
             )
+            .properties(
+                width=420,
+                height=top_n * 32,
+                title=alt.TitleParams(
+                    text=panel_title,
+                    fontSize=12,
+                    color="#111111",
+                    anchor="start",
+                ),
+            )
+            .configure_view(strokeWidth=0)
         )
-        .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-    )
 
-    chart.save(str(out_path), scale_factor=2)
-    print(f"  Saved: {out_path.name}")
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def main() -> int:

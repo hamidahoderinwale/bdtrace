@@ -45,6 +45,11 @@ SUBMISSIONS = [
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022",
     "20250111_moatless_deepseek_v3",
     "20241128_SWE-Fixer_Qwen2.5-7b-retriever_Qwen2.5-72b-editor_20241128",
+    # 2026-05-07 extension: closes within-SWE-agent extended-reasoning N=2,
+    # adds 2nd DeepSeek-V3 (cross-scaffold disambiguation), and Qwen-on-Lite presence.
+    "20250526_sweagent_claude-4-sonnet-20250514",
+    "20250609_KGCompass_deepseek-v3",
+    "20250901_entroPO_R2E_QwenCoder30BA3B",
 ]
 
 
@@ -93,6 +98,11 @@ def detect_pattern(submission: str, keys: list[str]) -> tuple[str, str]:
         return "instance_log", ".log"
     if any(k.endswith(".traj") for k in sub_keys):
         return "instance_traj", ".traj"
+    # Flat instance_json: trajs/<instance_id>.json with no nested dir
+    json_keys = [k for k in sub_keys if k.endswith(".json") and not "/trajs/" + submission in k]
+    flat_json = [k for k in json_keys if k.count("/") == 3]  # lite/sub/trajs/file.json
+    if flat_json:
+        return "instance_json", ".json"
     return "unknown", ""
 
 
@@ -131,7 +141,15 @@ def fetch_submission(submission: str) -> dict:
     keys = list_s3(prefix)
     print(f"  S3 listing: {len(keys)} keys")
     if not keys:
-        return {"submission": submission, "skipped": "empty S3 listing", "n_fetched": 0}
+        # Metadata path empty (likely a metadata bug — trajs/logs swap or wrong-date prefix).
+        # Fall back to submission_id-based prefix.
+        fallback = f"lite/{submission}/trajs/"
+        print(f"  metadata path empty; falling back to {fallback}")
+        keys = list_s3(fallback)
+        print(f"  fallback S3 listing: {len(keys)} keys")
+        if not keys:
+            return {"submission": submission, "skipped": "empty S3 listing (incl fallback)", "n_fetched": 0}
+        prefix = fallback
     pattern, _ = detect_pattern(submission, keys)
     print(f"  pattern: {pattern}")
 
@@ -184,6 +202,12 @@ def fetch_submission(submission: str) -> dict:
             for k in keys
             if k.endswith(".traj")
         })
+    elif pattern == "instance_json":
+        instances = sorted({
+            k.replace(prefix, "").rsplit(".json", 1)[0]
+            for k in keys
+            if k.endswith(".json")
+        })
     else:
         return {"submission": submission, "skipped": f"unknown pattern: {pattern}", "n_fetched": 0}
 
@@ -205,6 +229,9 @@ def fetch_submission(submission: str) -> dict:
         elif pattern == "instance_traj":
             url = f"{S3}/{prefix}{iid}.traj"
             fmt = "dars_traj_list"
+        elif pattern == "instance_json":
+            url = f"{S3}/{prefix}{iid}.json"
+            fmt = "instance_json"
         else:
             return iid, False, "unknown pattern"
         try:

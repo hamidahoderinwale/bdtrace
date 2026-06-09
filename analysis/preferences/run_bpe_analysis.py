@@ -183,57 +183,82 @@ def plot_pair_levenshtein_comparison(
     bpe_dists: dict[tuple[str, str], list[float]],
     out_path: Path,
 ) -> None:
-    """Side-by-side box plot: canonical vs BPE Levenshtein per agent-pair."""
-    rows = []
-    for (a, b), dists in canonical_dists.items():
-        label = f"{a}\nvs\n{b}"
-        for d in dists:
-            rows.append({"representation": "Canonical atoms", "pair_label": label, "distance": d})
-    for (a, b), dists in bpe_dists.items():
-        label = f"{a}\nvs\n{b}"
-        for d in dists:
-            rows.append({"representation": "BPE motifs", "pair_label": label, "distance": d})
+    """One PNG per representation: canonical vs BPE pairwise Levenshtein boxplots."""
+    panels = [
+        ("Canonical atoms", canonical_dists, GRAY,  out_path.parent / (out_path.stem + "_atoms.png")),
+        ("BPE motifs",      bpe_dists,       BLUE,  out_path.parent / (out_path.stem + "_motifs.png")),
+    ]
 
-    df = pd.DataFrame(rows)
+    for title, dists, color, panel_path in panels:
+        rows = []
+        for (a, b), ds in dists.items():
+            label = f"{a}  vs  {b}"
+            for d in ds:
+                rows.append({"pair_label": label, "distance": d})
+        df = pd.DataFrame(rows)
 
-    panel = (
-        alt.Chart(df)
-        .mark_boxplot(extent=1.5)
-        .encode(
-            x=alt.X(
-                "distance:Q",
-                title="Pairwise Levenshtein distance (0=identical, 1=completely different)",
-                scale=alt.Scale(domain=[0, 1]),
-            ),
-            y=alt.Y("pair_label:N", title=None),
-            color=alt.Color(
-                "representation:N",
-                scale=alt.Scale(
-                    domain=["Canonical atoms", "BPE motifs"],
-                    range=[GRAY, BLUE],
+        # Manual boxplot without median bar: IQR box + whiskers + outliers, no median rule.
+        def _stats(s: pd.Series) -> pd.Series:
+            q1, q3 = s.quantile([0.25, 0.75])
+            iqr = q3 - q1
+            lo = max(float(s.min()), float(q1 - 1.5 * iqr))
+            hi = min(float(s.max()), float(q3 + 1.5 * iqr))
+            return pd.Series({"q1": float(q1), "q3": float(q3), "lo": lo, "hi": hi})
+
+        summary = df.groupby("pair_label")["distance"].apply(_stats).unstack().reset_index()
+
+        outliers = (
+            df.merge(summary[["pair_label", "lo", "hi"]], on="pair_label")
+              .query("distance < lo or distance > hi")
+        )
+
+        whiskers = (
+            alt.Chart(summary)
+            .mark_rule(color=color, strokeWidth=1.2)
+            .encode(
+                x=alt.X("lo:Q",
+                        scale=alt.Scale(domain=[0, 1]),
+                        axis=alt.Axis(title="Pairwise Levenshtein distance  (0 = identical, 1 = completely different)",
+                                      domain=False, ticks=False, labelFontSize=10)),
+                x2="hi:Q",
+                y=alt.Y("pair_label:N", title=None,
+                        axis=alt.Axis(domain=False, ticks=False, labelFontSize=10, labelLimit=240)),
+            )
+        )
+        box = (
+            alt.Chart(summary)
+            .mark_bar(color=color, height=14)
+            .encode(
+                x="q1:Q",
+                x2="q3:Q",
+                y=alt.Y("pair_label:N", title=None),
+            )
+        )
+        outlier_pts = (
+            alt.Chart(outliers)
+            .mark_point(color=color, opacity=0.5, size=24, filled=False, strokeWidth=1)
+            .encode(
+                x=alt.X("distance:Q", scale=alt.Scale(domain=[0, 1])),
+                y=alt.Y("pair_label:N", title=None),
+            )
+        )
+
+        chart = (
+            (whiskers + box + outlier_pts)
+            .properties(
+                width=420,
+                height=max(160, 28 * df["pair_label"].nunique()),
+                title=alt.TitleParams(
+                    text=f"Within-task procedural divergence  ·  {title}",
+                    fontSize=12,
+                    color="#111111",
+                    anchor="start",
                 ),
-                legend=None,
-            ),
-            column=alt.Column(
-                "representation:N",
-                title=None,
-                header=alt.Header(labelFontSize=10),
-            ),
+            )
+            .configure_view(strokeWidth=0)
         )
-        .properties(
-            width=260,
-            height=160,
-            title=alt.TitleParams(
-                text="Within-task procedural divergence",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
-            ),
-        )
-        .configure_view(strokeWidth=0)
-        .configure_axis(grid=False)
-    )
-    panel.save(str(out_path), scale_factor=2)
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def main() -> int:

@@ -44,6 +44,7 @@ SUBMISSIONS = [
     "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1",
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022",
     "20250111_moatless_deepseek_v3",
+    "20250526_sweagent_claude-4-sonnet-20250514",
 ]
 
 

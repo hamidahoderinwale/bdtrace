@@ -48,6 +48,11 @@ SUBMISSION_LABEL = {
     "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1":    "DARS+R1",
     "20241202_agentless-1.5_claude-3.5-sonnet-20241022":    "Agentless+Claude-3.5",
     "20250111_moatless_deepseek_v3":                        "Moatless+V3",
+    # 2026-05-07 extension
+    "20250526_sweagent_claude-4-sonnet-20250514":           "Claude-4",
+    # KGCompass + entroPO fetched but deferred — need custom canonicalizers:
+    #   KGCompass: text knowledge-graph log (not dars_traj_list as auto-detected)
+    #   entroPO: chat-message list with embedded tool calls
 }
 
 EXCLUDE = {

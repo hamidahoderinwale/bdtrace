@@ -134,83 +134,72 @@ def run_permutation(
 
 
 def plot_null(results: dict, out_path: Path) -> None:
+    """Per-slice permutation-null histogram, one PNG per slice.
+
+    No reference / dashed lines: bars at or beyond the observed gap are
+    highlighted in VERMILLION; observed value + p-value are annotated as text.
+    """
     keys = ["aggregate"] + BUCKET_ORDER
     valid_keys = [k for k in keys if k in results and not np.isnan(results[k]["observed_gap"])]
 
-    panels = []
     for key in valid_keys:
         r = results[key]
         null = np.array(r["null_distribution"])
         obs = r["observed_gap"]
-        q95 = r["null_q95"]
         n_records = r["n_records"]
         p_value = r["p_value"]
 
-        # Pre-compute histogram bins
         counts, bin_edges = np.histogram(null, bins=30)
         bin_df = pd.DataFrame({
             "x0": bin_edges[:-1],
             "x1": bin_edges[1:],
             "count": counts,
+            "beyond": bin_edges[1:] >= obs,
         })
+
+        x_lo = float(min(null.min(), obs)) - 0.005
+        x_hi = float(max(null.max(), obs)) + 0.015
 
         bars = (
             alt.Chart(bin_df)
-            .mark_bar(color="#cccccc", stroke="white", strokeWidth=0.5)
+            .mark_bar(stroke="white", strokeWidth=0.5)
             .encode(
-                x=alt.X("x0:Q", axis=alt.Axis(
-                    title="same-family similarity advantage",
-                    domain=False, ticks=False, labelFontSize=10,
-                )),
+                x=alt.X("x0:Q",
+                        scale=alt.Scale(domain=[x_lo, x_hi]),
+                        axis=alt.Axis(title="Same-family similarity advantage",
+                                      domain=False, ticks=False, labelFontSize=10)),
                 x2="x1:Q",
-                y=alt.Y("count:Q", axis=alt.Axis(
-                    title=None, domain=False, ticks=False, labelFontSize=10,
-                )),
+                y=alt.Y("count:Q",
+                        axis=alt.Axis(title="Permutation count",
+                                      domain=False, ticks=False, labelFontSize=10)),
+                color=alt.condition(
+                    alt.datum.beyond,
+                    alt.value(VERMILLION),
+                    alt.value(GRAY),
+                ),
             )
         )
 
-        rule_obs = (
-            alt.Chart(pd.DataFrame({"x": [obs], "label": [f"observed = {obs:.3f}"]}))
-            .mark_rule(color=NEAR_BLACK, strokeWidth=2)
-            .encode(x="x:Q", tooltip="label:N")
-        )
-
-        rule_q95 = (
-            alt.Chart(pd.DataFrame({"x": [q95], "label": [f"chance 95th pct = {q95:.3f}"]}))
-            .mark_rule(color=GRAY, strokeWidth=1, opacity=0.8, strokeDash=[4, 4])
-            .encode(x="x:Q", tooltip="label:N")
-        )
-
-        panel = (
-            (bars + rule_obs + rule_q95)
+        slice_label = "aggregate" if key == "aggregate" else f"{key} solved"
+        chart = (
+            bars
             .properties(
-                width=160,
-                height=180,
+                width=380,
+                height=240,
                 title=alt.TitleParams(
-                    text=f"{key} (n={n_records}, p={p_value:.4f})",
-                    fontSize=10,
+                    text=f"Permutation null  ·  {slice_label}",
+                    fontSize=12,
                     color="#111111",
                     anchor="start",
                 ),
             )
+            .configure_view(strokeWidth=0)
         )
-        panels.append(panel)
 
-    chart = (
-        alt.hconcat(*panels, spacing=20)
-        .properties(
-            title=alt.TitleParams(
-                text="Permutation null: same-family divergence",
-                fontSize=13,
-                color="#111111",
-                anchor="start",
-            )
-        )
-        .configure_view(strokeWidth=0)
-        .configure_axisY(grid=True, gridColor="#F0F0F0", gridWidth=0.3)
-    )
-
-    chart.save(str(out_path), scale_factor=2)
+        slice_slug = "aggregate" if key == "aggregate" else key.replace("/", "of")
+        panel_path = out_path.parent / (out_path.stem + "_" + slice_slug + ".png")
+        chart.save(str(panel_path), scale_factor=2)
+        print(f"  Saved: {panel_path.name}")
 
 
 def main() -> int:
