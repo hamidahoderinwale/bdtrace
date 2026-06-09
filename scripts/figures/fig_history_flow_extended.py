@@ -30,6 +30,7 @@ AGENTS = [
     ("Claude-3",              "20240402_sweagent_claude3opus",                      "FAIL"),
     ("Claude-3.5",            "20240620_sweagent_claude3.5sonnet",                  "FAIL"),
     ("Claude-3.7-thinking",   "20250226_sweagent_claude-3-7-sonnet-20250219",       "PASS"),
+    ("Claude-4",              "20250526_sweagent_claude-4-sonnet-20250514",         "PASS"),
     ("GPT-4",                 "20240402_sweagent_gpt4",                             "FAIL"),
     ("GPT-4o",                "20240728_sweagent_gpt4o",                            "FAIL"),
     ("DARS+R1",               "20250205_dars_agent_claude_3.5_sonnet_deepseek_r1",  "PASS"),
@@ -236,9 +237,6 @@ def main() -> int:
             title=alt.TitleParams(
                 text=f"File-touch sequences across agents, instance {INSTANCE}",
                 fontSize=12, color="#111111", anchor="start",
-                subtitle=f"Gold patch file: {GOLD_FILE}. Cells highlighted when "
-                          "the agent has the gold file open.",
-                subtitleFontSize=10, subtitleColor="#666",
             ),
         )
         .configure_view(strokeWidth=0)

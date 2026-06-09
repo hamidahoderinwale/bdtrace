@@ -174,7 +174,7 @@ def plot_confusion(cm_mean, le, mean_acc, out_path: Path) -> None:
         .properties(
             width=360, height=360,
             title=alt.TitleParams(
-                f"8-class agent confusion ({mean_acc:.0%} acc)",
+                f"9-class agent confusion ({mean_acc:.0%} acc)",
                 fontSize=12, color="#111111", anchor="start",
             ),
         )
