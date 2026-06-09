@@ -199,8 +199,6 @@ Random retrieval            & 289 & 0.13--0.24 & Baseline \\
 \label{tab:representation_comparison}
 \end{table}
 
-\textcolor{red}{Consider cutting.} \textcolor{purple}{This is a useful foundation when weighing options for developer decision-making and model routing. Given pairwise orderings, it is then possible to come up with partial orderings which is useful for ranking results with methods like Bradley-Terry which is an interesting line of possible future work---where it forms the basis of recommendation as a function of preference.}
-
 \section{Why procedural representations matter}
 Given theoretical grounding, we put foundations to work in a number of ways. In this section we look at top-down analyses given agent traces. Firstly, we show that these approaches offer a more grounded representation of process than what can be elicited from models in natural language alone. We ask two questions: given what a model says it will do, what does it actually do (forward coverage)? Then, given what a model says it did, what did it actually do (reverse coverage)? \textcolor{blue}{Forward coverage is high across families, but reverse coverage is not---and it is lowest for the extended-thinking models (Claude-3.7-thinking and Claude-4 reach only $\approx$0.20--0.25 median reverse coverage, versus 0.50--0.71 for the older models, Figure~\ref{fig:cot_alignment}). In other words, thinking models narrate the least of what they actually do: many actions they take are never mentioned in their reasoning.}
 
