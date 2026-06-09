@@ -204,12 +204,12 @@ Random retrieval            & 289 & 0.13--0.24 & Baseline \\
 \end{table}
 
 \section{Why procedural representations matter}
-Given theoretical grounding, we put foundations to work in a number of ways. In this section we look at top-down analyses given agent traces. Firstly, we show that these approaches offer a more grounded representation of process than what can be elicited from models in natural language alone. We ask two questions: given what a model says it will do, what does it actually do (forward coverage)? Then, given what a model says it did, what did it actually do (reverse coverage)? \textcolor{blue}{Forward coverage is high across families, but reverse coverage is not---and it is lowest for the extended-thinking models (Claude-3.7-thinking and Claude-4 reach only $\approx$0.20--0.25 median reverse coverage, versus 0.50--0.71 for the older models, Figure~\ref{fig:cot_alignment}). In other words, thinking models narrate the least of what they actually do: many actions they take are never mentioned in their reasoning.}
+Given theoretical grounding, we put foundations to work in a number of ways. In this section we look at top-down analyses given agent traces. Firstly, we show that these approaches offer a more grounded representation of process than what can be elicited from models in natural language alone. We ask two questions: given what a model says it will do, what does it actually do (forward follow-through)? Then, given what a model says it did, what did it actually do (reverse follow-through)? \textcolor{blue}{Forward follow-through is high across families, but reverse follow-through is not---and it is lowest for the extended-thinking models (Claude-3.7-thinking and Claude-4 reach only $\approx$0.20--0.25 median reverse follow-through, versus 0.50--0.71 for the older models, Figure~\ref{fig:cot_alignment}). In other words, thinking models narrate the least of what they actually do: many actions they take are never mentioned in their reasoning.}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.6\linewidth]{figures/cot_alignment_6agents.png}
-    \caption{\textcolor{blue}{Narration coverage of behavioral accounts by family: forward coverage (says$\to$does) and reverse coverage (did$\to$says) per agent, with IQR. Forward $\gg$ reverse everywhere; extended-thinking models have the lowest reverse coverage.}}
+    \caption{\textcolor{blue}{Follow-through of behavioral accounts by family: forward follow-through (says$\to$does) and reverse follow-through (did$\to$says) per agent, with IQR. Forward $\gg$ reverse everywhere; extended-thinking models have the lowest reverse follow-through.}}
     \label{fig:cot_alignment}
 \end{figure}
 
@@ -259,7 +259,7 @@ Neither passes  & 157 & 0.69 & 36.8 & 13.0 \\
 \label{tab:scaffold_outcomes}
 \end{table}
 
-\textcolor{blue}{The traces show \emph{why} the scaffolds diverge on these tasks. On the 63 instances Agentless solves but SWE-agent does not, SWE-agent's failing runs are long and edit-heavy: they average 33 steps (vs.\ Agentless's 13) and are over twice as likely to contain a streak of five or more consecutive edits (30\% vs.\ 13\% of SWE-agent's own successful runs). Agentless instead localizes, patches, and validates in a tight ${\sim}13$-step loop. The failure signature here is edit-thrashing and length, not browsing.}
+\textcolor{blue}{We can also use our framework to understand trajectory anomalies, offering developers useful signal for when their agents are failing. The traces show \emph{why} the scaffolds diverge on these tasks. On the 63 instances where Agentless ``wins'' (successfully passing a task that SWE-agent did not), SWE-agent's failing runs are long and edit-heavy: they average 33 steps (vs.\ Agentless's 13) and are over twice as likely to contain a streak of five or more consecutive edits (30\% vs.\ 13\% of SWE-agent's own successful runs). Agentless instead localizes the error, patches the problem, and validates in a tight ${\sim}13$-step loop. The failure signature here is edit-thrashing and length, not browsing.}
 
 \begin{figure}[H]
 \centering
@@ -519,8 +519,8 @@ Weighted mean  & 745 & 0.253 & -- & -- \\
 \subsection{\textcolor{blue}{Reward specification and scorer}}
 \textcolor{blue}{The reward spec defines phases, penalties, and bonuses over the coarse action sequence. The library scorer \texttt{procgrep.reward.score} evaluates each rule as a binary match (\texttt{require\_any} with a minimum occurrence count, \texttt{require\_sequence} within a maximum gap, contiguous patterns, and \texttt{before\_first}/\texttt{require\_absent\_before} scoping); satisfied phases and bonuses add their weight, triggered penalties subtract, and the total is clamped to $[0,1]$. The reported per-agent scores (Table~\ref{tab:score-vs-heuristic}) agree with an independent inline reference to within 0.01.}
 
-\subsection{\textcolor{blue}{Narration coverage and verbosity}}
-\textcolor{blue}{Forward coverage (does the stated plan cover the actions taken) and reverse coverage (does the account mention each action taken) are computed by aligning the stated action set against the observed canonical action set per trajectory; verbosity is the ratio of stated to observed actions, with a shuffled-rationale control as baseline (Table~\ref{tab:verbosity}, Figure~\ref{fig:cot_alignment}).}
+\subsection{\textcolor{blue}{Behavioral follow-through and verbosity}}
+\textcolor{blue}{Forward follow-through (does the stated plan cover the actions taken) and reverse follow-through (does the account mention each action taken) are operationalized as set coverage: we align the stated action set against the observed canonical action set per trajectory (this measures whether actions are accounted for, not whether each stated intent is executed in order). Verbosity is the ratio of stated to observed actions, with a shuffled-rationale control as baseline (Table~\ref{tab:verbosity}, Figure~\ref{fig:cot_alignment}).}
 
 \subsection{\textcolor{blue}{Cost methodology}}
 \textcolor{blue}{Token, API-call, and dollar costs are read from \texttt{info.model\_stats} in the raw trajectories (tokens sent/received, API calls, instance cost). Cost telemetry is present only for the SWE-agent submissions; for agents without it, cost-per-step is estimated from published per-token pricing and flagged ($^*$) in Table~\ref{tab:per-agent-megatable}, and the cost panel of Figure~\ref{fig:token_cost_difficulty} is restricted to the cost-available subset.}
