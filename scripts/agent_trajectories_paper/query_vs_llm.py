@@ -1,13 +1,19 @@
 """EXP runner — structural query vs LLM classification of trajectory properties.
 
-(A) procgrep-style structural query over the canonical atom sequence
-    (deterministic ground truth; timed over the FULL corpus; $0), vs
-(B) LLM judges over the serialized trajectory text (latency, cost, label).
+(A) procgrep structural query over the canonical atom sequence (deterministic
+    ground truth; timed over the FULL corpus; $0) vs
+(B) LLM judges over the serialized trajectory text (label + confidence score).
 
-Structural predicates are judged on a BALANCED per-predicate sample (equal
-positives/negatives, so accuracy is meaningful against chance = 0.5). A fuzzy
-predicate (compositional divergence) has no ground truth and is scored only by
-inter-judge agreement (Fleiss' kappa) — consolidating the paper's classifier box.
+Structural predicates are judged on a BALANCED per-predicate sample (chance =
+0.50). A fuzzy predicate (compositional divergence) has no ground truth and is
+scored only by inter-judge agreement.
+
+Metrics (all additive, nothing dropped):
+  - accuracy (balanced) + Fleiss kappa  [original]
+  - precision / recall / F1 / MCC vs the exact answer, with bootstrap 90% CIs
+  - ROC-AUC + Brier (calibration) from elicited confidence scores
+  - pairwise Cohen kappa (inter-judge; tolerates a missing judge)
+  - latency + tokens per judge  -> quality-vs-cost Pareto
 
   python query_vs_llm.py --k 15 --out query_vs_llm_full.json
 """
@@ -22,6 +28,14 @@ import time
 from pathlib import Path
 
 import httpx
+import numpy as np
+from sklearn.metrics import (
+    brier_score_loss,
+    cohen_kappa_score,
+    matthews_corrcoef,
+    precision_recall_fscore_support,
+    roc_auc_score,
+)
 
 ROOT = Path("/Users/hamidaho/learning-from-dev/bidirect-align-dev-traces")
 ENVF = ROOT / "distillation_run/intervention/.env"
@@ -57,11 +71,14 @@ FUZZY = {
         "code but performs the wrong operations, or the right operations in the wrong order",
     ),
 }
+# 3 cheap judges + 1 stronger judge (does scale clear the structural predicates?).
 DEFAULT_JUDGES = (
     "openai/gpt-4o-mini",
     "anthropic/claude-3.5-haiku",
     "deepseek/deepseek-chat",
+    "anthropic/claude-sonnet-4-6",
 )
+RNG = np.random.RandomState(0)
 
 
 def _load_key() -> str:
@@ -72,9 +89,8 @@ def _load_key() -> str:
 
 
 def fleiss_kappa(items: list[list[bool | None]]) -> float | None:
-    """Fleiss' kappa over binary labels; items = [[judge labels] per trace]."""
     counts = [sum(1 for x in row if x is not None) for row in items]
-    r = max(counts) if counts else 0  # modal rater count; keep only fully-rated items
+    r = max(counts) if counts else 0
     if r < 2:
         return None
     table = [[sum(1 for x in row if x is True), sum(1 for x in row if x is False)]
@@ -89,28 +105,84 @@ def fleiss_kappa(items: list[list[bool | None]]) -> float | None:
     return round((p_bar - p_e) / (1 - p_e), 3) if p_e != 1 else None
 
 
+def pairwise_cohen(per_item: list[list[bool | None]], n_judges: int) -> float | None:
+    """Mean Cohen kappa over judge pairs, each on the items both answered."""
+    ks = []
+    for i in range(n_judges):
+        for j in range(i + 1, n_judges):
+            a, b = [], []
+            for row in per_item:
+                if row[i] is not None and row[j] is not None:
+                    a.append(int(row[i]))
+                    b.append(int(row[j]))
+            if len(set(a)) > 1 or len(set(b)) > 1:
+                if len(a) >= 2:
+                    ks.append(cohen_kappa_score(a, b))
+    return round(float(np.mean(ks)), 3) if ks else None
+
+
+def _metrics(labels: list[bool | None], scores: list[float | None], truth: list[bool]) -> dict:
+    """P/R/F1/MCC (+ bootstrap CI) and AUC/Brier where computable."""
+    idx = [i for i, x in enumerate(labels) if x is not None]
+    y = np.array([truth[i] for i in idx], dtype=int)
+    yhat = np.array([int(labels[i]) for i in idx], dtype=int)
+    n = len(idx)
+    out: dict = {"answered": n}
+    if n == 0 or len(set(y.tolist())) < 2:
+        return out | {"note": "degenerate (no positives/negatives answered)"}
+    out["accuracy"] = round(float((y == yhat).mean()), 3)
+    p, r, f1, _ = precision_recall_fscore_support(y, yhat, average="binary", zero_division=0)
+    out |= {"precision": round(float(p), 3), "recall": round(float(r), 3), "f1": round(float(f1), 3)}
+    out["mcc"] = round(float(matthews_corrcoef(y, yhat)), 3)
+    # bootstrap 90% CI on F1
+    boots = []
+    for _ in range(1000):
+        b = RNG.randint(0, n, n)
+        if len(set(y[b].tolist())) < 2:
+            continue
+        boots.append(precision_recall_fscore_support(y[b], yhat[b], average="binary", zero_division=0)[2])
+    if boots:
+        out["f1_ci90"] = [round(float(np.percentile(boots, 5)), 3), round(float(np.percentile(boots, 95)), 3)]
+    # AUC + Brier from confidence scores
+    sc = [scores[i] for i in idx]
+    if all(s is not None for s in sc):
+        s = np.array(sc, dtype=float)
+        try:
+            out["auc"] = round(float(roc_auc_score(y, s)), 3)
+            out["brier"] = round(float(brier_score_loss(y, s)), 3)
+        except ValueError:
+            pass
+    return out
+
+
 def judge(client, key, model, text, definition):
+    """Return (label|None, score|None, latency_s, tokens). Score in [0,1]."""
     prompt = (
         "Below is a serialized trace of an AI coding agent's actions on a software task.\n\n"
         f"TRACE:\n{text[:TEXT_CAP]}\n\n"
         f"Question: Is the following true — {definition}?\n"
-        "Answer with exactly one word: yes or no."
+        "Answer with one word (yes or no), then a space and your confidence as a percentage 0-100.\n"
+        "Example: yes 85"
     )
     t = time.time()
     try:
         r = client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={"Authorization": f"Bearer {key}"},
-            json={"model": model, "max_tokens": 4,
+            json={"model": model, "max_tokens": 8,
                   "messages": [{"role": "user", "content": prompt}]},
             timeout=60.0,
         )
         j = r.json()
         ans = j["choices"][0]["message"]["content"].strip().lower()
         tok = int(j.get("usage", {}).get("total_tokens", 0))
-        return (True if ans.startswith("y") else False if ans.startswith("n") else None), time.time() - t, tok
+        label = True if ans.startswith("y") else False if ans.startswith("n") else None
+        conf = re.search(r"(\d{1,3})", ans)
+        c = min(100, int(conf.group(1))) / 100 if conf else 0.5
+        score = c if label else (1 - c) if label is False else None
+        return label, score, time.time() - t, tok
     except Exception:  # noqa: BLE001
-        return None, time.time() - t, 0
+        return None, None, time.time() - t, 0
 
 
 def main() -> None:
@@ -125,7 +197,6 @@ def main() -> None:
     corpus = [json.loads(l) for l in open(CORPUS)]
     corpus = [r for r in corpus if r.get("atoms") and r.get("text")]
 
-    # (A) procgrep timing over the FULL corpus.
     t0 = time.time()
     truth_full = {p: [fn(r["atoms"]) for r in corpus] for p, (fn, _) in PREDICATES.items()}
     procgrep_ms = (time.time() - t0) * 1000.0
@@ -133,72 +204,73 @@ def main() -> None:
     print(f"procgrep: {len(PREDICATES)} preds x {len(corpus)} traces in {procgrep_ms:.2f} ms "
           f"({us_per:.1f} µs/decision)", flush=True)
 
-    n_judge = sum(min(args.k, sum(t)) + min(args.k, len(t) - sum(t)) for t in truth_full.values())
-    n_judge += 2 * args.k  # fuzzy
-    print(f"expected judge calls: ~{n_judge * len(args.models)} "
-          f"({len(PREDICATES)+1} preds x balanced ~{2*args.k} x {len(args.models)} judges)", flush=True)
-
     key = _load_key()
     out = {"corpus": len(corpus), "models": args.models,
            "procgrep_ms_full": round(procgrep_ms, 3), "procgrep_us_per_decision": round(us_per, 1),
            "predicates": {}}
     calls = tok_tot = 0
-    lat_all: list[float] = []
+    lat_by_model: dict[str, list[float]] = {m: [] for m in args.models}
+    tok_by_model: dict[str, int] = {m: 0 for m in args.models}
 
     with httpx.Client() as client:
-        # structural predicates — balanced sample, accuracy + kappa
         for p, (fn, definition) in PREDICATES.items():
-            pos = [r for r in corpus if truth_full[p][corpus.index(r)]] if False else \
-                  [r for i, r in enumerate(corpus) if truth_full[p][i]]
+            pos = [r for i, r in enumerate(corpus) if truth_full[p][i]]
             neg = [r for i, r in enumerate(corpus) if not truth_full[p][i]]
             rng.shuffle(pos); rng.shuffle(neg)
             sample = pos[: args.k] + neg[: args.k]
             gt = [True] * min(args.k, len(pos)) + [False] * min(args.k, len(neg))
-            per_item_labels = []
-            jr = {m: {"labels": [], "lat": [], "tok": 0} for m in args.models}
+            per_item = []
+            jr = {m: {"lab": [], "sc": []} for m in args.models}
             for r in sample:
                 row = []
                 for m in args.models:
-                    lab, lat, tk = judge(client, key, m, r["text"], definition)
-                    jr[m]["labels"].append(lab); jr[m]["lat"].append(lat); jr[m]["tok"] += tk
-                    lat_all.append(lat); calls += 1; tok_tot += tk; row.append(lab)
-                per_item_labels.append(row)
-            jres = {}
-            for m in args.models:
-                lab = jr[m]["labels"]
-                ok = sum(1 for x, y in zip(lab, gt, strict=False) if x is not None and x == y)
-                ans = sum(1 for x in lab if x is not None)
-                jres[m] = {"accuracy": round(ok / ans, 3) if ans else None, "answered": ans}
-            kappa = fleiss_kappa(per_item_labels)
-            out["predicates"][p] = {"kind": "structural", "n_balanced": len(sample),
-                                    "judges": jres, "kappa": kappa}
-            accs = "  ".join(f"{m.split('/')[-1]}={jres[m]['accuracy']}" for m in args.models)
-            print(f"  {p:26s} n={len(sample)} acc(chance .50): {accs}  κ={kappa}", flush=True)
+                    lab, sc, lat, tk = judge(client, key, m, r["text"], definition)
+                    jr[m]["lab"].append(lab); jr[m]["sc"].append(sc)
+                    lat_by_model[m].append(lat); tok_by_model[m] += tk
+                    calls += 1; tok_tot += tk; row.append(lab)
+                per_item.append(row)
+            judges = {m: _metrics(jr[m]["lab"], jr[m]["sc"], gt) for m in args.models}
+            out["predicates"][p] = {
+                "kind": "structural", "n_balanced": len(sample),
+                "judges": judges,
+                "fleiss_kappa": fleiss_kappa(per_item),
+                "pairwise_cohen_kappa": pairwise_cohen(per_item, len(args.models)),
+            }
+            f1s = "  ".join(f"{m.split('/')[-1]}:F1={judges[m].get('f1','?')}/AUC={judges[m].get('auc','?')}"
+                            for m in args.models)
+            print(f"  {p:24s} {f1s}  κ={out['predicates'][p]['pairwise_cohen_kappa']}", flush=True)
 
-        # fuzzy predicate — kappa only
         for p, (_, definition) in FUZZY.items():
             sample = rng.sample(corpus, min(2 * args.k, len(corpus)))
-            per_item_labels = []
+            per_item = []
             for r in sample:
                 row = []
                 for m in args.models:
-                    lab, lat, tk = judge(client, key, m, r["text"], definition)
-                    lat_all.append(lat); calls += 1; tok_tot += tk; row.append(lab)
-                per_item_labels.append(row)
-            kappa = fleiss_kappa(per_item_labels)
-            pos_rate = [sum(1 for x in row if x) for row in per_item_labels]
-            out["predicates"][p] = {"kind": "fuzzy", "n": len(sample), "kappa": kappa,
-                                    "no_ground_truth": True}
-            print(f"  {p:26s} n={len(sample)} (no ground truth)  κ={kappa}", flush=True)
+                    lab, sc, lat, tk = judge(client, key, m, r["text"], definition)
+                    lat_by_model[m].append(lat); tok_by_model[m] += tk
+                    calls += 1; tok_tot += tk; row.append(lab)
+                per_item.append(row)
+            out["predicates"][p] = {"kind": "fuzzy", "n": len(sample), "no_ground_truth": True,
+                                    "fleiss_kappa": fleiss_kappa(per_item),
+                                    "pairwise_cohen_kappa": pairwise_cohen(per_item, len(args.models))}
+            print(f"  {p:24s} (fuzzy)  κ={out['predicates'][p]['pairwise_cohen_kappa']}", flush=True)
 
-    out["totals"] = {"judge_calls": calls, "total_tokens": tok_tot,
-                     "mean_llm_latency_s": round(sum(lat_all) / len(lat_all), 2) if lat_all else 0}
+    # Pareto-ready per-judge summary: mean F1 across structural predicates vs latency/cost.
+    pareto = {}
+    for m in args.models:
+        f1s = [out["predicates"][p]["judges"][m].get("f1") for p in PREDICATES
+               if out["predicates"][p]["judges"][m].get("f1") is not None]
+        lat = lat_by_model[m]
+        pareto[m] = {"mean_f1": round(float(np.mean(f1s)), 3) if f1s else None,
+                     "mean_latency_s": round(float(np.mean(lat)), 2) if lat else 0,
+                     "tokens": tok_by_model[m]}
+    out["pareto"] = {"procgrep": {"mean_f1": 1.0, "us_per_decision": round(us_per, 1), "cost": 0}, **pareto}
+    out["totals"] = {"judge_calls": calls, "total_tokens": tok_tot}
     (ROOT / "output/paper2_pilot" / args.out).write_text(json.dumps(out, indent=2))
-    print(f"\nSPEED: procgrep {out['procgrep_us_per_decision']} µs vs LLM "
-          f"{out['totals']['mean_llm_latency_s']}s per decision "
-          f"(~{out['totals']['mean_llm_latency_s']*1e6/out['procgrep_us_per_decision']:.0f}x). "
-          f"calls={calls} tokens={tok_tot}")
-    print(f"wrote {args.out}")
+    print(f"\nprocgrep {us_per:.1f} µs/decision (exact, $0) vs judges:")
+    for m, v in pareto.items():
+        print(f"  {m:28s} F1={v['mean_f1']}  {v['mean_latency_s']}s/decision")
+    print(f"wrote {args.out}  ({calls} calls, {tok_tot} tokens)")
 
 
 if __name__ == "__main__":
