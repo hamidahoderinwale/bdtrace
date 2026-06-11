@@ -71,12 +71,15 @@ FUZZY = {
         "code but performs the wrong operations, or the right operations in the wrong order",
     ),
 }
-# 3 cheap judges + 1 stronger judge (does scale clear the structural predicates?).
+# Cheap -> strong -> flagship, to test whether scale clears the structural
+# predicates (it does not).
 DEFAULT_JUDGES = (
     "openai/gpt-4o-mini",
     "anthropic/claude-3.5-haiku",
     "deepseek/deepseek-chat",
     "anthropic/claude-sonnet-4-6",
+    "openai/gpt-4o",
+    "anthropic/claude-opus-4-8",
 )
 RNG = np.random.RandomState(0)
 

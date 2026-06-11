@@ -40,10 +40,14 @@ pts = alt.Chart(df).mark_point(size=140, filled=True, opacity=0.9).encode(
             axis=alt.Axis(domain=False, ticks=False, values=[0, 0.5, 1])),
     color=alt.Color("kind:N", scale=cs, legend=alt.Legend(title=None, orient="top-right")),
 )
-labels = alt.Chart(df).mark_text(align="left", dx=8, dy=-2, fontSize=11, color="#333333").encode(
-    x="sec:Q", y="f1:Q", text=alt.Text("name:N"),
-)
-chart = (pts + labels).properties(
+# Split labels into two vertical lanes so neighbours in the cluster don't collide.
+_up = {"procgrep", "claude-sonnet-4-6", "claude-3.5-haiku", "gpt-4o"}
+df["lane"] = df["name"].apply(lambda n: "up" if n in _up else "down")
+lab_up = alt.Chart(df[df.lane == "up"]).mark_text(
+    align="left", dx=8, dy=-9, fontSize=11, color="#333333").encode(x="sec:Q", y="f1:Q", text="name:N")
+lab_dn = alt.Chart(df[df.lane == "down"]).mark_text(
+    align="left", dx=8, dy=13, fontSize=11, color="#333333").encode(x="sec:Q", y="f1:Q", text="name:N")
+chart = (pts + lab_up + lab_dn).properties(
     width=440, height=300,
     title=alt.TitleParams("Quality versus latency per behavioural-query decision",
                           fontWeight="normal", fontSize=14, anchor="start", dx=6),
