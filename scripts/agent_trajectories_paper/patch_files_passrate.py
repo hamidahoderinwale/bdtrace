@@ -115,12 +115,12 @@ order = ["1", "2", "3+"]
 line = alt.Chart(df).mark_line(point=True, strokeWidth=2).encode(
     x=alt.X("bin:N", sort=order, title="Files in submitted patch",
             axis=alt.Axis(domain=False, ticks=False, labelAngle=0)),
-    y=alt.Y("pass_rate:Q", title="Pass rate (%)", scale=alt.Scale(domain=[0, 70]),
+    y=alt.Y("pass_rate:Q", title="Pass rate %", scale=alt.Scale(domain=[0, 70]),
             axis=alt.Axis(domain=False, ticks=False)),
     color=alt.Color("agent:N", scale=alt.Scale(domain=dom, range=[FAM[a] for a in dom]),
-                    legend=alt.Legend(title="Agent (darker = newer)")),
+                    legend=alt.Legend(title="Agent, darker = newer")),
     detail="agent:N",
-).properties(width=380, height=270, title="Pass rate vs. solution breadth (files changed)")
+).properties(width=380, height=270, title="Pass rate by number of files changed")
 out = Path("docs/papers/figures/fig_patch_files_passrate.png")
 line.save(str(out), scale_factor=2)
 Path("output/paper2_pilot/patch_files_passrate.json").write_text(

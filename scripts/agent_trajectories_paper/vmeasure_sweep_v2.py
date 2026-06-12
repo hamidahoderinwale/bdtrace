@@ -86,7 +86,7 @@ area = alt.Chart(df).mark_area(opacity=0.18, color=BLUE).encode(
 line = alt.Chart(df).mark_line(point=True, color=BLUE, strokeWidth=2).encode(
     x=alt.X("vocab:Q", scale=xscale), y="mean:Q")
 chart = (shade + area + line).properties(
-    width=400, height=240, title="Canonical-alphabet vocabulary stability (5-seed mean ± sd)")
+    width=400, height=240, title="Canonical-alphabet vocabulary stability")
 
 OUT = Path("docs/papers/figures/fig_vmeasure_sweep.png")
 if OUT.exists():
