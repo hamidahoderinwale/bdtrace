@@ -50,7 +50,11 @@ def build_cmd(condition: str, ids: list[str], provider: str, model: str, endpoin
     cond_cfg = CONF / f"{condition}.yaml"
     cmd = [
         str(VENV / "mini-extra"), "swebench",
-        "-c", "swebench.yaml", "-c", "swebench_modal.yaml", "-c", str(cond_cfg),
+        "-c", "swebench.yaml", "-c", "swebench_modal.yaml",
+        # Raise the swe-rex startup window: stock SWE-bench images lack swe-rex, so
+        # the sandbox pipx-installs it at startup, which exceeds the bundled 600s.
+        "-c", str(CONF / "modal_timeout.yaml"),
+        "-c", str(cond_cfg),
     ]
     if provider == "openrouter":
         # Use the dedicated --model-class flag, not -c model.model_class=. The bundled
