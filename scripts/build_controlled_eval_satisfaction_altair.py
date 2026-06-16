@@ -32,7 +32,7 @@ from scripts.theme import register, AGENT_COLORS, AGENT_ORDER
 
 register()
 
-OPENROUTER_API_KEY = "REDACTED_CREDENTIAL"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # Load data and compute satisfaction rates
