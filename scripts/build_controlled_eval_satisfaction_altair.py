@@ -32,7 +32,7 @@ from scripts.theme import register, AGENT_COLORS, AGENT_ORDER
 
 register()
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # Load data and compute satisfaction rates
