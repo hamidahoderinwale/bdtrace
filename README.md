@@ -1,334 +1,81 @@
-# Representations for Learning from Developer-Agent Workflows
+# Procedural Clio: Structural Analysis of LLM Agent Fix Strategies
 
----
+Behavioral observation of fix procedures from LLM agent traces on SWE-bench, without relying on agent self-report.
 
-## Quick Start
+## Core findings
 
-```bash
-# 1. Start companion service
-cd companion && npm install && npm start  # Port 43917
+1. **Structural patterns predict difficulty, semantics don't.** FIM on edit certificates separates difficulty 4.6x better than any semantic grouping (issue text, predicted fix descriptions, or fix descriptions from agent traces).
 
-# 2. Use Cursor IDE normally (events captured automatically)
+2. **Agents can't describe their own fix strategies.** Self-reported edit operations match actual patch structure at F1=0.20. Observe behavior, don't ask.
 
-# 3. Transform traces
-python
-from representations import motifs_repr, tokens_repr
-motifs = motifs_repr(trace)  # High-level patterns
-tokens = tokens_repr(trace)  # Token sequences
-```
+3. **Agents use different structural approaches to the same problem.** On co-solved instances, agents produce identical edit certificates only 24% of the time (median Jaccard 0.56). The LLM backbone drives strategy, not the scaffold.
 
----
+4. **The hard part is composition, not primitives.** 43.8% of agent failures are composition failures: the agent has individually demonstrated every required edit operation but can't combine them. For the hardest instances, it's 50.4%.
 
-## The 6-Level Representation System
+5. **More benchmark instances don't help.** Strategy coverage saturates early. SWE-smith over-samples easy patterns (52.7% return-value changes) while under-representing hard ones.
 
-Each level trades privacy for expressiveness:
+See [findings.md](findings.md) for the full record with methodology, decision traces, and literature anchors.
 
-| **Level** | **Compression** | **Description** | **Use Case** |
-|-----------|----------------|-----------------|--------------|
-| **Raw** | 1× | Complete event logs with PII redaction | Ground truth |
-| **Tokens** | 10× | Canonicalized token sequences | Research datasets |
-| **Edits** | 11× | AST-based edit operations | Workflow analysis |
-| **Functions** | 39× | Function-level changes & signatures | API tracking |
-| **Modules** | 100× | File dependencies & coupling | Team collaboration |
-| **Motifs** | 240× | Abstract workflow patterns | Public sharing |
-
-### Example Outputs
-
-```json
-// Raw
-{"events": [{"type": "code_change", "file": "utils.ts", "diff": "+15, -8", "before": "...", "after": "..."}]}
-
-// Tokens  
-["FUNCTION_DECL", "ASYNC", "PARAM:input", "RETURN_TYPE:Promise", "AWAIT", "CALL:process"]
-
-// Edits
-["EDIT(modify)→OP:async_wrapper", "EDIT(delete)→OP:remove_function"]
-
-// Functions
-["MODIFY processData params:(string)→(string,Config) return:void→Promise<string>"]
-
-// Modules
-["utils.ts→api.ts (imports, co-edited 5×)", "api.ts→config.ts (depends_on)"]
-
-// Motifs
-["PROMPT→EXPLORE→REFACTOR→ABSTRACT→TEST→COMMIT", "intent:'refactoring', freq:23"]
-```
-
----
-
-## Architecture
-
-### `/companion` - Data Capture (Node.js)
-Captures real-time telemetry from Cursor IDE via MCP protocol. Stores in SQLite (local) or PostgreSQL (cloud).
-
-**Captures**: Code changes with diffs • AI prompts + context • Terminal commands • File events
-
-### `/representations` - Transformation (Python)
-Transforms raw traces into 6 abstraction levels using encoders for each rung.
-
-**Core**: Canonicalization • PII redaction • Intent extraction • Motif mining (PrefixSpan + Sequitur)
-
-### `/analysis` - Computational Model (Python)
-Processes sequences, builds behavioral libraries, calculates metrics.
-
-**Features**: DTW-based clustering • Context Precision • Event vectorization • Embeddings
-
----
-
-## Configuration
-
-### Environment Variables
+## Setup
 
 ```bash
-# Database
-DATABASE_TYPE=sqlite                    # or 'postgres'
-DATABASE_PATH=/path/to/companion.db
-
-# Embeddings (optional)
-EMBEDDING_SERVICE=local                 # 'openrouter', 'huggingface', 'local'
-OPENROUTER_API_KEY=sk-or-v1-...
-HF_TOKEN=hf_...
-
-# Clustering
-CLUSTERING_METHOD=dtw                   # 'dtw', 'kmeans', 'hierarchical'
-CP_TIME_WINDOW_SECONDS=300              # 5 minutes
+uv sync
+source .venv/bin/activate
 ```
 
-### Companion Config (`companion/config.json`)
+Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.venv/.env` for LLM-based analyses.
 
-```json
-{
-  "port": 43917,
-  "database": {"type": "sqlite", "path": "./data/companion.db"},
-  "pii": {
-    "redactEmails": true,
-    "redactNames": true,
-    "redactFilePaths": true
-  }
-}
-```
+## Representation pipeline
 
----
+| Level | What it captures | Coverage |
+|-------|-----------------|----------|
+| Edit certificates | Set of (direction, AST-node-type) pairs from the patch | 289/300 (96%) |
+| Scoped certificates | Edit type + file path + function/class scope + patch size | 300/300 |
+| Contextual edit ops | Edit type + parent AST node (e.g. `ADD_For@FunctionDef`) | 203/300 (68%) |
+| Fix intent labels | 12-category semantic taxonomy per hunk | 289/300 |
 
-## API Reference
+## Key scripts
 
-### REST API
+**Analysis:**
+- `scripts/compositional_generalization.py` -- classify failures as novel primitive vs novel composition across 84 agents
+- `scripts/fim_difficulty_analysis.py` -- connect FIM patterns to 84-agent ease data
+- `scripts/semantic_vs_structural.py` -- nearest-neighbor, UMAP, and variance comparison
+- `scripts/validate_grounding.py` -- measure self-report accuracy (grounding failure)
+- `scripts/compare_representations.py` -- kNN prediction across representation types
 
-**Base URL**: `http://localhost:43917`
+**Pipeline:**
+- `scripts/build_canonical_forms.py` -- FIM closed itemsets from edit certificates
+- `scripts/build_scoped_certificates.py` -- oracle scoped certificates with file/scope/size
+- `scripts/build_agent_scoped_certs.py` -- agent scoped certificates + oracle alignment
 
-```bash
-# Data
-GET /api/prompts?workspace=/path&limit=100
-GET /api/events?type=code_change&since=2024-01-01
-GET /api/entries?file_path=src/index.js
+**Figures:**
+- `scripts/pairwise_figures_v2.py` -- agent comparison: strip plots, divergence scatter, vocabulary, instance flow
+- `scripts/scoped_figures.py` -- file navigation, scope decomposition, minimality, instance anatomy
+- `scripts/cluster_fix_descriptions.py` -- variance comparison across all groupings
+- `scripts/build_figures.py` -- paper-level conceptual figures
 
-# Representations
-GET /api/tokens?workspace=/path&redact_emails=true
-GET /api/edits?workspace=/path
-GET /api/functions?workspace=/path
+## Data
 
-# Export
-GET /api/hf/export?rung=tokens
-GET /api/hf/export?rung=motifs&workspace=/path
+- `output/leaderboard/lite_results.msgpack` -- 84 agents, pass/fail per instance
+- `output/resolved_traces_lite_full.jsonl` -- 300 oracle traces with file paths and content
+- `output/canonical_forms/` -- FIM patterns and instance assignments
+- `output/compositional_generalization/` -- failure classification and composition gap data
+- `output/pairwise_agent_comparison/` -- agent edit certificates and pairwise Jaccard
+- `output/scoped_certificates/` -- enriched certificates with file/scope information
 
-# Analytics
-GET /api/analytics/context-precision?workspace=/path
-GET /api/analytics/session-summary?session_id=xyz
-```
-
-### Python API
-
-#### Representations
-
-```python
-from representations import (
-    raw_repr, tokens_repr, semantic_edits_repr,
-    functions_repr, module_graph_repr, motifs_repr
-)
-
-trace = {...}  # Your trace data
-
-# Transform at different levels
-raw = raw_repr(trace, redact_pii_enabled=True)
-tokens = tokens_repr(trace, include_prompts=True)
-edits = semantic_edits_repr(trace)
-functions = functions_repr(trace)
-modules = module_graph_repr(trace)
-motifs = motifs_repr(trace, use_statistical_mining=True)
-```
-
-#### Analysis
-
-```python
-from analysis import SequenceProcessor, DatabaseConnector
-
-# Database access
-db = DatabaseConnector()
-events = db.get_events_with_prompts(workspace_path="/path")
-
-# Sequence processing
-processor = SequenceProcessor()
-sequences = processor.extract_sequences(workspace_path="/path")
-vectorized = processor.vectorize_sequences(sequences)
-clusters = processor.cluster_sequences(vectorized, method='dtw')
-library = processor.build_behavioral_library(workspace_path="/path")
-```
-
----
-
-## Privacy Features
-
-### PII Redaction
-- Emails: `user@domain.com` → `<EMAIL_REDACTED>`
-- URLs: `https://example.com` → `<URL_REDACTED>`
-- File paths: `/Users/name/project/file.js` → `<PATH>/project/file.js`
-- IP addresses, names, optional numbers
-
-### Event Canonicalization
-- Hash event types to stable symbols: `code_change` → `EV_a13f92`
-- Obscures IDE/agent details while maintaining finite alphabet
-
-### Graduated Disclosure
-Choose representation level by privacy needs:
-- **Public**: Motifs (~240× compression)
-- **Team**: Module graphs (~100×)
-- **Research**: Tokens with PII redaction (~10×)
-- **Internal**: Raw events with redaction
-
----
-
-## Data Extraction Without Service
-
-Extract data directly from Cursor databases:
-
-```bash
-# Extract raw data
-./scripts/extract_cursor_data.sh ./cursor_exports
-
-# Parse to traces
-python scripts/parse_to_traces.py --input ./cursor_exports --output traces.jsonl
-
-# Convert formats
-python scripts/convert_format.py --input traces.jsonl --output traces.parquet
-```
-
----
-
-## Usage Examples
-
-### Calculate Context Precision
-
-```python
-from analysis import DatabaseConnector
-from analysis.scripts.calculate_cp import calculate_cp
-
-db = DatabaseConnector()
-prompts = db.get_prompts(limit=1000)
-
-for prompt in prompts:
-    diff_files = db.get_entries_for_prompt(prompt['id'], time_window_seconds=300)
-    result = calculate_cp(prompt, [e['file_path'] for e in diff_files])
-    if result['cp'] < 0.3:
-        print(f"Low CP: {result['cp']:.2f}, unused: {result['unused_context_files']}")
-```
-
-### Export Custom Dataset
-
-```bash
-# Export with maximum privacy
-curl "http://localhost:43917/api/hf/export?rung=tokens&redact_emails=true&redact_names=true" > dataset.json
-
-# Export motifs for public sharing
-curl "http://localhost:43917/api/hf/export?rung=motifs" > motifs_public.json
-
-# Upload to HuggingFace
-cd companion
-./cli.js hf upload dataset.json --repo user/dataset --private --token hf_xxx
-```
-
-### Motif Mining
-
-```python
-from representations import motifs_repr
-from representations.encoders.motif_mining import MotifRegistry
-
-motifs = motifs_repr(trace, use_statistical_mining=True)
-
-registry = MotifRegistry()
-for motif in motifs[:10]:
-    print(f"{motif}: {registry.describe(motif)} [{registry.get_category(motif)}]")
-```
-
----
-
-## Key Algorithms
-
-**Event Canonicalization**: SHA1-based hashing for privacy-preserving event encoding
-
-**Motif Mining**: PrefixSpan (frequent subsequences) + Sequitur (grammar compression)
-
-**Context Precision**: `CP = |Context ∩ Diff| / |Context|` (time-windowed)
-
-**Clustering**: DTW (Dynamic Time Warping) for variable-length sequence similarity
-
----
-
-## Data Flow
+## Structure
 
 ```
-┌─────────────────────────────────────────────────┐
-│ CAPTURE: Companion Service (Port 43917)        │
-│ File Watch • Prompt Capture • Terminal Monitor │
-│              ↓ SQLite/PostgreSQL                │
-└─────────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────────┐
-│ TRANSFORM: Representations (Python)             │
-│ Raw → Tokens → Edits → Functions → Modules     │
-│                     ↓ Motifs                    │
-└─────────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────────┐
-│ ANALYZE: Sequence Processing (Python)          │
-│ Vectorize → Cluster → Calculate CP → Library   │
-└─────────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────────┐
-│ EXPORT: HuggingFace • JSON • Parquet • API     │
-└─────────────────────────────────────────────────┘
+analysis/          -- core analysis modules (AST edits, scoped ops, procedures)
+representations/   -- computed and inferred representations
+scripts/           -- all runnable scripts
+configs/           -- benchmark configs, DSPy config
+data/              -- data loaders
+eval/              -- evaluation pipeline
+output/            -- all generated data and figures
+findings.md        -- full research record
 ```
 
----
+## License
 
-## Troubleshooting
-
-**Database is empty?**
-```bash
-curl http://localhost:43917/api/status  # Check service
-ls -lh companion/data/companion.db      # Verify database
-```
-
-**MCP not capturing?**
-```bash
-tail -f companion/logs/mcp.log  # Check MCP logs
-```
-
-**Embedding service fails?**
-```bash
-export EMBEDDING_SERVICE=local
-pip install sentence-transformers
-```
-
-**Out of memory during clustering?**
-```python
-processor.cluster_sequences(vectorized, method='kmeans', n_clusters=5)
-```
-
----
-
-## Learn More
-
-- **Project Site**: [https://telemetry-landing.netlify.app/](https://telemetry-landing.netlify.app/)
-- **Paper**: Coming soon
-- **Examples**: See `/analysis/example_usage.py`
-- **License**: MIT
+MIT

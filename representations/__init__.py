@@ -1,33 +1,105 @@
 """
-Representation Engineering Framework
+Representation framework.
 
-Provides six encoders spanning a privacy-expressiveness frontier:
-- raw: Complete event logs with PII redaction
-- tokens: Canonicalized token sequences  
-- functions: Function-level changes
-- edits: AST-based edit operations
-- modules: File dependency graphs
-- motifs: Abstract workflow patterns
+computed/: edits, modules, motifs
+inferred/: behavioral, mechanistic, functional
 """
 
-from .encoders.raw import raw_repr, raw_repr_str
-from .encoders.tokens import tokens_repr, tokens_repr_str
-from .encoders.edits import semantic_edits_repr, semantic_edits_repr_str
-from .encoders.functions import functions_repr, functions_repr_str
-from .encoders.modules import module_graph_repr, file_edit_graph_repr, file_edit_graph_repr_str
-from .encoders.motifs import motifs_repr, motifs_repr_str
-
-# Maintain backward compatibility aliases if needed
-functions_repr_str = functions_repr_str
-semantic_edits_repr = semantic_edits_repr
+from .computed import (
+    certificate_distance,
+    dtw_similarity,
+    edge_divergence,
+    file_edit_graph_repr,
+    file_edit_graph_repr_str,
+    graph_distance,
+    graph_edit_distance,
+    module_graph_repr,
+    module_graph_repr_list,
+    motif_distance,
+    motifs_repr,
+    motifs_repr_str,
+    motifs_repr_structural,
+    operation_divergence,
+    semantic_edits_repr,
+    semantic_edits_repr_source,
+    semantic_edits_repr_str,
+    semantic_edits_repr_trace,
+    tree_edit_distance,
+    vocabulary_coverage,
+)
+from .encoders import functions_repr, functions_repr_str, raw_repr, raw_repr_str, tokens_repr, tokens_repr_str
+from .inferred import (
+    BehavioralModule,
+    BehavioralSignature,
+    FunctionalModule,
+    FunctionalSignature,
+    InferredRepresentationsModule,
+    MechanisticModule,
+    MechanisticSignature,
+    behavioral_aggregate_distance,
+    behavioral_repr,
+    claim_distance,
+    field_distances,
+    functional_aggregate_distance,
+    functional_repr,
+    grounding_overlap,
+    impact_distance,
+    location_overlap,
+    mechanism_distance,
+    mechanistic_aggregate_distance,
+    mechanistic_repr,
+    pattern_distance,
+    role_distance,
+)
 
 __all__ = [
-    "raw_repr", "raw_repr_str",
-    "tokens_repr", "tokens_repr_str",
-    "semantic_edits_repr", "semantic_edits_repr_str",
-    "functions_repr", "functions_repr_str",
-    "module_graph_repr", "file_edit_graph_repr", "file_edit_graph_repr_str",
-    "motifs_repr", "motifs_repr_str",
+    "semantic_edits_repr",
+    "semantic_edits_repr_source",
+    "semantic_edits_repr_str",
+    "semantic_edits_repr_trace",
+    "tree_edit_distance",
+    "certificate_distance",
+    "operation_divergence",
+    "module_graph_repr",
+    "module_graph_repr_list",
+    "file_edit_graph_repr",
+    "file_edit_graph_repr_str",
+    "graph_edit_distance",
+    "graph_distance",
+    "edge_divergence",
+    "motifs_repr",
+    "motifs_repr_str",
+    "motifs_repr_structural",
+    "dtw_similarity",
+    "motif_distance",
+    "vocabulary_coverage",
+    "behavioral_repr",
+    "claim_distance",
+    "field_distances",
+    "behavioral_aggregate_distance",
+    "mechanistic_repr",
+    "pattern_distance",
+    "mechanism_distance",
+    "location_overlap",
+    "mechanistic_aggregate_distance",
+    "functional_repr",
+    "role_distance",
+    "impact_distance",
+    "grounding_overlap",
+    "functional_aggregate_distance",
+    "BehavioralModule",
+    "BehavioralSignature",
+    "MechanisticModule",
+    "MechanisticSignature",
+    "FunctionalModule",
+    "FunctionalSignature",
+    "InferredRepresentationsModule",
+    "raw_repr",
+    "raw_repr_str",
+    "tokens_repr",
+    "tokens_repr_str",
+    "functions_repr",
+    "functions_repr_str",
 ]
 
 __version__ = "1.1.0"

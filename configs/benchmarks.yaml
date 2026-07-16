@@ -1,0 +1,77 @@
+# Science-of-evals: benchmark configs.
+# Each benchmark maps to a dataset. Run pipeline per benchmark; plot after.
+#
+# Usage:
+#   uv run python scripts/run_benchmark_pipeline.py --benchmark swe_bench_verified
+#   uv run python scripts/run_multi_benchmark_plots.py --benchmarks swe_bench_verified swe_bench_lite
+#   uv run python scripts/run_cross_benchmark_analysis.py
+#
+# Real pass/fail from SWE-bench experiments:
+#   git clone --depth 1 https://github.com/SWE-bench/experiments.git /path/to/experiments
+#   uv run python scripts/fetch_swebench_results.py --experiments-dir /path/to/experiments --split verified --models 20240402_sweagent_gpt4 --output-dir output/swebench_results
+#   uv run python scripts/run_multi_benchmark_plots.py --benchmarks swe_bench_verified --pass-fail-dir output/swebench_results
+#
+# SWE-smith (50k tasks, sample recommended):
+#   uv run python scripts/run_benchmark_pipeline.py --benchmark swe_smith --limit 300
+#   # Resolve step uses SWE-bench/SWE-smith from HF (train split). Use --limit to control size.
+
+## Fix-type vocabulary used by label_fix_types.py / FixTypeModule.
+## Add, remove, or rename entries here; the labeler reads this at runtime.
+## Each entry: label (snake_case) and a short description used as LLM context.
+fix_type_vocabulary:
+  guard_clause:       "add null/None/empty/bounds check + early return or raise"
+  api_change:         "change how a library or framework API is called"
+  exception_handling: "add, remove, or modify try/except/raise/finally"
+  logic_fix:          "fix conditional logic, operator, comparison, or branching"
+  refactor:           "restructure code without changing observable behavior"
+  type_coercion:      "cast or convert between types (int/str/list/dict/bytes)"
+  config_fix:         "fix settings, defaults, constants, or env variable handling"
+  import_fix:         "add, remove, or reorder imports"
+  loop_fix:           "fix iteration, range, list comprehension, or generator"
+  string_fix:         "fix string formatting, encoding, parsing, or regex"
+  async_fix:          "fix async/await, event loop, or concurrency patterns"
+  test_fix:           "fix test assertion, fixture, or setup only (no src change)"
+  other:              "does not fit any category above"
+
+
+## Fix-mechanism vocabulary: classifies HOW a fix was implemented (per diff hunk),
+## not what kind of bug it was. Used by ChunkIntentModule to label each hunk,
+## producing a sequence of mechanism tokens per patch (analogous to motif sequences).
+## Add, remove, or rename entries here; the module reads this at runtime.
+fix_mechanism_vocabulary:
+  add_iteration:       "introduces a new for or while loop as the primary fix"
+  refactor_iteration:  "converts a comprehension to an explicit loop or vice versa"
+  add_guard:           "adds a defensive conditional check for an edge case"
+  add_error_handling:  "adds try/except block, raise statement, or assertion"
+  refactor_access:     "changes how an object attribute or subscript is accessed"
+  api_change:          "replaces one function or method call with a different one"
+  algorithm_replace:   "replaces the entire algorithmic approach with a different strategy"
+  extend_logic:        "adds boolean operators or conditions to an existing expression"
+  constant_fix:        "changes a literal value, string constant, or numeric constant"
+  add_import:          "adds a new import statement for a previously unused module"
+  signature_change:    "adds, removes, or renames a function parameter or return value"
+  remove_redundancy:   "removes unnecessary code without introducing new logic"
+  other:               "does not fit any category above"
+
+
+benchmarks:
+  swe_bench_verified:
+    dataset: swe_bench_verified_resolved_multifile
+    traces: output/resolved_traces_verified_multifile.jsonl
+    description: SWE-bench Verified, multi-file instances (~71)
+
+  swe_bench_verified_full:
+    dataset: swe_bench_verified_resolved_full
+    traces: output/resolved_traces_verified_full.jsonl
+    description: SWE-bench Verified, full 500 instances (for eval saturation study)
+
+  swe_bench_lite:
+    dataset: swe_bench_lite_resolved
+    traces: output/resolved_traces.jsonl
+    description: SWE-bench Lite
+
+  swe_smith_stratified:
+    dataset: swe_smith_stratified
+    traces: output/resolved_traces_swe_smith_stratified.jsonl
+    description: SWE-Smith stratified (10 repos × 30 tasks)
+    hf_dataset: SWE-bench/SWE-smith
