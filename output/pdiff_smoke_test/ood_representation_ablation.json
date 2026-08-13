@@ -1,0 +1,138 @@
+{
+  "caps": {
+    "swe_smith": 5000
+  },
+  "n_views": {
+    "lite": 300,
+    "verified": 500,
+    "swe_smith": 5000
+  },
+  "reference_vocab_sizes": {
+    "min_count_1": {
+      "edits": 97,
+      "modules": 69,
+      "scopes": 249
+    },
+    "min_count_2": {
+      "edits": 85,
+      "modules": 38,
+      "scopes": 20
+    }
+  },
+  "cells": {
+    "verified": {
+      "mc1_edits": {
+        "n_scored": 480,
+        "mean_ood": 0.0026997509294091446,
+        "median_ood": 0.0,
+        "pct_fully_covered": 0.95625,
+        "pct_fully_novel": 0.0,
+        "vocab_size": 97,
+        "novel_item_count": 10
+      },
+      "mc1_modules": {
+        "n_scored": 500,
+        "mean_ood": 0.076,
+        "median_ood": 0.0,
+        "pct_fully_covered": 0.924,
+        "pct_fully_novel": 0.076,
+        "vocab_size": 69,
+        "novel_item_count": 27
+      },
+      "mc1_scopes": {
+        "n_scored": 308,
+        "mean_ood": 0.6712346185560472,
+        "median_ood": 1.0,
+        "pct_fully_covered": 0.2857142857142857,
+        "pct_fully_novel": 0.5909090909090909,
+        "vocab_size": 249,
+        "novel_item_count": 425
+      },
+      "mc2_edits": {
+        "n_scored": 480,
+        "mean_ood": 0.006954264589076313,
+        "median_ood": 0.0,
+        "pct_fully_covered": 0.9270833333333334,
+        "pct_fully_novel": 0.0,
+        "vocab_size": 85,
+        "novel_item_count": 10
+      },
+      "mc2_modules": {
+        "n_scored": 500,
+        "mean_ood": 0.152,
+        "median_ood": 0.0,
+        "pct_fully_covered": 0.848,
+        "pct_fully_novel": 0.152,
+        "vocab_size": 38,
+        "novel_item_count": 27
+      },
+      "mc2_scopes": {
+        "n_scored": 308,
+        "mean_ood": 0.872445709052852,
+        "median_ood": 1.0,
+        "pct_fully_covered": 0.09090909090909091,
+        "pct_fully_novel": 0.801948051948052,
+        "vocab_size": 20,
+        "novel_item_count": 425
+      }
+    },
+    "swe_smith": {
+      "mc1_edits": {
+        "n_scored": 1400,
+        "mean_ood": 0.013297555388290137,
+        "median_ood": 0.0,
+        "pct_fully_covered": 0.9142857142857143,
+        "pct_fully_novel": 0.0,
+        "vocab_size": 97,
+        "novel_item_count": 15
+      },
+      "mc1_modules": {
+        "n_scored": 1458,
+        "mean_ood": 1.0,
+        "median_ood": 1.0,
+        "pct_fully_covered": 0.0,
+        "pct_fully_novel": 1.0,
+        "vocab_size": 69,
+        "novel_item_count": 94
+      },
+      "mc1_scopes": {
+        "n_scored": 1265,
+        "mean_ood": 0.8523546019198194,
+        "median_ood": 1.0,
+        "pct_fully_covered": 0.12569169960474308,
+        "pct_fully_novel": 0.8237154150197629,
+        "vocab_size": 249,
+        "novel_item_count": 1138
+      },
+      "mc2_edits": {
+        "n_scored": 1400,
+        "mean_ood": 0.022475782308362762,
+        "median_ood": 0.0,
+        "pct_fully_covered": 0.875,
+        "pct_fully_novel": 0.0007142857142857143,
+        "vocab_size": 85,
+        "novel_item_count": 15
+      },
+      "mc2_modules": {
+        "n_scored": 1458,
+        "mean_ood": 1.0,
+        "median_ood": 1.0,
+        "pct_fully_covered": 0.0,
+        "pct_fully_novel": 1.0,
+        "vocab_size": 38,
+        "novel_item_count": 94
+      },
+      "mc2_scopes": {
+        "n_scored": 1265,
+        "mean_ood": 0.8677037455298324,
+        "median_ood": 1.0,
+        "pct_fully_covered": 0.11462450592885376,
+        "pct_fully_novel": 0.8442687747035573,
+        "vocab_size": 20,
+        "novel_item_count": 1138
+      }
+    }
+  },
+  "edit_level_sanity_warnings": [],
+  "interpretation": "Edit-op level is portable; module-level is not; scope-level in between."
+}

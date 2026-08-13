@@ -1,0 +1,263 @@
+{
+  "n_lite_ops": 97,
+  "n_swe_smith_ops": 108,
+  "n_novel_ops": 15,
+  "ops": [
+    {
+      "op": "DEL_ClassDef",
+      "occurrences": 37,
+      "sample_instance_ids": [
+        "oauthlib__oauthlib.1fd52536.combine_file__519420f6",
+        "oauthlib__oauthlib.1fd52536.func_pm_class_rm_base__6gayqfbz",
+        "oauthlib__oauthlib.1fd52536.pr_881"
+      ],
+      "sample_repos": [
+        "swesmith/oauthlib__oauthlib.1fd52536",
+        "swesmith/oauthlib__oauthlib.1fd52536",
+        "swesmith/oauthlib__oauthlib.1fd52536"
+      ],
+      "sample_diff_snippet": "--- oauthlib/oauth2/rfc6749/grant_types/resource_owner_password_credentials.py\n+++ oauthlib/oauth2/rfc6749/grant_types/resource_owner_password_credentials.py\n@@ -12,5 +12,5 @@\n \n \n-class ResourceOwnerPasswordCredentialsGrant(GrantTypeBase):\n+class ResourceOwnerPasswordCredentialsGrant():\n \n     \"\"\"`Resource Owner Password Credentials Grant`_\n@@ -93,5 +93,5 @@",
+      "classification": "synthetic_artifact",
+      "reasoning": "Direction-flipped: Lite has 'ADD_ClassDef' but not 'DEL_ClassDef'; SWE-Smith reverses fixes to synthesize bugs"
+    },
+    {
+      "op": "DEL_AnnAssign",
+      "occurrences": 26,
+      "sample_instance_ids": [
+        "jd__tenacity.0d40e76f.combine_file__69rgwhxp",
+        "jd__tenacity.0d40e76f.func_basic__5efricuq",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.combine_file__08222ijt"
+      ],
+      "sample_repos": [
+        "swesmith/jd__tenacity.0d40e76f",
+        "swesmith/jd__tenacity.0d40e76f",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7"
+      ],
+      "sample_diff_snippet": "--- tenacity/__init__.py\n+++ tenacity/__init__.py\n@@ -346,10 +346,4 @@\n         return wrapped_f  # type: ignore[return-value]\n \n-    def begin(self) -> None:\n-        self.statistics.clear()\n-        self.statistics[\"start_time\"] = time.monotonic()\n-        self.statistics[\"attempt_number\"] = 1\n-        self.statistics[\"idle_for\"] = 0",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'AnnAssign' (uncommon)"
+    },
+    {
+      "op": "DEL_Lambda",
+      "occurrences": 20,
+      "sample_instance_ids": [
+        "oauthlib__oauthlib.1fd52536.combine_file__868k2n2u",
+        "oauthlib__oauthlib.1fd52536.combine_file__ch76f2nx",
+        "jd__tenacity.0d40e76f.combine_file__4gcf36bk"
+      ],
+      "sample_repos": [
+        "swesmith/oauthlib__oauthlib.1fd52536",
+        "swesmith/oauthlib__oauthlib.1fd52536",
+        "swesmith/jd__tenacity.0d40e76f"
+      ],
+      "sample_diff_snippet": "--- oauthlib/oauth2/rfc6749/endpoints/metadata.py\n+++ oauthlib/oauth2/rfc6749/endpoints/metadata.py\n@@ -65,22 +65,22 @@\n \n         if key not in array:\n-            if is_required:\n+            if not is_required:\n                 raise ValueError(\"key {} is a mandatory metadata.\".format(key))\n \n         elif is_issuer:",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'Lambda' (uncommon)"
+    },
+    {
+      "op": "DEL_While",
+      "occurrences": 18,
+      "sample_instance_ids": [
+        "jd__tenacity.0d40e76f.combine_file__69rgwhxp",
+        "agronholm__typeguard.b6a7e438.func_basic__mukkptnn",
+        "pdfminer__pdfminer.six.1a8bd2f7.combine_file__9pxesytc"
+      ],
+      "sample_repos": [
+        "swesmith/jd__tenacity.0d40e76f",
+        "swesmith/agronholm__typeguard.b6a7e438",
+        "swesmith/pdfminer__pdfminer.six.1a8bd2f7"
+      ],
+      "sample_diff_snippet": "--- tenacity/__init__.py\n+++ tenacity/__init__.py\n@@ -346,10 +346,4 @@\n         return wrapped_f  # type: ignore[return-value]\n \n-    def begin(self) -> None:\n-        self.statistics.clear()\n-        self.statistics[\"start_time\"] = time.monotonic()\n-        self.statistics[\"attempt_number\"] = 1\n-        self.statistics[\"idle_for\"] = 0",
+      "classification": "synthetic_artifact",
+      "reasoning": "Direction-flipped: Lite has 'ADD_While' but not 'DEL_While'; SWE-Smith reverses fixes to synthesize bugs"
+    },
+    {
+      "op": "DEL_AsyncFunctionDef",
+      "occurrences": 7,
+      "sample_instance_ids": [
+        "jd__tenacity.0d40e76f.func_basic__oycchd2s",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.combine_file__eb3bzx04",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.combine_module__hftgtcbl"
+      ],
+      "sample_repos": [
+        "swesmith/jd__tenacity.0d40e76f",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7"
+      ],
+      "sample_diff_snippet": "--- tenacity/_utils.py\n+++ tenacity/_utils.py\n@@ -94,8 +94,10 @@\n ) -> typing.Callable[..., typing.Awaitable[typing.Any]]:\n     if is_coroutine_callable(call):\n+        async def inner(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:\n+            return call(*args, **kwargs)\n+        return inner\n+\n+    async def inner(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'AsyncFunctionDef' (uncommon)"
+    },
+    {
+      "op": "DEL_Await",
+      "occurrences": 7,
+      "sample_instance_ids": [
+        "Cog-Creators__Red-DiscordBot.33e0eac7.combine_module__hftgtcbl",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.func_pm_class_rm_funcs__89fq1woh",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.func_pm_class_rm_funcs__igtm7kyn"
+      ],
+      "sample_repos": [
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7"
+      ],
+      "sample_diff_snippet": "--- redbot/core/_drivers/json.py\n+++ redbot/core/_drivers/json.py\n@@ -77,5 +77,5 @@\n     @property\n     def _lock(self):\n-        return _locks[self.cog_name]\n+        return _locks.get(self.cog_name, None)\n \n     @property",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'Await' (uncommon)"
+    },
+    {
+      "op": "DEL_Break",
+      "occurrences": 6,
+      "sample_instance_ids": [
+        "jd__tenacity.0d40e76f.combine_file__69rgwhxp",
+        "agronholm__typeguard.b6a7e438.combine_file__dye0fzhb",
+        "pdfminer__pdfminer.six.1a8bd2f7.combine_file__9pxesytc"
+      ],
+      "sample_repos": [
+        "swesmith/jd__tenacity.0d40e76f",
+        "swesmith/agronholm__typeguard.b6a7e438",
+        "swesmith/pdfminer__pdfminer.six.1a8bd2f7"
+      ],
+      "sample_diff_snippet": "--- tenacity/__init__.py\n+++ tenacity/__init__.py\n@@ -346,10 +346,4 @@\n         return wrapped_f  # type: ignore[return-value]\n \n-    def begin(self) -> None:\n-        self.statistics.clear()\n-        self.statistics[\"start_time\"] = time.monotonic()\n-        self.statistics[\"attempt_number\"] = 1\n-        self.statistics[\"idle_for\"] = 0",
+      "classification": "genuine_novel",
+      "reasoning": "6 occurrences, AST node 'Break' not rare, no direction-flip sibling in Lite"
+    },
+    {
+      "op": "ADD_YieldFrom",
+      "occurrences": 5,
+      "sample_instance_ids": [
+        "Cog-Creators__Red-DiscordBot.33e0eac7.func_basic__q25czwjg",
+        "pygments__pygments.27649ebb.combine_file__hdw61chf",
+        "pygments__pygments.27649ebb.combine_file__hik4u0he"
+      ],
+      "sample_repos": [
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/pygments__pygments.27649ebb",
+        "swesmith/pygments__pygments.27649ebb"
+      ],
+      "sample_diff_snippet": "--- redbot/cogs/downloader/repo_manager.py\n+++ redbot/cogs/downloader/repo_manager.py\n@@ -73,5 +73,5 @@\n \n     def __await__(self) -> Generator[Any, None, None]:\n-        return self.coro.__await__()\n+        return (yield from self.coro)\n \n     async def __aenter__(self) -> None:",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'YieldFrom' (uncommon)"
+    },
+    {
+      "op": "DEL_YieldFrom",
+      "occurrences": 5,
+      "sample_instance_ids": [
+        "pdfminer__pdfminer.six.1a8bd2f7.combine_file__dkox5kc3",
+        "pygments__pygments.27649ebb.combine_file__hdw61chf",
+        "pygments__pygments.27649ebb.combine_file__hik4u0he"
+      ],
+      "sample_repos": [
+        "swesmith/pdfminer__pdfminer.six.1a8bd2f7",
+        "swesmith/pygments__pygments.27649ebb",
+        "swesmith/pygments__pygments.27649ebb"
+      ],
+      "sample_diff_snippet": "--- pdfminer/pdfpage.py\n+++ pdfminer/pdfpage.py\n@@ -60,30 +60,30 @@\n         label: page label string.\n         \"\"\"\n-        self.doc = doc\n-        self.pageid = pageid\n+        self.doc = pageid\n+        self.pageid = doc\n         self.attrs = dict_value(attrs)",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'YieldFrom' (uncommon)"
+    },
+    {
+      "op": "ADD_Break",
+      "occurrences": 4,
+      "sample_instance_ids": [
+        "pdfminer__pdfminer.six.1a8bd2f7.combine_file__dkox5kc3",
+        "cknd__stackprinter.219fcc52.combine_file__gymp2mmm",
+        "pygments__pygments.27649ebb.func_pm_op_change__2b8iw2jr"
+      ],
+      "sample_repos": [
+        "swesmith/pdfminer__pdfminer.six.1a8bd2f7",
+        "swesmith/cknd__stackprinter.219fcc52",
+        "swesmith/pygments__pygments.27649ebb"
+      ],
+      "sample_diff_snippet": "--- pdfminer/pdfpage.py\n+++ pdfminer/pdfpage.py\n@@ -60,30 +60,30 @@\n         label: page label string.\n         \"\"\"\n-        self.doc = doc\n-        self.pageid = pageid\n+        self.doc = pageid\n+        self.pageid = doc\n         self.attrs = dict_value(attrs)",
+      "classification": "genuine_novel",
+      "reasoning": "4 occurrences, AST node 'Break' not rare, no direction-flip sibling in Lite"
+    },
+    {
+      "op": "DEL_Continue",
+      "occurrences": 3,
+      "sample_instance_ids": [
+        "cknd__stackprinter.219fcc52.combine_file__gymp2mmm",
+        "pygments__pygments.27649ebb.combine_file__ifw43907",
+        "bottlepy__bottle.a8dfef30.func_basic__swm014ul"
+      ],
+      "sample_repos": [
+        "swesmith/cknd__stackprinter.219fcc52",
+        "swesmith/pygments__pygments.27649ebb",
+        "swesmith/bottlepy__bottle.a8dfef30"
+      ],
+      "sample_diff_snippet": "--- stackprinter/source_inspection.py\n+++ stackprinter/source_inspection.py\n@@ -66,5 +66,5 @@\n     lineno += lineno_corrections[lineno - line_offset]\n \n-    max_line_relative = min(len(source_lines), max_line-line_offset)\n+    max_line_relative = min(len(source_lines), line_offset-max_line)\n     tokens, head_s, head_e = _tokenize(source_lines[:max_line_relative])\n \n@@ -81,5 +81,5 @@",
+      "classification": "synthetic_artifact",
+      "reasoning": "Direction-flipped: Lite has 'ADD_Continue' but not 'DEL_Continue'; SWE-Smith reverses fixes to synthesize bugs"
+    },
+    {
+      "op": "DEL_Delete",
+      "occurrences": 3,
+      "sample_instance_ids": [
+        "Cog-Creators__Red-DiscordBot.33e0eac7.func_basic__1wp6113e",
+        "madzak__python-json-logger.5f85723f.func_basic__niajdsy9",
+        "bottlepy__bottle.a8dfef30.func_basic__yw12megz"
+      ],
+      "sample_repos": [
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/madzak__python-json-logger.5f85723f",
+        "swesmith/bottlepy__bottle.a8dfef30"
+      ],
+      "sample_diff_snippet": "--- redbot/core/dev_commands.py\n+++ redbot/core/dev_commands.py\n@@ -106,7 +106,9 @@\n     def __setitem__(self, key: str, value: Tuple[str, int]) -> None:\n         self._data.pop(key, None)\n-        self._data[key] = value\n-        if len(self._data) > self.MAX_SIZE:\n-            del self._data[next(iter(self._data))]\n+        # Swap key and value position\n+        self._data[value] = key",
+      "classification": "synthetic_artifact",
+      "reasoning": "Direction-flipped: Lite has 'ADD_Delete' but not 'DEL_Delete'; SWE-Smith reverses fixes to synthesize bugs"
+    },
+    {
+      "op": "DEL_async",
+      "occurrences": 3,
+      "sample_instance_ids": [
+        "Cog-Creators__Red-DiscordBot.33e0eac7.combine_module__hftgtcbl",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.func_pm_class_rm_funcs__izcviisi",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.pr_5969"
+      ],
+      "sample_repos": [
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7"
+      ],
+      "sample_diff_snippet": "--- redbot/core/_drivers/json.py\n+++ redbot/core/_drivers/json.py\n@@ -77,5 +77,5 @@\n     @property\n     def _lock(self):\n-        return _locks[self.cog_name]\n+        return _locks.get(self.cog_name, None)\n \n     @property",
+      "classification": "genuine_novel",
+      "reasoning": "3 occurrences, AST node 'async' not rare, no direction-flip sibling in Lite"
+    },
+    {
+      "op": "ADD_async",
+      "occurrences": 2,
+      "sample_instance_ids": [
+        "jd__tenacity.0d40e76f.func_basic__oycchd2s",
+        "Cog-Creators__Red-DiscordBot.33e0eac7.pr_5969"
+      ],
+      "sample_repos": [
+        "swesmith/jd__tenacity.0d40e76f",
+        "swesmith/Cog-Creators__Red-DiscordBot.33e0eac7"
+      ],
+      "sample_diff_snippet": "--- tenacity/_utils.py\n+++ tenacity/_utils.py\n@@ -94,8 +94,10 @@\n ) -> typing.Callable[..., typing.Awaitable[typing.Any]]:\n     if is_coroutine_callable(call):\n+        async def inner(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:\n+            return call(*args, **kwargs)\n+        return inner\n+\n+    async def inner(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:",
+      "classification": "unclear",
+      "reasoning": "Only 2 occurrences; no heuristic fires"
+    },
+    {
+      "op": "DEL_SetComp",
+      "occurrences": 1,
+      "sample_instance_ids": [
+        "pdfminer__pdfminer.six.1a8bd2f7.combine_file__06wx35ad"
+      ],
+      "sample_repos": [
+        "swesmith/pdfminer__pdfminer.six.1a8bd2f7"
+      ],
+      "sample_diff_snippet": "--- tools/dumppdf.py\n+++ tools/dumppdf.py\n@@ -130,19 +130,19 @@\n     visited = set()\n     out.write(\"<pdf>\")\n-    for xref in doc.xrefs:\n+    for xref in reversed(doc.xrefs):\n         for objid in xref.get_objids():\n-            if objid in visited:\n-                continue",
+      "classification": "rare_ast_node",
+      "reasoning": "Maps to real Python AST node 'SetComp' (uncommon)"
+    }
+  ],
+  "summary": {
+    "genuine_novel": 3,
+    "synthetic_artifact": 4,
+    "normalization_miss": 0,
+    "rare_ast_node": 7,
+    "unclear": 1
+  }
+}

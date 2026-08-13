@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Procedural Fingerprinting — Architecture Handoff</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: #f7f8fa; color: #1a1a2e; line-height: 1.55; }
+  header { background: #1a1a2e; color: #eee; padding: 28px 48px; }
+  header h1 { font-size: 1.6rem; font-weight: 700; }
+  header p  { font-size: 0.9rem; color: #aab; margin-top: 6px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 36px 32px; }
+
+  /* Section headings */
+  h2 { font-size: 1.15rem; font-weight: 700; color: #1a1a2e;
+       border-left: 4px solid #5a7db5; padding-left: 10px;
+       margin: 36px 0 14px; }
+  h3 { font-size: 0.95rem; font-weight: 600; color: #2e4070; margin: 16px 0 6px; }
+
+  /* Architecture diagram */
+  .arch { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+          margin: 24px 0; align-items: start; }
+  .layer { background: #fff; border-radius: 8px; padding: 14px 12px;
+           border: 1.5px solid #d8dde8; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .layer-header { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: .06em; color: #5a7db5; margin-bottom: 8px;
+                  padding-bottom: 6px; border-bottom: 1px solid #e8eaf0; }
+  .file { font-size: 0.76rem; font-family: "SF Mono", "Fira Code", monospace;
+          color: #2e4070; background: #eef2fb; border-radius: 4px;
+          padding: 3px 6px; margin: 3px 0; display: block; }
+  .file.highlight { background: #fdefc8; border: 1px solid #e8c848; color: #704800; }
+  .note { font-size: 0.73rem; color: #666; margin-top: 6px; font-style: italic; }
+
+  /* Arrow row */
+  .flow { display: flex; align-items: center; justify-content: center;
+          gap: 0; margin: 12px 0; font-size: 0.82rem; color: #555; flex-wrap: wrap; }
+  .flow-box { background: #fff; border: 1.5px solid #c5cad8; border-radius: 6px;
+              padding: 8px 14px; text-align: center; }
+  .arrow { color: #5a7db5; font-size: 1.3rem; padding: 0 6px; }
+
+  /* Key artifacts */
+  .artifact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .artifact { background: #fff; border-radius: 8px; border: 1.5px solid #d8dde8;
+              padding: 14px 16px; }
+  .artifact code { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.78rem;
+                   background: #eef2fb; padding: 2px 6px; border-radius: 3px; color: #2e4070; }
+  .artifact p { font-size: 0.82rem; color: #444; margin-top: 5px; }
+
+  /* Paper status */
+  .paper-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .paper-sec { background: #fff; border-radius: 8px; padding: 14px 16px;
+               border: 1.5px solid #d8dde8; }
+  .paper-sec .status { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+                       letter-spacing: .06em; margin-bottom: 6px; }
+  .done   { color: #2a7a2a; }
+  .partial{ color: #c17800; }
+  .todo   { color: #b02020; }
+  .paper-sec h3 { font-size: 0.88rem; font-weight: 600; color: #1a1a2e; margin: 0 0 4px; }
+  .paper-sec p  { font-size: 0.78rem; color: #555; }
+
+  /* Findings */
+  .finding { background: #fff; border-left: 4px solid #5a7db5;
+             border-radius: 0 6px 6px 0; padding: 10px 14px; margin: 8px 0;
+             border-top: 1px solid #e0e4ef; border-bottom: 1px solid #e0e4ef;
+             border-right: 1px solid #e0e4ef; font-size: 0.83rem; }
+  .finding strong { color: #1a1a2e; }
+
+  /* Prompt box */
+  .prompt-box { background: #1a1a2e; color: #d4e4ff; border-radius: 10px;
+                padding: 24px 28px; font-family: "SF Mono", "Fira Code", monospace;
+                font-size: 0.78rem; line-height: 1.65; white-space: pre-wrap;
+                overflow-x: auto; margin: 16px 0; }
+  .copy-btn { cursor: pointer; background: #5a7db5; color: #fff; border: none;
+              border-radius: 5px; padding: 7px 16px; font-size: 0.82rem;
+              margin-bottom: 8px; }
+  .copy-btn:hover { background: #3a5d95; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 12px 0; }
+  th { background: #eef2fb; color: #2e4070; padding: 8px 12px; text-align: left;
+       font-weight: 600; border-bottom: 2px solid #c5cad8; }
+  td { padding: 7px 12px; border-bottom: 1px solid #e8eaf0; }
+  tr:hover td { background: #f5f7fc; }
+
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 7px;
+          font-size: 0.72rem; font-weight: 600; }
+  .chip-blue  { background: #dce8fb; color: #2e4070; }
+  .chip-green { background: #d8f0d8; color: #1a5a1a; }
+  .chip-amber { background: #fdefc8; color: #704800; }
+  .chip-red   { background: #fde8e8; color: #800000; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Procedural Fingerprinting of LLM Coding Agents — Architecture Handoff</h1>
+  <p>Repo: <code>bidirect-align-dev-traces</code> &nbsp;|&nbsp;
+     Branch: <code>paper2-pilot-dashboard</code> &nbsp;|&nbsp;
+     Date: May 2026 &nbsp;|&nbsp; Contact: hamidah@thetaste.ai</p>
+</header>
+
+<main>
+
+<!-- ─── ONE-LINE THESIS ─── -->
+<h2>Thesis in one sentence</h2>
+<p style="font-size:1.05rem;background:#fff;padding:14px 18px;border-radius:8px;
+          border:1.5px solid #c5cad8;margin:12px 0;">
+  The scaffolding framework around an LLM matters more than the LLM itself —
+  two different LLMs in the same agent framework behave almost identically at the
+  procedural level, while two different frameworks using the same LLM diverge substantially.
+</p>
+
+<!-- ─── DATA PIPELINE ─── -->
+<h2>Data pipeline (source → paper)</h2>
+<div class="flow">
+  <div class="flow-box">Raw agent logs<br><small>SWE-bench Lite/Verified<br>9 submissions, ~300 tasks each</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box">Canonicalization<br><small>action-type vocabulary<br>72 atom types</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box">BPE vocabulary<br><small>V=200 motifs, learned<br>V-measure stopping</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box">Feature extraction<br><small>entropy, compression,<br>repertoire, JSD matrix</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box">Analysis &amp; figures<br><small>backbone probe, motif<br>templates, fingerprints</small></div>
+</div>
+
+<!-- ─── CODEBASE ARCHITECTURE ─── -->
+<h2>Codebase architecture</h2>
+<div class="arch">
+
+  <div class="layer">
+    <div class="layer-header">📥 Data</div>
+    <code class="file">data/agent_trajectories.py</code>
+    <code class="file">data/swebench_trajectories.py</code>
+    <code class="file">data/loaders.py</code>
+    <p class="note">Loads raw agent logs from SWE-bench parquet files.
+    Maps submissions to agent labels.</p>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">🧠 Representations</div>
+    <code class="file highlight">representations/core/intent.py</code>
+    <code class="file">representations/computed/motifs/motifs.py</code>
+    <code class="file">representations/computed/edits/edits.py</code>
+    <code class="file">representations/inferred/behavioral/behavioral.py</code>
+    <code class="file">representations/inferred/fix_type/fix_type.py</code>
+    <p class="note"><strong>intent.py</strong> = the canonical atom taxonomy.
+    Motifs = BPE over canonical sequences.
+    Inferred = LLM-generated descriptions.</p>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">⚙️ Pipeline</div>
+    <code class="file">pipeline/compose.py</code>
+    <code class="file">pipeline/stages/structural.py</code>
+    <code class="file">pipeline/stages/localization.py</code>
+    <code class="file">pipeline/stages/annotation.py</code>
+    <p class="note">Orchestrates extraction stages end-to-end.
+    Each stage is independently runnable.</p>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">📊 Analysis</div>
+    <code class="file">analysis/procedures/corpus_motifs.py</code>
+    <code class="file">analysis/procedures/divergence_matrix.py</code>
+    <code class="file">analysis/experiments/</code>
+    <code class="file highlight">scripts/controlled_eval_analysis.py</code>
+    <p class="note">controlled_eval_analysis.py = new (May 2026).
+    Corpus motifs = BPE training + JSD computation.</p>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">📁 Key outputs</div>
+    <code class="file highlight">output/paper2_pilot/bpe_sequences_extended.jsonl</code>
+    <code class="file highlight">output/paper2_pilot/extended_pass_fail.json</code>
+    <code class="file">output/paper2_pilot/per_agent_megatable.json</code>
+    <code class="file">output/paper2_pilot/backbone_probe_extended.json</code>
+    <code class="file">output/paper2_pilot/controlled_eval_results.json</code>
+    <p class="note">All figures saved to <code>output/figures/</code></p>
+  </div>
+
+</div>
+
+<!-- ─── KEY ARTIFACTS ─── -->
+<h2>Key data artifacts</h2>
+<div class="artifact-grid">
+  <div class="artifact">
+    <code>bpe_sequences_extended.jsonl</code>
+    <p>2,639 rows (9 agents × ~290 tasks). Fields: <code>submission</code>, <code>agent</code>,
+    <code>instance_id</code>, <code>canonical</code> (list of atom strings),
+    <code>bpe</code> (list of motif strings), <code>compression</code>. No outcome field — must join.</p>
+  </div>
+  <div class="artifact">
+    <code>extended_pass_fail.json</code>
+    <p>Dict keyed by submission ID → <code>{resolved: [...], no_generation: [...], no_logs: [...]}</code>.
+    Join to bpe_sequences on <code>(submission, instance_id)</code> to get outcomes.</p>
+  </div>
+  <div class="artifact">
+    <code>per_agent_megatable.json</code>
+    <p>Pre-computed fingerprint metrics per agent: entropy_bits, repertoire_90, compression,
+    resolve_rate_pct, type_a_pct, type_b_pct, cost_per_task, cost_per_resolved.
+    Source of truth for Table 1 in the paper.</p>
+  </div>
+  <div class="artifact">
+    <code>controlled_eval_results.json</code>
+    <p><strong>New (May 2026).</strong> Pass rates under 4 procedural constraints
+    (test_before_submit, repro_step, search_before_edit, low_edit_retry) per agent,
+    plus matched-task difficulty-controlled analysis.</p>
+  </div>
+</div>
+
+<!-- ─── 9-AGENT CORPUS ─── -->
+<h2>The 9-agent corpus</h2>
+<table>
+  <tr>
+    <th>Agent label</th><th>Scaffold</th><th>Backbone</th><th>Paradigm</th>
+    <th>n</th><th>Resolve %</th><th>Entropy (bits)</th>
+  </tr>
+  <tr><td>Claude-3</td><td>SWE-agent</td><td>Claude-3 Opus</td>
+      <td><span class="chip chip-blue">RLHF dense</span></td>
+      <td>300</td><td>11.7%</td><td>5.58</td></tr>
+  <tr><td>Claude-3.5</td><td>SWE-agent</td><td>Claude-3.5 Sonnet</td>
+      <td><span class="chip chip-blue">RLHF dense</span></td>
+      <td>289</td><td>23.9%</td><td>5.56</td></tr>
+  <tr><td>Claude-3.7-thinking</td><td>SWE-agent</td><td>Claude-3.7 Sonnet</td>
+      <td><span class="chip chip-amber">Extended thinking</span></td>
+      <td>284</td><td>50.7%</td><td>5.14</td></tr>
+  <tr><td>Claude-4</td><td>SWE-agent</td><td>Claude-4 Sonnet</td>
+      <td><span class="chip chip-amber">Extended thinking</span></td>
+      <td>288</td><td>59.0%</td><td>5.26</td></tr>
+  <tr><td>GPT-4</td><td>SWE-agent</td><td>GPT-4</td>
+      <td><span class="chip chip-blue">RLHF dense</span></td>
+      <td>300</td><td>18.0%</td><td>5.47</td></tr>
+  <tr><td>GPT-4o</td><td>SWE-agent</td><td>GPT-4o</td>
+      <td><span class="chip chip-blue">RLHF dense</span></td>
+      <td>278</td><td>19.8%</td><td>5.76</td></tr>
+  <tr><td>DARS+R1</td><td>DARS</td><td>DeepSeek-R1</td>
+      <td><span class="chip chip-green">RL reasoning</span></td>
+      <td>300</td><td>47.0%</td><td>4.44</td></tr>
+  <tr><td>Agentless+Claude-3.5</td><td>Agentless</td><td>Claude-3.5</td>
+      <td><span class="chip chip-blue">RLHF dense</span></td>
+      <td>300</td><td>40.7%</td><td>0.00</td></tr>
+  <tr><td>Moatless+V3</td><td>Moatless</td><td>DeepSeek-V3</td>
+      <td><span class="chip chip-green">MoE pretrain</span></td>
+      <td>300</td><td>30.7%</td><td>3.71</td></tr>
+</table>
+
+<!-- ─── HEADLINE FINDINGS ─── -->
+<h2>Headline findings (8 shipped, 4 validated)</h2>
+
+<h3>Shipped and in figures</h3>
+<div class="finding"><strong>Scaffold &gt; backbone.</strong>
+  Backbone probe F1 = 0.83; within-scaffold backbone swap barely changes procedure (JSD 0.11–0.20).
+  Cross-scaffold JSD 0.54–0.78. Paradigm exception: extended-thinking Claude sits at 0.54–0.63
+  even within SWE-agent — paradigm shift breaks scaffold homogenization.</div>
+<div class="finding"><strong>Three-regime JSD structure.</strong>
+  Agentless ~1.0 vs all (deterministic pipeline); within-SWE-agent 0.11–0.20; cross-scaffold 0.54–0.78.</div>
+<div class="finding"><strong>Per-agent fingerprint.</strong>
+  Four scalars bucket cleanly by scaffold: entropy 0–6 bits, repertoire@90% 1–49,
+  compression 0.08–0.57. Agentless is a degenerate case (single pipeline = 0 entropy, 1 action type).</div>
+<div class="finding"><strong>Cost × resolve efficiency.</strong>
+  Within-scaffold backbone choice creates 4× spread in cost/resolved.
+  Steps ≠ efficiency: Claude-3.5 takes more steps than GPT-4 but is 2× cheaper per resolved.</div>
+<div class="finding"><strong>Type B failure dominates.</strong>
+  Post-localization failure (agent found the right file, still failed to fix) accounts for
+  57% (Claude-3) to 91% (Claude-3.7-thinking) of all failures. Not a search problem — a repair problem.</div>
+<div class="finding"><strong>Stuck-edit-loop signature.</strong>
+  EDIT_SRC_PY +0.053 / SUBMIT −0.063 in long Type B failures across 7 scaffolds. Generalizable detector.</div>
+
+<h3>New (May 2026 session)</h3>
+<div class="finding"><strong>Controlled evaluations — within-agent (new).</strong>
+  Low edit retry rate predicts success for GPT-4o (+16pp, p=0.004).
+  Search-before-edit shows consistent +8–12pp trend across agents (underpowered individually).
+  Repro step reverses direction: negative for old Claude models, positive for extended-thinking ones —
+  suggesting the repro strategy only works when the agent is capable of executing it.</div>
+<div class="finding"><strong>Controlled evaluations — matched-task null (new).</strong>
+  After controlling for task difficulty (same instance, different agents), all procedural effects
+  collapse to near-zero (largest: Δ+0.030, p=0.19). Task difficulty dominates, consistent with
+  η²=0.56 from prior work. Procedural approach is a fingerprint, not a causal lever — within the
+  observed corpus.</div>
+
+<!-- ─── PAPER STATUS ─── -->
+<h2>Paper section status</h2>
+<div class="paper-grid">
+
+  <div class="paper-sec">
+    <div class="status done">● Done</div>
+    <h3>§1 Abstract + Intro</h3>
+    <p>Scaffolded. Needs framing update to "scaffold &gt; backbone" headline.
+    Remove "Procedural Grep" title; replace with plain-language alternative.</p>
+  </div>
+
+  <div class="paper-sec">
+    <div class="status done">● Done</div>
+    <h3>§3 Background + Theory</h3>
+    <p>BPE analogy, V-measure stopping criterion, formal definitions. Entropy definition
+    (Shannon over action-type distribution) needs 3-line formal block before Table 1.</p>
+  </div>
+
+  <div class="paper-sec">
+    <div class="status done">● Done</div>
+    <h3>Table 1 (megatable)</h3>
+    <p>LaTeX at <code>output/paper2_pilot/per_agent_megatable.tex</code>.
+    Needs booktabs + xcolor imports. Insert in §4.</p>
+  </div>
+
+  <div class="paper-sec">
+    <div class="status partial">◑ Partial</div>
+    <h3>§4 Natural experiments</h3>
+    <p>Faithfulness, compositional failure, fingerprinting text drafted.
+    Still needs: MI(process, outcome) number, backbone probe figure integrated.</p>
+  </div>
+
+  <div class="paper-sec">
+    <div class="status partial">◑ Partial — just started</div>
+    <h3>§5 Controlled evaluations</h3>
+    <p>New section. Analysis script written May 2026.
+    Figures: delta heatmap, matched bars, satisfaction rates.
+    Text not yet drafted. The matched-task null is the key finding here.</p>
+  </div>
+
+  <div class="paper-sec">
+    <div class="status todo">○ Not started</div>
+    <h3>§6 Implications + Conclusion</h3>
+    <p>Procedural grep capability map (10 capabilities listed in project notes).
+    Routing direction. Threats to validity. Conclusion.
+    Target: ~1.5 pages.</p>
+  </div>
+
+</div>
+
+<!-- ─── MISSING LITERATURE ─── -->
+<h2>Critical missing citations (add before submission)</h2>
+<table>
+  <tr><th>Gap</th><th>What to cite</th><th>Where</th></tr>
+  <tr><td>Process mining</td>
+      <td>van der Aalst — Process Mining (Springer 2016); α-algorithm, conformance checking</td>
+      <td>§2 Related work — direct ancestor of vocabulary induction</td></tr>
+  <tr><td>Fault localization</td>
+      <td>Tarantula (Jones 2002), spectrum-based FL, delta debugging</td>
+      <td>§5 Controlled evals — Type A/B failure connects here</td></tr>
+  <tr><td>Plan recognition</td>
+      <td>Kautz &amp; Allen 1986, Geib &amp; Goldman 2009</td>
+      <td>§4 faithfulness analysis — forward/reverse faithfulness = plan recognition</td></tr>
+  <tr><td>Halstead metrics</td>
+      <td>Halstead 1977 — Software Science</td>
+      <td>§3 — entropy/compression as behavioral analog of Halstead complexity</td></tr>
+  <tr><td>Runtime verification</td>
+      <td>Leucker &amp; Schallhart 2009</td>
+      <td>§5 — procedural controls as behavioral spec + conformance</td></tr>
+</table>
+
+<!-- ─── HANDOFF PROMPT ─── -->
+<h2>Ready-to-paste handoff prompt for Claude</h2>
+<button class="copy-btn" onclick="
+  navigator.clipboard.writeText(document.getElementById('prompt').innerText);
+  this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy prompt',2000);
+">Copy prompt</button>
+<div class="prompt-box" id="prompt">You are picking up work on a research paper about procedural fingerprinting of LLM coding agents.
+
+THESIS: The scaffolding framework around an LLM (SWE-agent, Agentless, Moatless, DARS)
+determines agent behavior more than the LLM choice. Two LLMs in the same scaffold look
+nearly identical procedurally; two scaffolds using the same LLM diverge substantially.
+
+REPO: /Users/hamidaho/learning-from-dev/bidirect-align-dev-traces
+BRANCH: paper2-pilot-dashboard
+PYTHON: .venv/bin/python (use this, not system python)
+
+KEY DATA:
+- output/paper2_pilot/bpe_sequences_extended.jsonl
+  → 2,639 rows: (submission, agent, instance_id, canonical, bpe, compression)
+  → "canonical" = list of action-type atoms (72 types); "bpe" = BPE-merged motifs
+- output/paper2_pilot/extended_pass_fail.json
+  → Dict: submission_id → {resolved: [...], no_generation: [...], no_logs: [...]}
+  → Join to bpe_sequences on (submission, instance_id) to get pass/fail per trajectory
+- output/paper2_pilot/per_agent_megatable.json
+  → Pre-computed fingerprint metrics (entropy, repertoire_90, compression, resolve_rate)
+- output/paper2_pilot/controlled_eval_results.json
+  → NEW: pass rates under 4 procedural constraints + matched-task analysis
+
+AGENTS IN CORPUS (9 total):
+  Claude-3, Claude-3.5, Claude-3.7-thinking, Claude-4  (SWE-agent scaffold)
+  GPT-4, GPT-4o                                        (SWE-agent scaffold)
+  DARS+R1                                              (DARS scaffold)
+  Agentless+Claude-3.5                                 (Agentless scaffold — deterministic)
+  Moatless+V3                                          (Moatless scaffold)
+
+CANONICAL ACTION VOCABULARY (top atoms by frequency):
+  SHELL_CD, EDIT_SRC_PY, OPEN_SRC_PY, SEARCH, FIND_FILE,
+  RUN_PYTHON_REPRO_PY, EDIT_REPRO_PY, NAV_SRC_PY, CREATE_TEST_PY, SUBMIT
+
+PAPER SECTION STATUS:
+  §1-3: Drafted (intro, background, BPE vocabulary induction, V-measure stability)
+  §4: Partial — natural experiments (faithfulness, compositional failure, fingerprinting)
+  §5: Just started — controlled evaluations
+       Script: scripts/controlled_eval_analysis.py
+       Figures: output/figures/controlled_eval_*.png
+  §6: Not started — implications, routing, conclusion
+
+KEY FINDINGS TO CITE IN YOUR WORK:
+1. Backbone probe F1=0.83 (scaffold classification > chance 12.5%)
+2. JSD: within-SWE-agent 0.11-0.20, cross-scaffold 0.54-0.78
+3. Agentless entropy=0 bits (single pipeline step), GPT-4o entropy=5.76 bits (widest)
+4. Controlled eval: low edit retry rate → +16pp pass rate for GPT-4o (p=0.004)
+5. Matched-task null: after controlling for task difficulty, Δ collapses to ~0
+   This confirms η²=0.56 task-difficulty dominance from prior work.
+6. EXIT_ERROR is trivially predictive (0/421 exit-error trajectories ever reach SUBMIT)
+
+FIGURES ALREADY GENERATED (output/figures/):
+  backbone_probe_extended.png, jsd_matrix_extended.png, fig_agg_*.png (4 panels)
+  controlled_eval_delta_heatmap.png, controlled_eval_matched_bars.png
+  controlled_eval_satisfaction_rates.png, fig_failure_types_extended.png
+
+MISSING CRITICAL CITATIONS (add to §2 Related Work):
+  - Van der Aalst, Process Mining (Springer 2016) — process discovery is the direct ancestor
+  - Halstead 1977 — entropy/compression as behavioral analog of software complexity metrics
+  - Kautz & Allen 1986 — faithfulness analysis maps to plan recognition
+
+CURRENT TASK: Draft the §5 Controlled Evaluations section text.
+The section should:
+1. Define "procedural control" formally (a predicate on canonical action sequences)
+2. State the 4 constraints tested: test_before_submit, repro_step, search_before_edit,
+   low_edit_retry_rate (definitions in scripts/controlled_eval_analysis.py)
+3. Present the within-agent results (Table or Fig: controlled_eval_delta_heatmap.png)
+4. Present the matched-task null result (Fig: controlled_eval_matched_bars.png)
+5. Interpret: (a) low edit retry correlates with success within-agent; (b) cross-agent,
+   task difficulty dominates and procedural choice carries no additional signal;
+   (c) the matched-task design IS the methodological contribution — it shows how
+   procedural representations enable difficulty-controlled ablation studies
+
+TONE: Plain English. No jargon. Target: MSR 2026. ~2 pages for this section.
+Avoid "isomorphism", "behavioral equivalence", "scaffold-dominant."
+</div>
+
+<!-- ─── NEXT STEPS ─── -->
+<h2>Recommended next steps (in order)</h2>
+<table>
+  <tr><th>#</th><th>Task</th><th>Effort</th><th>Blocker</th></tr>
+  <tr><td>1</td><td>Draft §5 Controlled Evaluations text using the prompt above</td>
+      <td><span class="chip chip-green">~1 hr</span></td><td>None — figures exist</td></tr>
+  <tr><td>2</td><td>Add entropy formal definition (3-line block) before Table 1 in §3</td>
+      <td><span class="chip chip-green">~15 min</span></td><td>None</td></tr>
+  <tr><td>3</td><td>Add process mining citation to §2 Related Work</td>
+      <td><span class="chip chip-green">~20 min</span></td><td>None</td></tr>
+  <tr><td>4</td><td>Compute MI(process_features, pass/fail) to quantify "signal beyond NL"</td>
+      <td><span class="chip chip-amber">~30 min</span></td><td>None — data exists</td></tr>
+  <tr><td>5</td><td>Run difficulty-stratified version of controlled eval (within-agent, by difficulty bin)</td>
+      <td><span class="chip chip-amber">~2 hr</span></td>
+      <td>Need difficulty labels — use n_resolved across agents as proxy</td></tr>
+  <tr><td>6</td><td>Write §6 Implications (procedural grep 10-capability table, routing direction)</td>
+      <td><span class="chip chip-amber">~2 hr</span></td><td>None</td></tr>
+  <tr><td>7</td><td>SWE-bench Verified replication (GPT-4 + Claude-3.5 on 500 instances)</td>
+      <td><span class="chip chip-red">~3 hr</span></td>
+      <td>Data exists at output/swebench_results_verified_agents/ — run backbone probe</td></tr>
+</table>
+
+</main>
+
+<script>
+// Syntax-highlight the prompt box slightly
+</script>
+</body>
+</html>

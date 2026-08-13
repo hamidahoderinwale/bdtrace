@@ -1,0 +1,25 @@
+name: test_driven
+floor: 0.0
+ceiling: 1.0
+phases:
+  - name: exploration
+    reward: 0.10
+    require_any: [{atom: search_repo}, {atom: read_file}]
+    min_occurrences: 2
+    before_first: edit
+  - name: test_first
+    reward: 0.20
+    require_sequence: [run_test]
+    before_first: edit
+  - name: implementation
+    reward: 0.10
+    require_any: [{atom: edit}]
+  - name: verification
+    reward: 0.30
+    require_sequence: [edit, run_test]
+    max_gap: 5
+penalties:
+  - name: edit_streak
+    penalty: 0.15
+    pattern: [edit, edit, edit, edit, edit]
+    contiguous: true

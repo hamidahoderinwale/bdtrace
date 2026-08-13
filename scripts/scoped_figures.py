@@ -27,17 +27,16 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from scripts.theme import (
+    register,
+    BLUE, ORANGE, GREEN, VERMILLION, SKY, PINK, GRAY, NEAR_BLACK,
+)
+register()
+
+RED = VERMILLION  # backward-compat alias
 
 OUTPUT_DIR = ROOT / "output" / "scoped_certificates"
 ALIGNMENT_DIR = ROOT / "output" / "pairwise_agent_comparison"
-
-BLUE = "#0072B2"
-ORANGE = "#E69F00"
-GREEN = "#009E73"
-PINK = "#CC79A7"
-GRAY = "#999999"
-SKY = "#56B4E9"
-RED = "#D55E00"
 
 
 def _configure(chart: alt.Chart) -> alt.Chart:

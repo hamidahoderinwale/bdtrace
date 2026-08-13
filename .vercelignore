@@ -1,0 +1,15 @@
+output/
+.venv/
+data/
+analysis/
+figures/
+notebooks/
+pipeline/
+representations/
+scripts/
+configs/
+eval/
+*.jsonl
+*.parquet
+*.npz
+uv.lock

@@ -1,0 +1,42 @@
+# Procedural reward spec — option (b): the scorer that actually ran, as YAML,
+# restricted to atoms present in the corpus (no `think`-dependent rules).
+# Scored via procgrep.reward.score over COARSE atoms (canonical -> to_canon).
+# NOTE: test_verification under-counts shell-invoked test runs (e.g. Claude-4's
+# `cd … && pytest`), a known canonicalization limitation — proc_score is a
+# within-scaffold procedural-style measure, not a cross-agent capability ranking.
+name: swe_agent_procedural_reward
+floor: 0.0
+ceiling: 1.0
+
+phases:
+  - name: exploration
+    reward: 0.10
+    require_any: [{atom: search_repo}, {atom: read_file}]
+    min_occurrences: 2
+    before_first: edit
+  - name: implementation
+    reward: 0.15
+    require_any: [{atom: edit}]
+  - name: test_verification
+    reward: 0.25
+    require_sequence: [edit, run_test]
+    max_gap: 5
+  - name: completion
+    reward: 0.10
+    require_any: [{atom: submit}]
+
+penalties:
+  - name: edit_streak
+    penalty: 0.15
+    pattern: [edit, edit, edit, edit, edit]
+    contiguous: true
+  - name: no_search
+    penalty: 0.05
+    require_absent_before: [search_repo, read_file]
+    before_first: edit
+
+bonuses:
+  - name: test_driven
+    reward: 0.10
+    require_sequence: [run_test]
+    before_first: edit

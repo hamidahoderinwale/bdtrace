@@ -1,0 +1,1781 @@
+{
+  "n_instances": 289,
+  "n_dropped_no_edits": 11,
+  "n_dropped_no_leaderboard": 0,
+  "ood_stats": {
+    "mean": 0.0029286904742195216,
+    "median": 0.0,
+    "std": 0.017630272326704898,
+    "min": 0.0,
+    "max": 0.16666666666666666
+  },
+  "pass_rate_stats": {
+    "mean": 0.3251771296753995,
+    "median": 0.23809523809523808,
+    "std": 0.30658863609753323,
+    "min": 0.0,
+    "max": 0.9404761904761905
+  },
+  "patch_size_stats": {
+    "mean": 10.30795847750865,
+    "median": 7.0,
+    "std": 12.145255769258135,
+    "min": 1.0,
+    "max": 76.0
+  },
+  "ood_vs_pass_rate": {
+    "spearman": -0.08338607043577241,
+    "pearson": -0.023968116506745175,
+    "n": 289,
+    "spearman_ci_95": [
+      -0.18450909550267336,
+      0.02696418752127817
+    ],
+    "n_bootstrap": 1000
+  },
+  "patch_size_vs_pass_rate": {
+    "spearman": -0.3623256911842127,
+    "pearson": -0.3119898274356042,
+    "n": 289
+  },
+  "comparison": {
+    "ood_beats_patch_size": false,
+    "delta_abs_spearman": -0.2789396207484403
+  },
+  "per_instance": [
+    {
+      "instance_id": "astropy__astropy-12907",
+      "ood": 0.0,
+      "pass_rate": 0.5238095238095238,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "astropy__astropy-14182",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 41
+    },
+    {
+      "instance_id": "astropy__astropy-14365",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "astropy__astropy-14995",
+      "ood": 0.0,
+      "pass_rate": 0.8214285714285714,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "astropy__astropy-6938",
+      "ood": 0.0,
+      "pass_rate": 0.4523809523809524,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "astropy__astropy-7746",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-10914",
+      "ood": 0.0,
+      "pass_rate": 0.8452380952380952,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-11001",
+      "ood": 0.0,
+      "pass_rate": 0.47619047619047616,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-11019",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 76
+    },
+    {
+      "instance_id": "django__django-11039",
+      "ood": 0.0,
+      "pass_rate": 0.8571428571428571,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-11099",
+      "ood": 0.0,
+      "pass_rate": 0.9404761904761905,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-11133",
+      "ood": 0.0,
+      "pass_rate": 0.9047619047619048,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-11179",
+      "ood": 0.0,
+      "pass_rate": 0.8214285714285714,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "django__django-11283",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 30
+    },
+    {
+      "instance_id": "django__django-11422",
+      "ood": 0.0,
+      "pass_rate": 0.2976190476190476,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "django__django-11564",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 31
+    },
+    {
+      "instance_id": "django__django-11583",
+      "ood": 0.0,
+      "pass_rate": 0.7380952380952381,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-11620",
+      "ood": 0.0,
+      "pass_rate": 0.35714285714285715,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-11630",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 20
+    },
+    {
+      "instance_id": "django__django-11742",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 17
+    },
+    {
+      "instance_id": "django__django-11797",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-11815",
+      "ood": 0.0,
+      "pass_rate": 0.5595238095238095,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-11848",
+      "ood": 0.0,
+      "pass_rate": 0.38095238095238093,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "django__django-11905",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "django__django-11910",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-11964",
+      "ood": 0.0,
+      "pass_rate": 0.2619047619047619,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "django__django-11999",
+      "ood": 0.0,
+      "pass_rate": 0.6547619047619048,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "django__django-12113",
+      "ood": 0.0,
+      "pass_rate": 0.05952380952380952,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-12125",
+      "ood": 0.0,
+      "pass_rate": 0.25,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-12184",
+      "ood": 0.0,
+      "pass_rate": 0.39285714285714285,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-12284",
+      "ood": 0.0,
+      "pass_rate": 0.39285714285714285,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-12286",
+      "ood": 0.0,
+      "pass_rate": 0.7857142857142857,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "django__django-12308",
+      "ood": 0.0,
+      "pass_rate": 0.11904761904761904,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-12453",
+      "ood": 0.0,
+      "pass_rate": 0.7261904761904762,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "django__django-12470",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-12497",
+      "ood": 0.0,
+      "pass_rate": 0.6309523809523809,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-12589",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 15
+    },
+    {
+      "instance_id": "django__django-12700",
+      "ood": 0.0,
+      "pass_rate": 0.6785714285714286,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-12708",
+      "ood": 0.0,
+      "pass_rate": 0.5357142857142857,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-12747",
+      "ood": 0.0,
+      "pass_rate": 0.11904761904761904,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-12856",
+      "ood": 0.0,
+      "pass_rate": 0.15476190476190477,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-12908",
+      "ood": 0.0,
+      "pass_rate": 0.10714285714285714,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "django__django-12915",
+      "ood": 0.16666666666666666,
+      "pass_rate": 0.5238095238095238,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "django__django-12983",
+      "ood": 0.0,
+      "pass_rate": 0.7619047619047619,
+      "patch_size": 11
+    },
+    {
+      "instance_id": "django__django-13028",
+      "ood": 0.0,
+      "pass_rate": 0.5714285714285714,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-13033",
+      "ood": 0.0,
+      "pass_rate": 0.2976190476190476,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-13158",
+      "ood": 0.0,
+      "pass_rate": 0.38095238095238093,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-13220",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 20
+    },
+    {
+      "instance_id": "django__django-13230",
+      "ood": 0.0,
+      "pass_rate": 0.7976190476190477,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "django__django-13265",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 27
+    },
+    {
+      "instance_id": "django__django-13315",
+      "ood": 0.0,
+      "pass_rate": 0.39285714285714285,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "django__django-13321",
+      "ood": 0.0,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "django__django-13401",
+      "ood": 0.0,
+      "pass_rate": 0.6190476190476191,
+      "patch_size": 26
+    },
+    {
+      "instance_id": "django__django-13448",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "django__django-13551",
+      "ood": 0.0,
+      "pass_rate": 0.2976190476190476,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "django__django-13590",
+      "ood": 0.0,
+      "pass_rate": 0.6785714285714286,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-13658",
+      "ood": 0.0,
+      "pass_rate": 0.9285714285714286,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-13660",
+      "ood": 0.0,
+      "pass_rate": 0.15476190476190477,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-13710",
+      "ood": 0.0,
+      "pass_rate": 0.75,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-13757",
+      "ood": 0.0,
+      "pass_rate": 0.4166666666666667,
+      "patch_size": 19
+    },
+    {
+      "instance_id": "django__django-13768",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "django__django-13933",
+      "ood": 0.0,
+      "pass_rate": 0.8095238095238095,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-13964",
+      "ood": 0.0,
+      "pass_rate": 0.38095238095238093,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14016",
+      "ood": 0.0,
+      "pass_rate": 0.6071428571428571,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-14017",
+      "ood": 0.0,
+      "pass_rate": 0.34523809523809523,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14155",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "django__django-14238",
+      "ood": 0.0,
+      "pass_rate": 0.7380952380952381,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14411",
+      "ood": 0.0,
+      "pass_rate": 0.5119047619047619,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-14534",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14580",
+      "ood": 0.0,
+      "pass_rate": 0.2857142857142857,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14608",
+      "ood": 0.0,
+      "pass_rate": 0.6071428571428571,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-14667",
+      "ood": 0.06666666666666667,
+      "pass_rate": 0.0,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-14672",
+      "ood": 0.0,
+      "pass_rate": 0.7023809523809523,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14730",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "django__django-14752",
+      "ood": 0.0,
+      "pass_rate": 0.9047619047619048,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "django__django-14787",
+      "ood": 0.0,
+      "pass_rate": 0.6547619047619048,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-14855",
+      "ood": 0.0,
+      "pass_rate": 0.9166666666666666,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-14915",
+      "ood": 0.0,
+      "pass_rate": 0.8571428571428571,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-14997",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-14999",
+      "ood": 0.0,
+      "pass_rate": 0.47619047619047616,
+      "patch_size": 11
+    },
+    {
+      "instance_id": "django__django-15061",
+      "ood": 0.0,
+      "pass_rate": 0.09523809523809523,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-15202",
+      "ood": 0.0,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "django__django-15213",
+      "ood": 0.0,
+      "pass_rate": 0.35714285714285715,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "django__django-15252",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "django__django-15320",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-15347",
+      "ood": 0.0,
+      "pass_rate": 0.7857142857142857,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-15388",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-15400",
+      "ood": 0.0,
+      "pass_rate": 0.23809523809523808,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-15498",
+      "ood": 0.0,
+      "pass_rate": 0.39285714285714285,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-15695",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "django__django-15738",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-15781",
+      "ood": 0.0,
+      "pass_rate": 0.09523809523809523,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-15789",
+      "ood": 0.0,
+      "pass_rate": 0.7142857142857143,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-15790",
+      "ood": 0.0,
+      "pass_rate": 0.5595238095238095,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "django__django-15814",
+      "ood": 0.0,
+      "pass_rate": 0.6190476190476191,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "django__django-15819",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "django__django-15851",
+      "ood": 0.0,
+      "pass_rate": 0.7619047619047619,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-15902",
+      "ood": 0.0,
+      "pass_rate": 0.38095238095238093,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-15996",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 17
+    },
+    {
+      "instance_id": "django__django-16041",
+      "ood": 0.0,
+      "pass_rate": 0.7857142857142857,
+      "patch_size": 15
+    },
+    {
+      "instance_id": "django__django-16046",
+      "ood": 0.0,
+      "pass_rate": 0.7261904761904762,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-16139",
+      "ood": 0.0,
+      "pass_rate": 0.8809523809523809,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "django__django-16229",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "django__django-16255",
+      "ood": 0.0,
+      "pass_rate": 0.9404761904761905,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "django__django-16379",
+      "ood": 0.0,
+      "pass_rate": 0.8809523809523809,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-16400",
+      "ood": 0.0,
+      "pass_rate": 0.11904761904761904,
+      "patch_size": 15
+    },
+    {
+      "instance_id": "django__django-16408",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "django__django-16595",
+      "ood": 0.0,
+      "pass_rate": 0.8690476190476191,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "django__django-16816",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-16820",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 65
+    },
+    {
+      "instance_id": "django__django-16873",
+      "ood": 0.0,
+      "pass_rate": 0.8809523809523809,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "django__django-16910",
+      "ood": 0.0,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "django__django-17051",
+      "ood": 0.0,
+      "pass_rate": 0.4642857142857143,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "django__django-17087",
+      "ood": 0.0,
+      "pass_rate": 0.4523809523809524,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-18869",
+      "ood": 0.02631578947368421,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 67
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-22711",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 24
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-22835",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 19
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23299",
+      "ood": 0.09090909090909091,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23314",
+      "ood": 0.0,
+      "pass_rate": 0.6190476190476191,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23476",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23562",
+      "ood": 0.0,
+      "pass_rate": 0.40476190476190477,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23563",
+      "ood": 0.0,
+      "pass_rate": 0.09523809523809523,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23913",
+      "ood": 0.0,
+      "pass_rate": 0.6666666666666666,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23964",
+      "ood": 0.0,
+      "pass_rate": 0.8333333333333334,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23987",
+      "ood": 0.0,
+      "pass_rate": 0.2261904761904762,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24149",
+      "ood": 0.0,
+      "pass_rate": 0.5952380952380952,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24265",
+      "ood": 0.0,
+      "pass_rate": 0.05952380952380952,
+      "patch_size": 69
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24334",
+      "ood": 0.0,
+      "pass_rate": 0.20238095238095238,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24970",
+      "ood": 0.06666666666666667,
+      "pass_rate": 0.5952380952380952,
+      "patch_size": 21
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25079",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25311",
+      "ood": 0.1,
+      "pass_rate": 0.21428571428571427,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25332",
+      "ood": 0.0,
+      "pass_rate": 0.21428571428571427,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25433",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25442",
+      "ood": 0.0,
+      "pass_rate": 0.42857142857142855,
+      "patch_size": 31
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25498",
+      "ood": 0.0,
+      "pass_rate": 0.16666666666666666,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-26011",
+      "ood": 0.0,
+      "pass_rate": 0.38095238095238093,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-26020",
+      "ood": 0.0,
+      "pass_rate": 0.5833333333333334,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "mwaskom__seaborn-2848",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3010",
+      "ood": 0.0,
+      "pass_rate": 0.8928571428571429,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3190",
+      "ood": 0.0,
+      "pass_rate": 0.5833333333333334,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3407",
+      "ood": 0.0,
+      "pass_rate": 0.05952380952380952,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "pallets__flask-4045",
+      "ood": 0.0625,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 16
+    },
+    {
+      "instance_id": "pallets__flask-4992",
+      "ood": 0.05,
+      "pass_rate": 0.05952380952380952,
+      "patch_size": 11
+    },
+    {
+      "instance_id": "pallets__flask-5063",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 65
+    },
+    {
+      "instance_id": "psf__requests-1963",
+      "ood": 0.0,
+      "pass_rate": 0.36904761904761907,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "psf__requests-2148",
+      "ood": 0.0,
+      "pass_rate": 0.09523809523809523,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "psf__requests-2317",
+      "ood": 0.0,
+      "pass_rate": 0.6904761904761905,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "psf__requests-2674",
+      "ood": 0.0,
+      "pass_rate": 0.5833333333333334,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "psf__requests-3362",
+      "ood": 0.0,
+      "pass_rate": 0.6071428571428571,
+      "patch_size": 17
+    },
+    {
+      "instance_id": "psf__requests-863",
+      "ood": 0.0,
+      "pass_rate": 0.6309523809523809,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "pydata__xarray-3364",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "pydata__xarray-4094",
+      "ood": 0.0,
+      "pass_rate": 0.15476190476190477,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pydata__xarray-4248",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pydata__xarray-4493",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "pydata__xarray-5131",
+      "ood": 0.0,
+      "pass_rate": 0.8333333333333334,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pylint-dev__pylint-5859",
+      "ood": 0.16666666666666666,
+      "pass_rate": 0.4880952380952381,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6506",
+      "ood": 0.0,
+      "pass_rate": 0.15476190476190477,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7080",
+      "ood": 0.0,
+      "pass_rate": 0.21428571428571427,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7114",
+      "ood": 0.0,
+      "pass_rate": 0.3333333333333333,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7228",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7993",
+      "ood": 0.0,
+      "pass_rate": 0.5,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pytest-dev__pytest-11148",
+      "ood": 0.0,
+      "pass_rate": 0.27380952380952384,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5103",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 25
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5221",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5227",
+      "ood": 0.0,
+      "pass_rate": 0.8809523809523809,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5413",
+      "ood": 0.0,
+      "pass_rate": 0.05952380952380952,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5495",
+      "ood": 0.0,
+      "pass_rate": 0.10714285714285714,
+      "patch_size": 25
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5692",
+      "ood": 0.0,
+      "pass_rate": 0.5833333333333334,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "pytest-dev__pytest-6116",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 1
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7168",
+      "ood": 0.0,
+      "pass_rate": 0.16666666666666666,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7220",
+      "ood": 0.0,
+      "pass_rate": 0.10714285714285714,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7373",
+      "ood": 0.0,
+      "pass_rate": 0.8452380952380952,
+      "patch_size": 21
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7432",
+      "ood": 0.0,
+      "pass_rate": 0.6666666666666666,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7490",
+      "ood": 0.0,
+      "pass_rate": 0.35714285714285715,
+      "patch_size": 21
+    },
+    {
+      "instance_id": "pytest-dev__pytest-8365",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "pytest-dev__pytest-8906",
+      "ood": 0.0,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "pytest-dev__pytest-9359",
+      "ood": 0.0,
+      "pass_rate": 0.07142857142857142,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10508",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10949",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 16
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11040",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 17
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11281",
+      "ood": 0.0,
+      "pass_rate": 0.5119047619047619,
+      "patch_size": 30
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-12471",
+      "ood": 0.0,
+      "pass_rate": 0.6785714285714286,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13142",
+      "ood": 0.0,
+      "pass_rate": 0.5833333333333334,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13241",
+      "ood": 0.0,
+      "pass_rate": 0.6309523809523809,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13439",
+      "ood": 0.0,
+      "pass_rate": 0.8095238095238095,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13496",
+      "ood": 0.0,
+      "pass_rate": 0.7976190476190477,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13497",
+      "ood": 0.0,
+      "pass_rate": 0.20238095238095238,
+      "patch_size": 14
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13584",
+      "ood": 0.0,
+      "pass_rate": 0.6428571428571429,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13779",
+      "ood": 0.0,
+      "pass_rate": 0.7619047619047619,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14087",
+      "ood": 0.0,
+      "pass_rate": 0.17857142857142858,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14092",
+      "ood": 0.0,
+      "pass_rate": 0.4523809523809524,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14894",
+      "ood": 0.0,
+      "pass_rate": 0.8333333333333334,
+      "patch_size": 13
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14983",
+      "ood": 0.0,
+      "pass_rate": 0.16666666666666666,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-15512",
+      "ood": 0.0,
+      "pass_rate": 0.40476190476190477,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25500",
+      "ood": 0.0,
+      "pass_rate": 0.08333333333333333,
+      "patch_size": 41
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25570",
+      "ood": 0.0,
+      "pass_rate": 0.6190476190476191,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25638",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 35
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25747",
+      "ood": 0.0,
+      "pass_rate": 0.10714285714285714,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-10325",
+      "ood": 0.0,
+      "pass_rate": 0.2857142857142857,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-10451",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 20
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-11445",
+      "ood": 0.0,
+      "pass_rate": 0.13095238095238096,
+      "patch_size": 14
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-7686",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 54
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-7738",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-7975",
+      "ood": 0.0,
+      "pass_rate": 0.2857142857142857,
+      "patch_size": 14
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8273",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8282",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8435",
+      "ood": 0.0,
+      "pass_rate": 0.13095238095238096,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8474",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8506",
+      "ood": 0.0,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8595",
+      "ood": 0.0,
+      "pass_rate": 0.6666666666666666,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8627",
+      "ood": 0.0,
+      "pass_rate": 0.14285714285714285,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8713",
+      "ood": 0.0,
+      "pass_rate": 0.7738095238095238,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8721",
+      "ood": 0.0,
+      "pass_rate": 0.6428571428571429,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8801",
+      "ood": 0.0,
+      "pass_rate": 0.15476190476190477,
+      "patch_size": 27
+    },
+    {
+      "instance_id": "sympy__sympy-11400",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 14
+    },
+    {
+      "instance_id": "sympy__sympy-11870",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sympy__sympy-11897",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-12171",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "sympy__sympy-12236",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "sympy__sympy-12419",
+      "ood": 0.0,
+      "pass_rate": 0.14285714285714285,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "sympy__sympy-12454",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-12481",
+      "ood": 0.0,
+      "pass_rate": 0.5476190476190477,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sympy__sympy-13031",
+      "ood": 0.0,
+      "pass_rate": 0.17857142857142858,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "sympy__sympy-13043",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "sympy__sympy-13146",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sympy__sympy-13437",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "sympy__sympy-13471",
+      "ood": 0.0,
+      "pass_rate": 0.6309523809523809,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "sympy__sympy-13480",
+      "ood": 0.0,
+      "pass_rate": 0.9047619047619048,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-13647",
+      "ood": 0.0,
+      "pass_rate": 0.7857142857142857,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-13773",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sympy__sympy-13895",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sympy__sympy-13915",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "sympy__sympy-13971",
+      "ood": 0.0,
+      "pass_rate": 0.38095238095238093,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-14024",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "sympy__sympy-14308",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 39
+    },
+    {
+      "instance_id": "sympy__sympy-14317",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 45
+    },
+    {
+      "instance_id": "sympy__sympy-14396",
+      "ood": 0.0,
+      "pass_rate": 0.17857142857142858,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sympy__sympy-14774",
+      "ood": 0.0,
+      "pass_rate": 0.8809523809523809,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-14817",
+      "ood": 0.0,
+      "pass_rate": 0.25,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "sympy__sympy-15011",
+      "ood": 0.0,
+      "pass_rate": 0.6071428571428571,
+      "patch_size": 14
+    },
+    {
+      "instance_id": "sympy__sympy-15308",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 8
+    },
+    {
+      "instance_id": "sympy__sympy-15345",
+      "ood": 0.0,
+      "pass_rate": 0.19047619047619047,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "sympy__sympy-15346",
+      "ood": 0.0,
+      "pass_rate": 0.13095238095238096,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-15609",
+      "ood": 0.0,
+      "pass_rate": 0.42857142857142855,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "sympy__sympy-15678",
+      "ood": 0.0,
+      "pass_rate": 0.44047619047619047,
+      "patch_size": 11
+    },
+    {
+      "instance_id": "sympy__sympy-16106",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 20
+    },
+    {
+      "instance_id": "sympy__sympy-16281",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sympy__sympy-16503",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 10
+    },
+    {
+      "instance_id": "sympy__sympy-16792",
+      "ood": 0.0,
+      "pass_rate": 0.25,
+      "patch_size": 16
+    },
+    {
+      "instance_id": "sympy__sympy-16988",
+      "ood": 0.0,
+      "pass_rate": 0.23809523809523808,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-17022",
+      "ood": 0.0,
+      "pass_rate": 0.4166666666666667,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sympy__sympy-17139",
+      "ood": 0.0,
+      "pass_rate": 0.5476190476190477,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-17630",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-17655",
+      "ood": 0.0,
+      "pass_rate": 0.5476190476190477,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-18057",
+      "ood": 0.0,
+      "pass_rate": 0.47619047619047616,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-18087",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 14
+    },
+    {
+      "instance_id": "sympy__sympy-18189",
+      "ood": 0.0,
+      "pass_rate": 0.5357142857142857,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-18199",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 50
+    },
+    {
+      "instance_id": "sympy__sympy-18532",
+      "ood": 0.0,
+      "pass_rate": 0.5476190476190477,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "sympy__sympy-18621",
+      "ood": 0.0,
+      "pass_rate": 0.6428571428571429,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-18698",
+      "ood": 0.0,
+      "pass_rate": 0.023809523809523808,
+      "patch_size": 11
+    },
+    {
+      "instance_id": "sympy__sympy-18835",
+      "ood": 0.0,
+      "pass_rate": 0.03571428571428571,
+      "patch_size": 21
+    },
+    {
+      "instance_id": "sympy__sympy-19007",
+      "ood": 0.0,
+      "pass_rate": 0.011904761904761904,
+      "patch_size": 18
+    },
+    {
+      "instance_id": "sympy__sympy-19254",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 61
+    },
+    {
+      "instance_id": "sympy__sympy-19487",
+      "ood": 0.0,
+      "pass_rate": 0.09523809523809523,
+      "patch_size": 3
+    },
+    {
+      "instance_id": "sympy__sympy-20049",
+      "ood": 0.0,
+      "pass_rate": 0.047619047619047616,
+      "patch_size": 34
+    },
+    {
+      "instance_id": "sympy__sympy-20154",
+      "ood": 0.0,
+      "pass_rate": 0.6666666666666666,
+      "patch_size": 23
+    },
+    {
+      "instance_id": "sympy__sympy-20212",
+      "ood": 0.0,
+      "pass_rate": 0.7976190476190477,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-20322",
+      "ood": 0.05,
+      "pass_rate": 0.0,
+      "patch_size": 54
+    },
+    {
+      "instance_id": "sympy__sympy-20442",
+      "ood": 0.0,
+      "pass_rate": 0.2857142857142857,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sympy__sympy-20590",
+      "ood": 0.0,
+      "pass_rate": 0.23809523809523808,
+      "patch_size": 5
+    },
+    {
+      "instance_id": "sympy__sympy-20639",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 24
+    },
+    {
+      "instance_id": "sympy__sympy-21055",
+      "ood": 0.0,
+      "pass_rate": 0.4523809523809524,
+      "patch_size": 23
+    },
+    {
+      "instance_id": "sympy__sympy-21171",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-21379",
+      "ood": 0.0,
+      "pass_rate": 0.15476190476190477,
+      "patch_size": 12
+    },
+    {
+      "instance_id": "sympy__sympy-21614",
+      "ood": 0.0,
+      "pass_rate": 0.44047619047619047,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-21627",
+      "ood": 0.0,
+      "pass_rate": 0.05952380952380952,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-21847",
+      "ood": 0.0,
+      "pass_rate": 0.7976190476190477,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-22005",
+      "ood": 0.0,
+      "pass_rate": 0.23809523809523808,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "sympy__sympy-22714",
+      "ood": 0.0,
+      "pass_rate": 0.6904761904761905,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-22840",
+      "ood": 0.0,
+      "pass_rate": 0.10714285714285714,
+      "patch_size": 6
+    },
+    {
+      "instance_id": "sympy__sympy-23117",
+      "ood": 0.0,
+      "pass_rate": 0.7738095238095238,
+      "patch_size": 15
+    },
+    {
+      "instance_id": "sympy__sympy-23191",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 24
+    },
+    {
+      "instance_id": "sympy__sympy-23262",
+      "ood": 0.0,
+      "pass_rate": 0.5119047619047619,
+      "patch_size": 4
+    },
+    {
+      "instance_id": "sympy__sympy-24066",
+      "ood": 0.0,
+      "pass_rate": 0.5357142857142857,
+      "patch_size": 7
+    },
+    {
+      "instance_id": "sympy__sympy-24102",
+      "ood": 0.0,
+      "pass_rate": 0.0,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-24152",
+      "ood": 0.0,
+      "pass_rate": 0.9047619047619048,
+      "patch_size": 9
+    },
+    {
+      "instance_id": "sympy__sympy-24213",
+      "ood": 0.0,
+      "pass_rate": 0.8095238095238095,
+      "patch_size": 2
+    },
+    {
+      "instance_id": "sympy__sympy-24909",
+      "ood": 0.0,
+      "pass_rate": 0.10714285714285714,
+      "patch_size": 10
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+<section id="examples">
+<h2>6. Concrete examples — what BPE is actually doing</h2>
+<p>Plain-language illustrations of the core BPE concepts using real data from this pilot.</p>
+
+<h3>6.1 What is a BPE merge?</h3>
+
+<p>A merge is a single step in BPE training. Each merge finds the most-frequent adjacent pair of tokens in the corpus, and binds that pair into a single new symbol. From that point on, every occurrence of that pair is treated as one token.</p>
+
+<p><strong>Concrete example from our training run — the first merge that was performed:</strong></p>
+
+<table style="margin: 8px 0; font-size: 14px;">
+<tr><td><strong>Pair found:</strong></td>
+<td><span style="padding:2px 6px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11.5px;">EDIT_SRC_PY</span>
++
+<span style="padding:2px 6px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11.5px;">EDIT_SRC_PY</span>
+</td></tr>
+<tr><td><strong>Frequency across corpus:</strong></td><td>Most frequent adjacent pair (over 800 occurrences)</td></tr>
+<tr><td><strong>New merged symbol:</strong></td>
+<td><span style="padding:2px 6px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11.5px;">EDIT_SRC_PY → EDIT_SRC_PY</span>
+</td></tr>
+<tr><td><strong>Meaning:</strong></td><td>"Two source-file edits in a row" — a recognizable burst of editing activity</td></tr>
+</table>
+
+<p>After this first merge, BPE looks for the most frequent pair in the <em>updated</em> corpus — which might now involve the new merged symbol. That is how longer motifs grow: once <code>A→B</code> is a single token, it can itself pair with neighbors to form <code>A→B→C</code>, etc.</p>
+
+<p>We ran 124 merges total. Each merge adds one new symbol to the vocabulary and re-expresses the corpus to use that symbol where the pair appeared.</p>
+
+
+<h3>6.2 One trajectory in three views</h3>
+
+<p>Here is a real SWE-agent trajectory (agent <strong>Claude-3.5</strong>, instance <code>sphinx-doc__sphinx-8435</code>) shown at each representation level: raw shell-like commands, canonicalized atoms, and BPE motifs.</p>
+
+<h4 style="font-size:14px; margin:20px 0 6px;">Raw action strings (25 steps)</h4>
+<p style="font-size:13px; color:#666;">What the agent actually did — shell-like commands. Surface form varies enormously: different file paths, different arguments, different whitespace.</p>
+<div style="background:#fdfdfd; padding:8px 12px; border-radius:4px; border:1px solid #e5e5e5; max-height:280px; overflow-y:auto;">
+<div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 0]</span> create example.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 1]</span> edit 1:1<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 2]</span> edit 1:1<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 3]</span> create index.rst</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 4]</span> edit 1:3<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 5]</span> create conf.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 6]</span> edit 1:3<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 7]</span> find_file &quot;autodoc.py&quot; src</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 8]</span> find . -name &quot;autodoc.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[ 9]</span> find . -name &quot;*autodoc*.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[10]</span> find . -name &quot;ext*.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[11]</span> open sphinx/ext/extlinks.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[12]</span> open sphinx/extension.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[13]</span> find . -name &quot;*autodoc*.py&quot; | grep -v test</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[14]</span> find ./sphinx -name &quot;*.py&quot;</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[15]</span> open ./sphinx/ext/autodoc/__init__.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[16]</span> search_file &quot;autodoc_type_aliases&quot; ./sphinx/ext/autodoc/__in<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[17]</span> search_file &quot;class DataDocumenter&quot; ./sphinx/ext/autodoc/__in<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[18]</span> goto 1684</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[19]</span> edit 1699:1739<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[20]</span> search_file &quot;class AttributeDocumenter&quot; ./sphinx/ext/autodoc<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[21]</span> goto 2016</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[22]</span> edit 2090:2100<span style="color:#aaa;">…</span></div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[23]</span> python -m py_compile sphinx/ext/autodoc/__init__.py</div><div style="font-family:SF Mono,monospace; font-size:11.5px; padding:3px 6px; margin:1px 0; background:#f9f9f9; border-left:2px solid #ccc;"><span style="color:#888;">[24]</span> submit</div>
+</div>
+
+<h4 style="font-size:14px; margin:20px 0 6px;">Canonicalized atoms (25 tokens)</h4>
+<p style="font-size:13px; color:#666;">Each raw action → one canonical atom. Type-tagged file paths (SRC/TEST/REPRO/CONFIG) and stripped of non-semantic literals. Same length as raw — just normalized.</p>
+<div style="background:#fdfdfd; padding:10px 12px; border-radius:4px; border:1px solid #e5e5e5;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_DOC">CREATE_DOC</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_DOC">EDIT_DOC</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE">FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY">OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="NAV_SRC_PY">NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH">SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="NAV_SRC_PY">NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="RUN_PYTHON_SRC_PY">RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SUBMIT">SUBMIT</span>
+</div>
+
+<h4 style="font-size:14px; margin:20px 0 6px;">BPE-expressed (13 tokens — compression 0.52)</h4>
+<p style="font-size:13px; color:#666;">Recurring sub-sequences are merged into single motifs (colored boxes are motifs; gray are atoms). Compression ratio = 13/25 = <strong>0.52</strong> — i.e., after BPE the sequence uses only 52% as many tokens as before.</p>
+<div style="background:#fdfdfd; padding:10px 12px; border-radius:4px; border:1px solid #e5e5e5;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#d2c4f0; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e0c4e8; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_DOC+EDIT_DOC">CREATE_DOC→EDIT_DOC</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="CREATE_SRC_PY+EDIT_SRC_PY">CREATE_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c7e6c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c7e6c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c5e4d2; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY+OPEN_SRC_PY">OPEN_SRC_PY→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#c7e6c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5c7c4; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→SEARCH→SEARCH→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#bde4f2; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SEARCH+NAV_SRC_PY">SEARCH→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f0e4a6; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→RUN_PYTHON_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,Menlo,monospace; font-size:11.5px;" title="SUBMIT">SUBMIT</span>
+</div>
+
+<p style="font-size:13px; color:#555; margin-top:16px;">
+<strong>What "compression" means here:</strong> the same trajectory that took 25 canonical atoms to express takes only 13 BPE tokens because recurring patterns (like "edit-edit" or "search-then-open") got bound into single tokens. Across the whole corpus of 867 trajectories, compression ratio is ~0.41 at V=200 (meaning trajectories use ~41% as many tokens after BPE).
+</p>
+
+
+<h3>6.3 Top motifs with real-trajectory occurrences</h3>
+
+<p>The BPE-learned motifs correspond to recognizable procedural practices. Here are the top motifs by frequency across the corpus, with examples of where they appear in real trajectories.</p>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#1</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">EDIT_SRC_PY → EDIT_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 208 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-14182</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY">CREATE_REPRO_...→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→E...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→R...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→R...→RUN_PYTHON_RE</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#2</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">CREATE_REPRO_PY → EDIT_REPRO_PY → RUN_PYTHON_REPRO_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(3 atoms, 190 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>django__django-11001</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY">CREATE_REPRO_...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_SRC_PY">CREATE_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY">EDIT_SRC_PY→R...→RUN_PYTHON_SR</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#3</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">FIND_FILE → FIND_FILE</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 189 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>django__django-11099</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="FIND_FILE+FIND_FILE">FIND_FILE→FIND_FILE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">OPEN_SRC_PY→E...→EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">CREATE_TEST_P...→RUN_PYTHON_TE</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#4</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">SEARCH → OPEN_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 188 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-14995</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY">CREATE_REPRO_...→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+SEARCH">SEARCH→SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY">SEARCH→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→S...→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT">EDIT_SRC_PY→R...→SUBMIT</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#5</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">OPEN_SRC_PY → SEARCH → NAV_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(3 atoms, 181 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>django__django-12747</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY">CREATE_REPRO_...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY">SEARCH→OPEN_S...→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→SEARCH→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+RUN_PYTHON_REPRO_PY">EDIT_SRC_PY→R...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+NAV_SRC_PY">SEARCH→NAV_SRC_PY</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#6</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">SEARCH → SEARCH</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 157 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-14995</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY">CREATE_REPRO_...→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+SEARCH">SEARCH→SEARCH</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="SEARCH+OPEN_SRC_PY">SEARCH→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY">OPEN_SRC_PY→S...→NAV_SRC_PY</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#7</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">FIND_FILE → OPEN_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 156 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-7746</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_REPRO_PY+EDIT_REPRO_PY">EDIT_REPRO_PY→EDIT_REPRO_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY">EDIT_REPRO_PY...→RUN_PYTHON_RE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="FIND_FILE+OPEN_SRC_PY">FIND_FILE→OPEN_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="NAV_SRC_PY">NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY">EDIT_SRC_PY→E...→EDIT_SRC_PY</span>
+</div>
+
+</div>
+
+<div style="margin: 18px 0; padding: 12px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px;">
+<div style="font-size:14px;">
+<span style="color:#888;">#8</span>
+&nbsp;
+<span style="font-family:SF Mono,monospace; font-size:12.5px;">OPEN_SRC_PY → NAV_SRC_PY</span>
+&nbsp; <span style="color:#888; font-size:12px;">(2 atoms, 146 occurrences)</span>
+</div>
+
+<p style="margin: 4px 0; font-size:13px;">Example occurrence in agent <strong>GPT-4</strong>, instance <code>astropy__astropy-6938</code> (motif highlighted):</p>
+<div style="padding: 8px 12px; background:#fafafa; border-radius:4px;">
+<span style="display:inline-block; padding:2px 6px; margin:2px; background:#f5f5f5; border:1px solid #bbb; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="EDIT_SRC_PY">EDIT_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">OPEN_TEST_PY→...→RUN_PYTHON_TE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#f7d7a6; border:1px solid #d49030; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+NAV_SRC_PY">OPEN_SRC_PY→NAV_SRC_PY</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY">OPEN_TEST_PY→...→RUN_PYTHON_TE</span><span style="display:inline-block; padding:2px 6px; margin:2px; background:#e8f0ff; border:1px solid #6090d0; border-radius:3px; font-family:SF Mono,monospace; font-size:11px;" title="OPEN_SRC_PY+NAV_SRC_PY">OPEN_SRC_PY→NAV_SRC_PY</span>
+</div>
+
+</div>
+
+</section>

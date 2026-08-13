@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Procedural trace viewer — Paper 2 pilot</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 0; color: #222;
+    background: #fafafa; line-height: 1.5;
+  }
+  header {
+    background: #fff; border-bottom: 1px solid #ddd;
+    padding: 16px 24px;
+  }
+  header h1 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  header p { margin: 0; color: #666; font-size: 13px; }
+  .tasks {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    padding: 12px 24px; background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    font-size: 13px;
+  }
+  .task-btn {
+    background: #fff; border: 1px solid #c5c5c5;
+    padding: 6px 12px; border-radius: 4px; cursor: pointer;
+    font-family: inherit; font-size: 12px;
+  }
+  .task-btn.active { background: #0366d6; color: white; border-color: #0366d6; }
+  .task-btn:hover:not(.active) { background: #e8e8e8; }
+
+  main { padding: 18px 24px; max-width: 1400px; margin: 0 auto; }
+
+  .header-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; color: white; }
+  .badge.resolved { background: #2e7d32; }
+  .badge.partial { background: #b58900; }
+  .badge.unresolved { background: #c03030; }
+
+  .agent-meta {
+    display: flex; gap: 22px; font-size: 12px; color: #444;
+    margin-bottom: 14px;
+  }
+  .agent-meta strong { color: #111; }
+
+  .lane-stack { margin: 12px 0 8px; }
+  .lane {
+    display: flex; align-items: center; margin: 4px 0;
+    position: relative;
+  }
+  .lane-name {
+    min-width: 90px; font-weight: 600; font-size: 13px; color: #333;
+  }
+  .lane-track {
+    flex: 1; height: 28px; position: relative;
+    background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 4px;
+    cursor: crosshair; overflow: hidden;
+  }
+  .phase-band {
+    position: absolute; top: 0; height: 100%;
+    color: white; font-size: 10px; padding: 4px 4px; box-sizing: border-box;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    user-select: none;
+  }
+  .phase-band:hover { filter: brightness(1.1); cursor: pointer; }
+  .lane-length {
+    min-width: 90px; text-align: right; color: #666; font-size: 12px;
+    padding-left: 10px;
+  }
+  .cursor {
+    position: absolute; top: -2px; height: 32px; width: 2px;
+    background: #c03030; z-index: 3; pointer-events: none;
+    transition: left 50ms linear;
+  }
+
+  .chips-wrap {
+    display: flex; gap: 12px; margin: 14px 0;
+  }
+  .chips-col {
+    flex: 1; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
+    padding: 10px; min-width: 0;
+  }
+  .chips-col h4 {
+    margin: 0 0 6px; font-size: 13px; color: #333;
+  }
+  .chip-row {
+    display: flex; flex-wrap: wrap; gap: 3px;
+  }
+  .chip {
+    display: inline-block; padding: 2px 6px; border-radius: 3px;
+    font-family: "SF Mono", Menlo, monospace; font-size: 10.5px;
+    background: #ffffff; border: 1px solid #c03030;
+    cursor: pointer; user-select: none;
+    transition: transform 80ms ease-out;
+  }
+  .chip.shared-all { background: #c8e6c9; border-color: #2e7d32; }
+  .chip.shared-two { background: #fff3c4; border-color: #b58900; }
+  .chip.atom { background: #f3f3f3; border-color: #bbb; }
+  .chip.active { outline: 2px solid #0366d6; outline-offset: 1px; transform: translateY(-1px); }
+  .chip:hover:not(.active) { filter: brightness(0.94); }
+
+  .legend {
+    background: #f6f6f6; padding: 8px 12px; border-radius: 5px;
+    font-size: 11px; margin: 12px 0;
+  }
+  .legend span.sw {
+    display: inline-block; padding: 1px 5px; margin: 0 4px 0 0;
+    border-radius: 3px; font-family: "SF Mono", monospace; font-size: 10.5px;
+  }
+
+  .detail {
+    margin-top: 16px; background: #fff; border: 1px solid #e0e0e0;
+    border-radius: 6px; padding: 14px;
+    min-height: 260px;
+  }
+  .detail-head { font-size: 13px; color: #666; margin-bottom: 6px; }
+  .detail-cols {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .detail-panel {
+    background: #f9f9f9; border-radius: 4px; padding: 10px;
+    border-left: 3px solid #888;
+  }
+  .detail-panel h5 {
+    margin: 0 0 6px; font-size: 12px; color: #333;
+    display: flex; justify-content: space-between;
+  }
+  .detail-panel .atom-tag {
+    font-family: "SF Mono", monospace; font-size: 10.5px;
+    background: #fff; padding: 1px 5px; border-radius: 3px;
+    border: 1px solid #bbb; color: #444; font-weight: normal;
+  }
+  .detail-panel pre {
+    margin: 4px 0; font-family: "SF Mono", monospace; font-size: 11px;
+    white-space: pre-wrap; word-break: break-word; color: #222;
+    background: #fff; padding: 6px 8px; border-radius: 3px;
+    max-height: 90px; overflow-y: auto;
+  }
+  .detail-panel .label {
+    color: #666; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-top: 6px;
+  }
+  .detail-panel.placeholder {
+    color: #888; font-size: 12px; text-align: center;
+    border-left-color: #ccc;
+    padding: 30px 10px;
+  }
+
+  footer { font-size: 12px; color: #888; margin: 24px 24px; text-align: center; }
+
+  .hint { color: #888; font-size: 11.5px; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+<h1>Procedural trace viewer</h1>
+<p>Drag over a lane to scrub across all three agents at the same proportional position. Click a motif chip or phase band to freeze on that slice. Details below show the raw action, the model's stated reasoning, and the observation it saw back.</p>
+</header>
+
+<div class="tasks" id="tasks"></div>
+
+<main>
+
+<div id="task-card"></div>
+
+</main>
+
+<footer>
+part of the Paper 2 pilot · <a href="dashboard.html">back to dashboard</a>
+</footer>
+
+<script>
+const PHASE_COLORS = {
+  exploration: "#7a9eca",
+  localization: "#3faea1",
+  editing: "#e89545",
+  verification: "#9e7acd",
+  cleanup_submit: "#888888",
+};
+const PHASE_LABELS = {
+  exploration: "explore",
+  localization: "localize",
+  editing: "edit",
+  verification: "verify",
+  cleanup_submit: "submit",
+};
+const AGENT_ORDER = ["GPT-4", "Claude-3.5", "GPT-4o"];
+const AGENT_COLORS = {
+  "GPT-4": "#0072B2",
+  "Claude-3.5": "#009E73",
+  "GPT-4o": "#E69F00",
+};
+
+let currentTask = null;
+
+function abbrevMotif(m, maxLen = 26) {
+  const parts = m.split("+");
+  let s;
+  if (parts.length <= 2) s = m.replace(/\+/g, "→");
+  else s = `${parts[0]}→…→${parts[parts.length - 1]} (${parts.length})`;
+  return s.length <= maxLen ? s : s.slice(0, maxLen - 1) + "…";
+}
+
+function motifAtomRange(motifSeq, motifIdx, canonical) {
+  // Walk motifSeq consuming atoms; return [startAtom, endAtomExclusive] for motifIdx.
+  let pos = 0;
+  for (let i = 0; i < motifSeq.length; i++) {
+    const n = motifSeq[i].split("+").length;
+    if (i === motifIdx) return [pos, pos + n];
+    pos += n;
+  }
+  return [0, 0];
+}
+
+function renderPhaseBand(phase, startFrac, widthFrac, tooltip, onClick) {
+  const band = document.createElement("div");
+  band.className = "phase-band";
+  band.style.background = PHASE_COLORS[phase.phase] || "#999";
+  band.style.left = (startFrac * 100) + "%";
+  band.style.width = (widthFrac * 100) + "%";
+  band.title = tooltip;
+  if (widthFrac >= 0.08) band.textContent = PHASE_LABELS[phase.phase] || phase.phase;
+  band.addEventListener("click", onClick);
+  return band;
+}
+
+function renderTask(task) {
+  currentTask = task;
+  const main = document.getElementById("task-card");
+  main.innerHTML = "";
+
+  // Header meta
+  const badgeClass = task.n_resolved === 3 ? "resolved" : (task.n_resolved === 0 ? "unresolved" : "partial");
+  const hmeta = document.createElement("div");
+  hmeta.className = "header-meta";
+  hmeta.innerHTML = `
+    <div>
+      <h2 style="margin:0; font-size:18px; color:#111;">${task.instance_id}</h2>
+      <div style="font-size:12px; color:#666;">${task.note}</div>
+    </div>
+    <span class="badge ${badgeClass}">${task.n_resolved}/3 resolved</span>
+  `;
+  main.appendChild(hmeta);
+
+  const agentMeta = document.createElement("div");
+  agentMeta.className = "agent-meta";
+  agentMeta.innerHTML = AGENT_ORDER.filter(a => task.agents[a]).map(a => {
+    const d = task.agents[a];
+    const check = d.resolved ? "✓" : "✗";
+    return `<span><strong>${a}</strong> ${check}&nbsp; ${(d.tokens_sent/1000).toFixed(0)}k tok · ${d.api_calls} calls · $${d.cost_usd.toFixed(2)}</span>`;
+  }).join("");
+  main.appendChild(agentMeta);
+
+  // Phase map lanes
+  const laneStack = document.createElement("div");
+  laneStack.className = "lane-stack";
+  laneStack.innerHTML = `<div style="font-size:11px; color:#666; font-weight:600; margin-bottom:4px;">phase map (widths = real step counts within the lane; lanes normalized to fill the same horizontal space)</div>`;
+  const cursors = {};
+  AGENT_ORDER.forEach(a => {
+    const d = task.agents[a];
+    if (!d) return;
+    const lane = document.createElement("div");
+    lane.className = "lane";
+    lane.innerHTML = `
+      <div class="lane-name">${a}</div>
+      <div class="lane-track" data-agent="${a}"></div>
+      <div class="lane-length">${d.canonical_length} steps</div>
+    `;
+    laneStack.appendChild(lane);
+    const track = lane.querySelector(".lane-track");
+    const total = d.canonical_length;
+    d.phases.forEach(p => {
+      const startFrac = p.start / total;
+      const wFrac = (p.end - p.start) / total;
+      const band = renderPhaseBand(
+        p, startFrac, wFrac,
+        `${PHASE_LABELS[p.phase]} · steps ${p.start}–${p.end - 1} (${p.end - p.start} atoms)`,
+        () => { showStep(a, p.start, p.end); }
+      );
+      track.appendChild(band);
+    });
+    const cursor = document.createElement("div");
+    cursor.className = "cursor";
+    cursor.style.left = "0";
+    cursor.style.display = "none";
+    track.appendChild(cursor);
+    cursors[a] = cursor;
+    track.addEventListener("mousemove", (e) => {
+      const rect = track.getBoundingClientRect();
+      const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      showStepByFraction(frac);
+    });
+    track.addEventListener("mouseleave", () => { /* leave cursor where it is */ });
+  });
+  main.appendChild(laneStack);
+
+  // Legend
+  const legend = document.createElement("div");
+  legend.className = "legend";
+  const phaseLg = ["exploration", "localization", "editing", "verification", "cleanup_submit"].map(p => `<span class="sw" style="background:${PHASE_COLORS[p]}; color:white;">${PHASE_LABELS[p]}</span>`).join(" ");
+  legend.innerHTML = `
+    <strong>phases:</strong> ${phaseLg}
+    &nbsp;|&nbsp;
+    <strong>motifs:</strong>
+    <span class="sw" style="background:#c8e6c9; border:1px solid #2e7d32;">shared by all 3</span>
+    <span class="sw" style="background:#fff3c4; border:1px solid #b58900;">shared by 2</span>
+    <span class="sw" style="background:#fff; border:1px solid #c03030;">unique</span>
+    <span class="sw" style="background:#f3f3f3; border:1px solid #bbb;">atom</span>
+    <span class="hint">click a chip or a phase band to freeze the detail view · drag across a lane to scrub</span>
+  `;
+  main.appendChild(legend);
+
+  // Chip columns
+  const motifSets = {};
+  AGENT_ORDER.forEach(a => {
+    if (task.agents[a]) motifSets[a] = new Set(task.agents[a].bpe);
+  });
+  const chipsWrap = document.createElement("div");
+  chipsWrap.className = "chips-wrap";
+  AGENT_ORDER.forEach(a => {
+    const d = task.agents[a];
+    if (!d) return;
+    const col = document.createElement("div");
+    col.className = "chips-col";
+    col.dataset.agent = a;
+    col.innerHTML = `<h4 style="color:${AGENT_COLORS[a]};">${a} <span style="color:#888; font-weight:normal;">· ${d.bpe.length} motifs</span></h4>`;
+    const row = document.createElement("div");
+    row.className = "chip-row";
+    const others = AGENT_ORDER.filter(x => x !== a && motifSets[x]);
+    d.bpe.forEach((m, i) => {
+      const chip = document.createElement("span");
+      let cls = "chip";
+      if (!m.includes("+")) cls += " atom";
+      else {
+        const nOther = others.filter(o => motifSets[o].has(m)).length;
+        if (nOther === 2) cls += " shared-all";
+        else if (nOther === 1) cls += " shared-two";
+      }
+      chip.className = cls;
+      chip.textContent = abbrevMotif(m);
+      chip.title = m;
+      chip.dataset.agent = a;
+      chip.dataset.motifIdx = i;
+      chip.addEventListener("click", () => {
+        const [s, e] = motifAtomRange(d.bpe, i, d.canonical);
+        showStep(a, s, e);
+      });
+      row.appendChild(chip);
+    });
+    col.appendChild(row);
+    chipsWrap.appendChild(col);
+  });
+  main.appendChild(chipsWrap);
+
+  // Detail panel
+  const detail = document.createElement("div");
+  detail.className = "detail";
+  detail.id = "detail";
+  detail.innerHTML = `
+    <div class="detail-head" id="detail-head">hover a lane or click a motif chip to inspect</div>
+    <div class="detail-cols" id="detail-cols"></div>
+  `;
+  main.appendChild(detail);
+  // seed placeholders
+  const cols = document.getElementById("detail-cols");
+  AGENT_ORDER.forEach(a => {
+    if (!task.agents[a]) return;
+    const p = document.createElement("div");
+    p.className = "detail-panel placeholder";
+    p.dataset.agent = a;
+    p.textContent = `${a} — no step selected`;
+    cols.appendChild(p);
+  });
+}
+
+function showStepByFraction(frac) {
+  const task = currentTask;
+  if (!task) return;
+  AGENT_ORDER.forEach(a => {
+    const d = task.agents[a];
+    if (!d) return;
+    const idx = Math.min(d.canonical_length - 1, Math.floor(frac * d.canonical_length));
+    updatePanel(a, idx, idx + 1, { showCursor: true, cursorFrac: frac });
+  });
+  document.getElementById("detail-head").textContent = `step ${(frac * 100).toFixed(0)}% across each lane (drag to scrub; click to freeze)`;
+}
+
+function showStep(agent, startIdx, endIdxExclusive) {
+  const task = currentTask;
+  if (!task) return;
+  AGENT_ORDER.forEach(a => {
+    const d = task.agents[a];
+    if (!d) return;
+    if (a === agent) {
+      updatePanel(a, startIdx, endIdxExclusive, { showCursor: true, cursorFrac: startIdx / d.canonical_length });
+    } else {
+      const total = task.agents[agent].canonical_length;
+      const frac = startIdx / total;
+      const otherIdx = Math.min(d.canonical_length - 1, Math.floor(frac * d.canonical_length));
+      updatePanel(a, otherIdx, otherIdx + 1, { showCursor: true, cursorFrac: frac });
+    }
+  });
+  const primary = task.agents[agent];
+  const range = endIdxExclusive - startIdx;
+  document.getElementById("detail-head").textContent =
+    `${agent} · steps ${startIdx}${range > 1 ? "–" + (endIdxExclusive - 1) : ""} (${range} atom${range > 1 ? "s" : ""}). Other lanes show the proportionally-matched step for comparison.`;
+}
+
+function updatePanel(agent, startIdx, endIdxExclusive, opts) {
+  const task = currentTask;
+  const d = task.agents[agent];
+  if (!d) return;
+  const cols = document.getElementById("detail-cols");
+  const panel = cols.querySelector(`.detail-panel[data-agent="${agent}"]`);
+  if (!panel) return;
+
+  const step = d.steps[startIdx] || {};
+  panel.className = "detail-panel";
+  panel.style.borderLeftColor = AGENT_COLORS[agent];
+  const atomLabel = d.canonical.slice(startIdx, endIdxExclusive).join(" · ");
+  const range = endIdxExclusive - startIdx;
+  panel.innerHTML = `
+    <h5>${agent} <span class="atom-tag">${atomLabel || "—"}</span></h5>
+    <div style="font-size:11px; color:#666;">step ${startIdx}${range > 1 ? " – " + (endIdxExclusive - 1) : ""} of ${d.canonical_length}</div>
+    <div class="label">action</div>
+    <pre>${escapeHtml(step.action || "(empty)")}</pre>
+    <div class="label">model's reasoning (response)</div>
+    <pre>${escapeHtml(step.thought || "(empty)")}</pre>
+    <div class="label">observation back</div>
+    <pre>${escapeHtml(step.observation_preview || "(empty)")}</pre>
+  `;
+
+  if (opts && opts.showCursor) {
+    const track = document.querySelector(`.lane-track[data-agent="${agent}"]`);
+    if (track) {
+      const cursor = track.querySelector(".cursor");
+      if (cursor) {
+        cursor.style.display = "block";
+        cursor.style.left = (opts.cursorFrac * 100) + "%";
+      }
+    }
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+async function loadIndex() {
+  const res = await fetch("viewer_data/index.json");
+  const idx = await res.json();
+  const tasksEl = document.getElementById("tasks");
+  idx.forEach((entry, i) => {
+    const btn = document.createElement("button");
+    btn.className = "task-btn" + (i === 0 ? " active" : "");
+    btn.textContent = `${entry.instance_id} · ${entry.note}`;
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".task-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      loadTask(entry.instance_id);
+    });
+    tasksEl.appendChild(btn);
+  });
+  if (idx.length) loadTask(idx[0].instance_id);
+}
+
+async function loadTask(instance_id) {
+  const res = await fetch(`viewer_data/${instance_id}.json`);
+  const task = await res.json();
+  renderTask(task);
+}
+
+loadIndex();
+</script>
+
+</body>
+</html>

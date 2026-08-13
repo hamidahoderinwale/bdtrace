@@ -1,0 +1,24 @@
+name: patch_driven
+floor: 0.0
+ceiling: 1.0
+phases:
+  - name: localization
+    reward: 0.20
+    require_any: [{atom: search_repo}, {atom: read_file}]
+    min_occurrences: 2
+    before_first: edit
+  - name: implementation
+    reward: 0.30
+    require_any: [{atom: edit}]
+  - name: completion
+    reward: 0.20
+    require_any: [{atom: submit}]
+penalties:
+  - name: test_thrash
+    penalty: 0.15
+    pattern: [run_test, run_test, run_test]
+    contiguous: true
+  - name: edit_streak
+    penalty: 0.10
+    pattern: [edit, edit, edit, edit, edit]
+    contiguous: true

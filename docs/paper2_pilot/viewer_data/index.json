@@ -1,0 +1,26 @@
+[
+  {
+    "instance_id": "django__django-13447",
+    "note": "short 3/3 \u2014 tight convergence",
+    "n_resolved": 3,
+    "max_atoms": 24
+  },
+  {
+    "instance_id": "django__django-11039",
+    "note": "medium 3/3 \u2014 productive divergence",
+    "n_resolved": 3,
+    "max_atoms": 54
+  },
+  {
+    "instance_id": "django__django-14855",
+    "note": "long 3/3 \u2014 GPT-4o verbosity signature",
+    "n_resolved": 3,
+    "max_atoms": 68
+  },
+  {
+    "instance_id": "django__django-13551",
+    "note": "medium 0/3 \u2014 what failure looks like",
+    "n_resolved": 0,
+    "max_atoms": 32
+  }
+]

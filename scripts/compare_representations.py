@@ -88,15 +88,17 @@ def load_certs(traces_path: Path) -> dict[str, frozenset[str]]:
                 d = ev["details"]
                 if not d["file_path"].endswith(".py"):
                     continue
-                before = d["before_content"].splitlines(keepends=True)
-                after = d["after_content"].splitlines(keepends=True)
+                before_str = d.get("before_content") or ""
+                after_str  = d.get("after_content")  or ""
+                before = before_str.splitlines(keepends=True)
+                after  = after_str.splitlines(keepends=True)
                 raw = "".join(difflib.unified_diff(
                     before, after, fromfile=d["file_path"], tofile=d["file_path"]
                 ))
                 if not raw:
                     continue
                 diff = f"diff --git a/{d['file_path']} b/{d['file_path']}\n" + raw
-                ops.extend(patch_to_ast_sequence(diff))
+                ops.extend(patch_to_ast_sequence(diff, before_str, after_str))
             if ops:
                 norm = frozenset(_NORMALIZE_OPS.get(op, op) for op in ops)
                 certs[trace["instance_id"]] = norm
