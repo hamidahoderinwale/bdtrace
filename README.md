@@ -1,20 +1,25 @@
 # Procedural Clio: Structural Analysis of LLM Agent Fix Strategies
 
-Behavioral observation of fix procedures from LLM agent traces on SWE-bench, without relying on agent self-report.
+Behavioral observation of coding-agent work from its artifacts — patch structure and action sequences — without relying on agent self-report. Companion analysis repo for **[Agent trajectories as programs (arXiv:2606.16988)](https://arxiv.org/abs/2606.16988)**; the reusable fingerprinting library that grew out of this work is **[procgrep](https://github.com/hamidahoderinwale/procgrep)**.
 
 ## Core findings
 
-1. **Structural patterns predict difficulty, semantics don't.** FIM on edit certificates separates difficulty 4.6x better than any semantic grouping (issue text, predicted fix descriptions, or fix descriptions from agent traces).
+From patch structure (edit certificates):
 
+1. **Structural patterns predict difficulty, semantics don't.** Frequent-itemset patterns over edit certificates separate difficulty 4.6x better than any semantic grouping (issue text, predicted fixes, or fix descriptions from agent traces).
 2. **Agents can't describe their own fix strategies.** Self-reported edit operations match actual patch structure at F1=0.20. Observe behavior, don't ask.
+3. **Agents use different structural approaches to the same problem.** On co-solved instances, agents produce identical edit certificates only 24% of the time. The LLM backbone drives strategy, not the scaffold.
+4. **The hard part is composition, not primitives.** 43.8% of failures are composition failures: the agent has demonstrated every required edit operation but can't combine them.
+5. **More benchmark instances don't help.** Strategy coverage saturates early; SWE-smith over-samples easy patterns and under-represents hard ones.
 
-3. **Agents use different structural approaches to the same problem.** On co-solved instances, agents produce identical edit certificates only 24% of the time (median Jaccard 0.56). The LLM backbone drives strategy, not the scaffold.
+From action sequences (trajectories as programs — the paper's line):
 
-4. **The hard part is composition, not primitives.** 43.8% of agent failures are composition failures: the agent has individually demonstrated every required edit operation but can't combine them. For the hardest instances, it's 50.4%.
+6. **Procedural fingerprints identify the agent** (leakage-controlled), and a distilled student's nearest behavioral neighbor is its own teacher: lineage (0.25) is far closer than scaffold (0.53) or era (0.52) changes.
+7. **Distillation transfers the vocabulary but narrows its use.** Canonical action vocabulary transfers completely (Jaccard 1.00) while the distribution concentrates (entropy 2.28→1.87) — rigidity, not selective loss; the drift is neither outcome-dependent nor localized.
+8. **Failure is predictable from a short action prefix** (AUC 0.69 at three actions), grounding budget allocation across task attempts.
+9. **Thinking models narrate least of what they do**: reverse coverage (did→says) is 0.20–0.25 for extended-thinking models vs 0.50–0.71 for older ones.
 
-5. **More benchmark instances don't help.** Strategy coverage saturates early. SWE-smith over-samples easy patterns (52.7% return-value changes) while under-representing hard ones.
-
-See [findings.md](findings.md) for the full record with methodology, decision traces, and literature anchors.
+See [findings.md](findings.md) for the full record — including the grounding audit that separates reproduced claims from retracted ones, and results still awaiting write-up.
 
 ## Setup
 
@@ -23,7 +28,7 @@ uv sync
 source .venv/bin/activate
 ```
 
-Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.venv/.env` for LLM-based analyses.
+Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.env` for LLM-based analyses.
 
 ## Representation pipeline
 
@@ -33,48 +38,26 @@ Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.venv/.env` for LLM-based analy
 | Scoped certificates | Edit type + file path + function/class scope + patch size | 300/300 |
 | Contextual edit ops | Edit type + parent AST node (e.g. `ADD_For@FunctionDef`) | 203/300 (68%) |
 | Fix intent labels | 12-category semantic taxonomy per hunk | 289/300 |
+| Canonical action sequences | Trajectory as atoms (search/read/edit/test/...), BPE-learned procedures on top | 9 agents, 2,639 trajectories |
 
-## Key scripts
-
-**Analysis:**
-- `scripts/compositional_generalization.py` -- classify failures as novel primitive vs novel composition across 84 agents
-- `scripts/fim_difficulty_analysis.py` -- connect FIM patterns to 84-agent ease data
-- `scripts/semantic_vs_structural.py` -- nearest-neighbor, UMAP, and variance comparison
-- `scripts/validate_grounding.py` -- measure self-report accuracy (grounding failure)
-- `scripts/compare_representations.py` -- kNN prediction across representation types
-
-**Pipeline:**
-- `scripts/build_canonical_forms.py` -- FIM closed itemsets from edit certificates
-- `scripts/build_scoped_certificates.py` -- oracle scoped certificates with file/scope/size
-- `scripts/build_agent_scoped_certs.py` -- agent scoped certificates + oracle alignment
-
-**Figures:**
-- `scripts/pairwise_figures_v2.py` -- agent comparison: strip plots, divergence scatter, vocabulary, instance flow
-- `scripts/scoped_figures.py` -- file navigation, scope decomposition, minimality, instance anatomy
-- `scripts/cluster_fix_descriptions.py` -- variance comparison across all groupings
-- `scripts/build_figures.py` -- paper-level conceptual figures
-
-## Data
-
-- `output/leaderboard/lite_results.msgpack` -- 84 agents, pass/fail per instance
-- `output/resolved_traces_lite_full.jsonl` -- 300 oracle traces with file paths and content
-- `output/canonical_forms/` -- FIM patterns and instance assignments
-- `output/compositional_generalization/` -- failure classification and composition gap data
-- `output/pairwise_agent_comparison/` -- agent edit certificates and pairwise Jaccard
-- `output/scoped_certificates/` -- enriched certificates with file/scope information
-
-## Structure
+## Where things live
 
 ```
-analysis/          -- core analysis modules (AST edits, scoped ops, procedures)
-representations/   -- computed and inferred representations
-scripts/           -- all runnable scripts
-configs/           -- benchmark configs, DSPy config
-data/              -- data loaders
-eval/              -- evaluation pipeline
-output/            -- all generated data and figures
-findings.md        -- full research record
+analysis/            -- core analysis modules (AST edits, scoped ops, procedures;
+                        preferences/ = BPE + canonicalization, the current line)
+representations/     -- computed (edits/modules/motifs) and inferred (first-gen DSPy) representations
+scripts/             -- runnable analyses; agent_trajectories_paper/ = the paper's figure scripts
+                        (its README maps script -> figure -> grounding status)
+distillation_run/    -- teacher/student rollout analysis (fingerprints in-tree;
+                        bulk .traj rollouts moving to HF, see MOVED.md when present)
+docs/papers/         -- paper sources + figures
+pipeline/, eval/,    -- first-generation (parquet + DSPy) pipeline, kept for provenance;
+configs/, data/         notebooks/README.md marks what is stale
+figures/             -- story-grouped figures
+findings.md          -- full research record (findings, grounding audit, decision traces)
 ```
+
+Generated data lives under `output/` (gitignored); each findings.md entry names the script that regenerates its numbers.
 
 ## License
 

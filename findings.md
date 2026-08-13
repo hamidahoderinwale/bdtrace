@@ -283,6 +283,16 @@ A pass over the *Agent trajectories as programs* draft separated reproducible re
 
 ---
 
+## Results in code, not yet written up (located 2026-08-13 repo audit)
+
+Screening-grade until re-verified; each has a concrete pointer.
+
+- **Motifs AUC = 1.0 is QUARANTINED as suspected leakage.** `notebooks/inter_eval_analysis.ipynb` reports AUC 1.0 for motif-based prediction of agent solvability, with an in-notebook annotation suspecting leakage in motif-vocabulary construction (vocabulary fit on data that includes the evaluation targets). Never cite this number; resolve the leakage question first. The edits/modules AUCs in the same notebook (~0.45–0.48, near-random) are unaffected.
+- **BugsInPy validation ran but its result was never recorded.** Commit `9aef941` ("add BugsInPy validation") added `scripts/bugsinpy_analysis.py` (downloads BugsInPy patches across 17 projects, computes edit certificates + FIM, compares to SWE-bench Lite), and findings.md still lists BugsInPy only as future work. The output was not retained in-tree; regenerate before claiming anything about cross-benchmark generality of the composition-failure finding.
+- **Search count is the only behavioral correlate of success** in the first-generation behavioral analysis: `notebooks/behavioral_analysis.ipynb` (stored outputs) shows n_searches rho ≈ +0.16–0.20 with resolution while every other behavioral measure sits ≈ 0; mean edit operations 1,871 (solved) vs 3,222 (unsolved). Single-corpus, first-gen pipeline — screening only.
+
+---
+
 ## Design Decisions Not Taken
 
 **Why not GumTree directly:** Requires AST-level alignment across versions (move tracking). Across a cross-repository benchmark like SWE-bench, "move" in django and "move" in sympy have no meaningful correspondence. The complexity isn't worth it.
