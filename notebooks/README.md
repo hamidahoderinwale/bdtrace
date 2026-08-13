@@ -1,51 +1,30 @@
 # Notebooks
 
-Analysis and visualization for procedural info theory.
-
-## Setup
-
-```bash
-uv sync --extra notebooks
-```
-
-## Run
-
-1. Extract data first: `python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --output-dir output`
-2. Build matrices: `python scripts/build_distance_matrices.py --input output/datasets/swe_bench_lite/test.parquet --reprs tokens edits_set_diff edits_tree modules_graph`
-3. Diversity: `python scripts/run_diversity_analysis.py --matrices output/datasets/swe_bench_lite/distances.parquet --labels output/datasets/swe_bench_lite/labels.parquet`
-4. Plots: `python scripts/run_plots.py --output-dir notebooks/plots --data-dir output`
-5. Or open `analysis.ipynb` and run all cells.
+Exploration notebooks from the first-generation pipeline (parquet certificates + DSPy).
+The current analysis line lives in `analysis/preferences/` and `scripts/agent_trajectories_paper/`;
+these notebooks are kept for provenance and for two results not yet promoted to `findings.md`.
 
 ## Contents
 
-| Notebook | Purpose |
-|----------|---------|
-| `analysis.ipynb` | Load certificates, summary stats, distributions, stratum breakdown, diversity analysis (when matrices available) |
+| Notebook | Purpose | Status |
+|----------|---------|--------|
+| `analysis.ipynb` | Load certificates, summary stats, distributions, stratum breakdown, diversity | Stale: reads `output/datasets/swe_bench_lite/test.parquet`, which must be regenerated (steps below) |
+| `behavioral_analysis.ipynb` | Agent trajectories × reference-patch structure | Stale, but holds an unpromoted result: search count is the only behavioral measure that correlates with success (rho ≈ 0.16–0.20); mean edit ops 1,871 solved vs 3,222 unsolved |
+| `inter_eval_analysis.ipynb` | Does the human patch's structure predict agent solvability? | Stale, and its motifs AUC = 1.0 is annotated in-notebook as suspected vocabulary leakage — quarantined, do not cite (see findings.md grounding audit) |
 
-## Outputs
+## Regenerating inputs (legacy pipeline)
 
-| Plot | Source | Requires |
-|------|--------|----------|
-| `distributions.png` | analysis.ipynb | extraction parquet |
-| `stratum_counts.png` | analysis.ipynb | extraction parquet |
-| `rank_correlation.png` | analysis.ipynb | distances.parquet |
-| `stratum_ratios.png` | analysis.ipynb | distances.parquet |
-| `diversity_scores.png` | analysis.ipynb | distances.parquet |
-| `per_instance_rho.png` | analysis.ipynb | per_instance_rep_correlation.parquet |
-| `divergence_from_baseline.png` | analysis.ipynb | eval_results.json (run_eval --output) |
-| `procedure_divergence_gap.png` | analysis.ipynb | procedure_divergence.parquet |
-| `retrieval_agreement.png` | analysis.ipynb | per_instance_pair_rho.parquet |
-| `embedding_ablation_aggregate.png` | run_plots.py | embedding_ablation.json |
-| `embedding_ablation_scatter.png` | run_plots.py | embedding_ablation.json |
-| `embedding_ablation_distributions.png` | run_plots.py | embedding_ablation.json |
-| `op_types_per_instance.png` | run_plots.py | extraction parquet (edits) |
-| `action_coverage.png` | run_plots.py | extraction parquet (edits) — action types by trajectory coverage |
-| `action_type_saturation.png` | run_plots.py | extraction parquet (edits with operations) |
-| `complexity_by_n_stages.png` | run_plots.py | extraction parquet (edits) |
-| `complexity_by_stages.png` | run_plots.py | extraction parquet (edits) |
-| `diversity_by_stage.png` | run_plots.py | distances.parquet, labels.parquet |
+```bash
+uv sync --extra notebooks
+python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --output-dir output
+python scripts/build_distance_matrices.py --input output/datasets/swe_bench_lite/test.parquet --reprs tokens edits_set_diff edits_tree modules_graph
+python scripts/run_diversity_analysis.py --matrices output/datasets/swe_bench_lite/distances.parquet --labels output/datasets/swe_bench_lite/labels.parquet
+python scripts/run_multi_benchmark_plots.py
+```
 
-## Analysis file formats (Parquet primary)
+(The `run_plots.py` this file used to reference does not exist; `run_multi_benchmark_plots.py` is the plotting entry point.)
+
+## Analysis file formats
 
 | Artifact | Format | Schema |
 |----------|--------|--------|
