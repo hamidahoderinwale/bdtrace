@@ -38,20 +38,15 @@ import msgpack
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts.theme import register, BLUE, ORANGE, GREEN, VERMILLION, PINK, GRAY
+register()
 
 from scripts.build_canonical_forms import load_certs, _NORMALIZE_OPS
 
-ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "output" / "compositional_generalization"
 OUT.mkdir(parents=True, exist_ok=True)
-
-# Wong colorblind-safe palette
-BLUE = "#0072B2"
-ORANGE = "#E69F00"
-GREEN = "#009E73"
-PINK = "#CC79A7"
-GRAY = "#999999"
 
 
 # --- Data loading ---
