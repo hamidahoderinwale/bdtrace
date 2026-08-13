@@ -1,0 +1,57 @@
+{
+  "pipeline": "canonicalize -> BPE",
+  "n_agents": 3,
+  "n_sequences": 867,
+  "n_canonical_tokens": 26730,
+  "n_canonical_atoms": 76,
+  "bpe_target_vocab": 200,
+  "bpe_final_vocab": 200,
+  "bpe_merges": 124,
+  "bpe_length_distribution": {
+    "1": 76,
+    "2": 49,
+    "3": 25,
+    "4": 20,
+    "5": 8,
+    "6": 6,
+    "7": 3,
+    "8": 8,
+    "12": 1,
+    "16": 3,
+    "32": 1
+  },
+  "compression_mean": 0.4191499162115234,
+  "pivot_criteria": {
+    "pct_vocab_3gram_or_longer": 0.6048387096774194,
+    "nameable_motifs_20plus": "yes (visible from merges; see bpe_top_motifs.csv)",
+    "no_single_token_dominates_50pct": true
+  },
+  "heritability_levenshtein_canonical": {
+    "Claude-3.5_x_GPT-4": {
+      "mean": 0.720969565778066,
+      "n": 289
+    },
+    "Claude-3.5_x_GPT-4o": {
+      "mean": 0.7582714086790621,
+      "n": 267
+    },
+    "GPT-4_x_GPT-4o": {
+      "mean": 0.6982824830409204,
+      "n": 278
+    }
+  },
+  "heritability_levenshtein_bpe": {
+    "Claude-3.5_x_GPT-4": {
+      "mean": 0.9302728766148236,
+      "n": 289
+    },
+    "Claude-3.5_x_GPT-4o": {
+      "mean": 0.9419548917230106,
+      "n": 267
+    },
+    "GPT-4_x_GPT-4o": {
+      "mean": 0.8961346775845846,
+      "n": 278
+    }
+  }
+}

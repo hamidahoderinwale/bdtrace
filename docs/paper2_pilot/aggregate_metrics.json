@@ -1,0 +1,251 @@
+{
+  "Claude-3.5": {
+    "n_trajectories": 289,
+    "n_tokens_full": 4624,
+    "n_tokens_motifs": 2544,
+    "entropy_full_bits": 6.639937197976414,
+    "entropy_motifs_bits": 6.145966714772557,
+    "distinct_motifs_at_90pct": 66,
+    "distinct_motifs_at_50pct": 21,
+    "mean_canonical_length": 32.65051903114187,
+    "median_canonical_length": 25.0,
+    "mean_bpe_length": 16.0,
+    "median_bpe_length": 13.0,
+    "mean_compression": 0.5003049413438779,
+    "median_compression": 0.4666666666666667,
+    "top_over_used_motifs": [
+      [
+        "OPEN_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        1.0728471460162317
+      ],
+      [
+        "RUN_PYTHON_TEST_PY+RUN_PYTHON_TEST_PY",
+        1.0666151923047174
+      ],
+      [
+        "OPEN_SRC_PY+SEARCH",
+        1.0410801001975796
+      ],
+      [
+        "EDIT_SRC_PY+RUN_PYTEST_TEST_PY",
+        1.0222210729462637
+      ],
+      [
+        "RUN_PYTHON_SRC_PY+SHELL_LS",
+        0.9962258644133193
+      ],
+      [
+        "EDIT_TEST_PY+RUN_PYTEST_TEST_PY",
+        0.9566975002266819
+      ],
+      [
+        "OPEN_SRC_PY+SEARCH+NAV_SRC_PY+EDIT_SRC_PY",
+        0.9373321753597508
+      ],
+      [
+        "OPEN_SRC_PY+SEARCH+NAV_SRC_PY+SEARCH+NAV_SRC_PY",
+        0.9204583567953546
+      ]
+    ],
+    "top_under_used_motifs": [
+      [
+        "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT",
+        -5.295328581430525
+      ],
+      [
+        "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        -4.200171348390184
+      ],
+      [
+        "EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY",
+        -3.694936040139762
+      ],
+      [
+        "EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY",
+        -3.548094651810491
+      ],
+      [
+        "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+        -3.5220994432775465
+      ],
+      [
+        "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+        -3.4956272319163553
+      ],
+      [
+        "SHELL_RM+SUBMIT",
+        -3.484900825323297
+      ],
+      [
+        "RUN_PYTEST_REPRO_PY+EDIT_SRC_PY",
+        -3.384595919527612
+      ]
+    ]
+  },
+  "GPT-4": {
+    "n_trajectories": 300,
+    "n_tokens_full": 2449,
+    "n_tokens_motifs": 1677,
+    "entropy_full_bits": 6.555133574071214,
+    "entropy_motifs_bits": 6.144711607894215,
+    "distinct_motifs_at_90pct": 66,
+    "distinct_motifs_at_50pct": 19,
+    "mean_canonical_length": 21.416666666666668,
+    "median_canonical_length": 20.0,
+    "mean_bpe_length": 8.163333333333334,
+    "median_bpe_length": 7.0,
+    "mean_compression": 0.3891032567887442,
+    "median_compression": 0.375,
+    "top_over_used_motifs": [
+      [
+        "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+        2.066997515095053
+      ],
+      [
+        "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+        1.8921389206476256
+      ],
+      [
+        "SEARCH+FIND_FILE+OPEN_SRC_PY",
+        1.8222949320335167
+      ],
+      [
+        "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+        1.6967640499496577
+      ],
+      [
+        "NAV_SRC_PY+NAV_SRC_PY",
+        1.661358713818459
+      ],
+      [
+        "EDIT_SRC_PY+SUBMIT",
+        1.6165044780341984
+      ],
+      [
+        "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY",
+        1.508507225735088
+      ],
+      [
+        "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        1.453465862177126
+      ]
+    ],
+    "top_under_used_motifs": [
+      [
+        "SHELL_CD+SHELL_CD",
+        -3.8684622327102365
+      ],
+      [
+        "EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+        -3.0719956267953683
+      ],
+      [
+        "CREATE_CONFIG_PY+EDIT_CONFIG_PY",
+        -3.0335214789807328
+      ],
+      [
+        "SHELL_LS+SHELL_CD+SHELL_CD",
+        -2.9533511302967494
+      ],
+      [
+        "RUN_PYTHON_SRC_PY+RUN_PYTHON_SRC_PY",
+        -2.8684622327102365
+      ],
+      [
+        "EDIT_DOC+EDIT_DOC",
+        -2.7309587089603014
+      ],
+      [
+        "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+        -2.5789556155152513
+      ],
+      [
+        "RUN_PYTEST_REPRO_PY+EDIT_SRC_PY",
+        -2.4679243031265075
+      ]
+    ]
+  },
+  "GPT-4o": {
+    "n_trajectories": 278,
+    "n_tokens_full": 3997,
+    "n_tokens_motifs": 2420,
+    "entropy_full_bits": 6.9217609194847425,
+    "entropy_motifs_bits": 6.51593236735855,
+    "distinct_motifs_at_90pct": 84,
+    "distinct_motifs_at_50pct": 29,
+    "mean_canonical_length": 39.097122302158276,
+    "median_canonical_length": 40.0,
+    "mean_bpe_length": 14.377697841726619,
+    "median_bpe_length": 10.0,
+    "mean_compression": 0.36720817363448494,
+    "median_compression": 0.3333333333333333,
+    "top_over_used_motifs": [
+      [
+        "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+        1.4694351637935223
+      ],
+      [
+        "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+        1.4694351637935223
+      ],
+      [
+        "SHELL_EXPORT+SHELL_EXPORT",
+        1.4694351637935223
+      ],
+      [
+        "SUBMIT+SUBMIT",
+        1.4694351637935223
+      ],
+      [
+        "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+        1.4694351637935221
+      ],
+      [
+        "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+        1.4694351637935221
+      ],
+      [
+        "RUN_PYTEST_REPRO_PY+EDIT_SRC_PY",
+        1.4694351637935221
+      ],
+      [
+        "OPEN_CONFIG_PY+OPEN_CONFIG_PY+OPEN_CONFIG_PY+OPEN_CONFIG_PY",
+        1.3954345823497456
+      ]
+    ],
+    "top_under_used_motifs": [
+      [
+        "EDIT_SRC_PY+SUBMIT",
+        -3.337919758264082
+      ],
+      [
+        "OPEN_SRC_PY+SEARCH",
+        -2.778492349650063
+      ],
+      [
+        "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+        -2.3119245497311374
+      ],
+      [
+        "SEARCH+FIND_FILE+OPEN_SRC_PY",
+        -2.0541267922634905
+      ],
+      [
+        "EDIT_SRC_PY+RUN_PYTEST_TEST_PY",
+        -1.989996454843775
+      ],
+      [
+        "FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+        -1.989996454843775
+      ],
+      [
+        "OPEN_REPRO_PY+RUN_PYTHON_REPRO_PY",
+        -1.989996454843775
+      ],
+      [
+        "FIND_FILE+FIND_FILE+OPEN_SRC_PY",
+        -1.70048983764879
+      ]
+    ]
+  }
+}

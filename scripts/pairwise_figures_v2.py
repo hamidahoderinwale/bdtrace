@@ -32,24 +32,23 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(_ROOT))
+from scripts.theme import (
+    register,
+    BLUE, ORANGE, GREEN, VERMILLION, SKY, PINK, YELLOW, GRAY, NEAR_BLACK,
+    CATEGORY,
+)
+register()
 
 ROOT = _ROOT
 PAIR_DIR = ROOT / "output" / "pairwise_agent_comparison"
 
-# Wong palette
-BLUE   = "#0072B2"
-ORANGE = "#E69F00"
-GREEN  = "#009E73"
-PINK   = "#CC79A7"
-GRAY   = "#999999"
-SKY    = "#56B4E9"
-RED    = "#D55E00"
-YELLOW = "#F0E442"
+RED = VERMILLION  # backward-compat alias
 
-# Color cycle for any number of agents
-_PALETTE = [BLUE, ORANGE, GREEN, PINK, SKY, RED, YELLOW, GRAY,
-            "#332288", "#88CCEE", "#44AA99", "#117733", "#DDCC77",
-            "#CC6677", "#AA4499", "#882255"]
+# Color cycle for any number of agents (Wong + extended)
+_PALETTE = CATEGORY + [
+    "#332288", "#88CCEE", "#44AA99", "#117733", "#DDCC77",
+    "#CC6677", "#AA4499", "#882255",
+]
 
 
 def _agent_color(agents: list[str]) -> dict[str, str]:

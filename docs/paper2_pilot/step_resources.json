@@ -1,0 +1,3535 @@
+{
+  "atoms": {
+    "CREATE_REPRO_PY": {
+      "occurrences": 558,
+      "n_trajectories": 528,
+      "mean_tokens_per_use": 12000.253618485385,
+      "total_tokens_attributed": 6696141.519114845,
+      "by_agent": {
+        "GPT-4": 209,
+        "Claude-3.5": 153,
+        "GPT-4o": 196
+      }
+    },
+    "EDIT_REPRO_PY": {
+      "occurrences": 1959,
+      "n_trajectories": 530,
+      "mean_tokens_per_use": 12489.165286816144,
+      "total_tokens_attributed": 24466274.796872824,
+      "by_agent": {
+        "GPT-4": 628,
+        "Claude-3.5": 472,
+        "GPT-4o": 859
+      }
+    },
+    "RUN_PYTHON_REPRO_PY": {
+      "occurrences": 2381,
+      "n_trajectories": 518,
+      "mean_tokens_per_use": 12725.961208557654,
+      "total_tokens_attributed": 30300513.63757577,
+      "by_agent": {
+        "GPT-4": 585,
+        "Claude-3.5": 632,
+        "GPT-4o": 1164
+      }
+    },
+    "SEARCH": {
+      "occurrences": 2418,
+      "n_trajectories": 604,
+      "mean_tokens_per_use": 13386.976278745808,
+      "total_tokens_attributed": 32369708.642007362,
+      "by_agent": {
+        "GPT-4": 663,
+        "Claude-3.5": 846,
+        "GPT-4o": 909
+      }
+    },
+    "OPEN_SRC_PY": {
+      "occurrences": 1951,
+      "n_trajectories": 792,
+      "mean_tokens_per_use": 13603.654344624701,
+      "total_tokens_attributed": 26540729.626362793,
+      "by_agent": {
+        "GPT-4": 535,
+        "Claude-3.5": 904,
+        "GPT-4o": 512
+      }
+    },
+    "NAV_SRC_PY": {
+      "occurrences": 2237,
+      "n_trajectories": 596,
+      "mean_tokens_per_use": 13256.22483975595,
+      "total_tokens_attributed": 29654174.96653406,
+      "by_agent": {
+        "GPT-4": 1044,
+        "Claude-3.5": 714,
+        "GPT-4o": 479
+      }
+    },
+    "EDIT_SRC_PY": {
+      "occurrences": 5776,
+      "n_trajectories": 752,
+      "mean_tokens_per_use": 13846.386477708686,
+      "total_tokens_attributed": 79976728.29524536,
+      "by_agent": {
+        "GPT-4": 1264,
+        "Claude-3.5": 1663,
+        "GPT-4o": 2849
+      }
+    },
+    "EXIT_ERROR": {
+      "occurrences": 281,
+      "n_trajectories": 281,
+      "mean_tokens_per_use": 14175.249328544998,
+      "total_tokens_attributed": 3983245.0613211445,
+      "by_agent": {
+        "GPT-4": 97,
+        "Claude-3.5": 45,
+        "GPT-4o": 139
+      }
+    },
+    "FIND_FILE": {
+      "occurrences": 1214,
+      "n_trajectories": 524,
+      "mean_tokens_per_use": 13432.169876316753,
+      "total_tokens_attributed": 16306654.229848538,
+      "by_agent": {
+        "GPT-4": 324,
+        "Claude-3.5": 672,
+        "GPT-4o": 218
+      }
+    },
+    "SHELL_RM": {
+      "occurrences": 259,
+      "n_trajectories": 237,
+      "mean_tokens_per_use": 10222.84013116893,
+      "total_tokens_attributed": 2647715.593972753,
+      "by_agent": {
+        "GPT-4": 115,
+        "Claude-3.5": 10,
+        "GPT-4o": 134
+      }
+    },
+    "SUBMIT": {
+      "occurrences": 627,
+      "n_trajectories": 583,
+      "mean_tokens_per_use": 11658.87530512401,
+      "total_tokens_attributed": 7310114.816312754,
+      "by_agent": {
+        "GPT-4": 203,
+        "Claude-3.5": 244,
+        "GPT-4o": 180
+      }
+    },
+    "CREATE_TEST_PY": {
+      "occurrences": 297,
+      "n_trajectories": 215,
+      "mean_tokens_per_use": 13448.740553666716,
+      "total_tokens_attributed": 3994275.9444390144,
+      "by_agent": {
+        "GPT-4": 53,
+        "Claude-3.5": 153,
+        "GPT-4o": 91
+      }
+    },
+    "EDIT_TEST_PY": {
+      "occurrences": 1326,
+      "n_trajectories": 275,
+      "mean_tokens_per_use": 14065.467272623322,
+      "total_tokens_attributed": 18650809.603498526,
+      "by_agent": {
+        "GPT-4": 182,
+        "Claude-3.5": 588,
+        "GPT-4o": 556
+      }
+    },
+    "RUN_PYTHON_TEST_PY": {
+      "occurrences": 1012,
+      "n_trajectories": 204,
+      "mean_tokens_per_use": 14411.56853164387,
+      "total_tokens_attributed": 14584507.354023596,
+      "by_agent": {
+        "GPT-4": 125,
+        "Claude-3.5": 577,
+        "GPT-4o": 310
+      }
+    },
+    "OPEN_TEST_PY": {
+      "occurrences": 321,
+      "n_trajectories": 152,
+      "mean_tokens_per_use": 14697.580387800004,
+      "total_tokens_attributed": 4717923.304483801,
+      "by_agent": {
+        "GPT-4": 48,
+        "Claude-3.5": 168,
+        "GPT-4o": 105
+      }
+    },
+    "UNKNOWN_CLOSE": {
+      "occurrences": 2,
+      "n_trajectories": 2,
+      "mean_tokens_per_use": 11471.568181818182,
+      "total_tokens_attributed": 22943.136363636364,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 1
+      }
+    },
+    "OPEN_CONFIG_PY": {
+      "occurrences": 172,
+      "n_trajectories": 48,
+      "mean_tokens_per_use": 11794.288604163186,
+      "total_tokens_attributed": 2028617.6399160682,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 28,
+        "GPT-4o": 132
+      }
+    },
+    "EDIT_CONFIG_PY": {
+      "occurrences": 682,
+      "n_trajectories": 78,
+      "mean_tokens_per_use": 13514.519581613344,
+      "total_tokens_attributed": 9216902.3546603,
+      "by_agent": {
+        "GPT-4": 10,
+        "Claude-3.5": 81,
+        "GPT-4o": 591
+      }
+    },
+    "OPEN_OTHER": {
+      "occurrences": 12,
+      "n_trajectories": 11,
+      "mean_tokens_per_use": 13201.10748301632,
+      "total_tokens_attributed": 158413.28979619584,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 10
+      }
+    },
+    "EDIT_OTHER": {
+      "occurrences": 75,
+      "n_trajectories": 38,
+      "mean_tokens_per_use": 14238.681505340617,
+      "total_tokens_attributed": 1067901.1129005463,
+      "by_agent": {
+        "GPT-4": 8,
+        "Claude-3.5": 52,
+        "GPT-4o": 15
+      }
+    },
+    "CREATE_SRC_PY": {
+      "occurrences": 147,
+      "n_trajectories": 94,
+      "mean_tokens_per_use": 12787.609462718117,
+      "total_tokens_attributed": 1879778.5910195634,
+      "by_agent": {
+        "GPT-4": 38,
+        "Claude-3.5": 32,
+        "GPT-4o": 77
+      }
+    },
+    "RUN_PYTHON_SRC_PY": {
+      "occurrences": 435,
+      "n_trajectories": 116,
+      "mean_tokens_per_use": 13112.310872929187,
+      "total_tokens_attributed": 5703855.229724197,
+      "by_agent": {
+        "GPT-4": 50,
+        "Claude-3.5": 170,
+        "GPT-4o": 215
+      }
+    },
+    "NAV_TEST_PY": {
+      "occurrences": 70,
+      "n_trajectories": 45,
+      "mean_tokens_per_use": 15419.68146321381,
+      "total_tokens_attributed": 1079377.7024249667,
+      "by_agent": {
+        "GPT-4": 20,
+        "Claude-3.5": 37,
+        "GPT-4o": 13
+      }
+    },
+    "OPEN_REPRO_PY": {
+      "occurrences": 200,
+      "n_trajectories": 129,
+      "mean_tokens_per_use": 12918.4501607332,
+      "total_tokens_attributed": 2583690.03214664,
+      "by_agent": {
+        "GPT-4": 37,
+        "Claude-3.5": 94,
+        "GPT-4o": 69
+      }
+    },
+    "COMMENT": {
+      "occurrences": 19,
+      "n_trajectories": 7,
+      "mean_tokens_per_use": 11606.913934707502,
+      "total_tokens_attributed": 220531.36475944254,
+      "by_agent": {
+        "GPT-4": 19
+      }
+    },
+    "SHELL_LS": {
+      "occurrences": 448,
+      "n_trajectories": 234,
+      "mean_tokens_per_use": 14293.282042853494,
+      "total_tokens_attributed": 6403390.355198366,
+      "by_agent": {
+        "GPT-4": 42,
+        "Claude-3.5": 265,
+        "GPT-4o": 141
+      }
+    },
+    "SHELL_MKDIR": {
+      "occurrences": 77,
+      "n_trajectories": 56,
+      "mean_tokens_per_use": 13933.829550150782,
+      "total_tokens_attributed": 1072904.8753616102,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 36,
+        "GPT-4o": 32
+      }
+    },
+    "CREATE_OTHER": {
+      "occurrences": 18,
+      "n_trajectories": 16,
+      "mean_tokens_per_use": 12660.635589596564,
+      "total_tokens_attributed": 227891.44061273817,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 14,
+        "GPT-4o": 1
+      }
+    },
+    "RUN_TEST_SCRIPT": {
+      "occurrences": 60,
+      "n_trajectories": 16,
+      "mean_tokens_per_use": 16605.17545973599,
+      "total_tokens_attributed": 996310.5275841595,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 43,
+        "GPT-4o": 16
+      }
+    },
+    "SHELL_CD": {
+      "occurrences": 396,
+      "n_trajectories": 76,
+      "mean_tokens_per_use": 12598.435133394527,
+      "total_tokens_attributed": 4988980.3128242325,
+      "by_agent": {
+        "GPT-4": 16,
+        "Claude-3.5": 89,
+        "GPT-4o": 291
+      }
+    },
+    "SHELL_TOUCH": {
+      "occurrences": 20,
+      "n_trajectories": 17,
+      "mean_tokens_per_use": 14365.504608729947,
+      "total_tokens_attributed": 287310.09217459895,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 14,
+        "GPT-4o": 2
+      }
+    },
+    "CREATE_CONFIG_PY": {
+      "occurrences": 68,
+      "n_trajectories": 62,
+      "mean_tokens_per_use": 14011.938008644227,
+      "total_tokens_attributed": 952811.7845878075,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 25,
+        "GPT-4o": 41
+      }
+    },
+    "OPEN_DOC": {
+      "occurrences": 32,
+      "n_trajectories": 25,
+      "mean_tokens_per_use": 13516.759928463665,
+      "total_tokens_attributed": 432536.3177108373,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 19,
+        "GPT-4o": 8
+      }
+    },
+    "OPEN_UNKNOWN": {
+      "occurrences": 29,
+      "n_trajectories": 16,
+      "mean_tokens_per_use": 15169.655171906918,
+      "total_tokens_attributed": 439919.9999853006,
+      "by_agent": {
+        "GPT-4": 10,
+        "Claude-3.5": 12,
+        "GPT-4o": 7
+      }
+    },
+    "SHELL_MV": {
+      "occurrences": 27,
+      "n_trajectories": 16,
+      "mean_tokens_per_use": 12763.879812515619,
+      "total_tokens_attributed": 344624.7549379217,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 5,
+        "GPT-4o": 20
+      }
+    },
+    "NAV_OTHER": {
+      "occurrences": 10,
+      "n_trajectories": 7,
+      "mean_tokens_per_use": 12570.02716079547,
+      "total_tokens_attributed": 125700.2716079547,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 6
+      }
+    },
+    "CREATE_UNKNOWN": {
+      "occurrences": 13,
+      "n_trajectories": 11,
+      "mean_tokens_per_use": 12578.9949983162,
+      "total_tokens_attributed": 163526.9349781106,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 4,
+        "GPT-4o": 6
+      }
+    },
+    "SHELL_GREP": {
+      "occurrences": 127,
+      "n_trajectories": 56,
+      "mean_tokens_per_use": 16785.731597991602,
+      "total_tokens_attributed": 2131787.9129449334,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 70,
+        "GPT-4o": 53
+      }
+    },
+    "SHELL_CAT": {
+      "occurrences": 139,
+      "n_trajectories": 46,
+      "mean_tokens_per_use": 15451.425907868044,
+      "total_tokens_attributed": 2147748.201193658,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 98,
+        "GPT-4o": 36
+      }
+    },
+    "RUN_PYTHON_ALL": {
+      "occurrences": 164,
+      "n_trajectories": 62,
+      "mean_tokens_per_use": 14008.386737719848,
+      "total_tokens_attributed": 2297375.424986055,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 76,
+        "GPT-4o": 82
+      }
+    },
+    "RUN_LINT": {
+      "occurrences": 44,
+      "n_trajectories": 11,
+      "mean_tokens_per_use": 16707.277274533793,
+      "total_tokens_attributed": 735120.2000794869,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 30,
+        "GPT-4o": 10
+      }
+    },
+    "NAV_CONFIG_PY": {
+      "occurrences": 4,
+      "n_trajectories": 3,
+      "mean_tokens_per_use": 14722.800308641976,
+      "total_tokens_attributed": 58891.2012345679,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 1,
+        "GPT-4o": 1
+      }
+    },
+    "RUN_PYTEST_REPRO_PY": {
+      "occurrences": 39,
+      "n_trajectories": 6,
+      "mean_tokens_per_use": 11903.570084795272,
+      "total_tokens_attributed": 464239.2333070156,
+      "by_agent": {
+        "GPT-4": 3,
+        "GPT-4o": 36
+      }
+    },
+    "RUN_PYTEST_TEST_PY": {
+      "occurrences": 128,
+      "n_trajectories": 38,
+      "mean_tokens_per_use": 16724.55456782444,
+      "total_tokens_attributed": 2140742.9846815285,
+      "by_agent": {
+        "GPT-4": 10,
+        "Claude-3.5": 101,
+        "GPT-4o": 17
+      }
+    },
+    "EDIT_DOC": {
+      "occurrences": 96,
+      "n_trajectories": 38,
+      "mean_tokens_per_use": 13887.929217606672,
+      "total_tokens_attributed": 1333241.2048902404,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 29,
+        "GPT-4o": 61
+      }
+    },
+    "NAV_DOC": {
+      "occurrences": 9,
+      "n_trajectories": 8,
+      "mean_tokens_per_use": 13353.527253704902,
+      "total_tokens_attributed": 120181.74528334412,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 6,
+        "GPT-4o": 1
+      }
+    },
+    "SHELL_CHMOD": {
+      "occurrences": 4,
+      "n_trajectories": 4,
+      "mean_tokens_per_use": 11950.785272008605,
+      "total_tokens_attributed": 47803.14108803442,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 1,
+        "GPT-4o": 2
+      }
+    },
+    "UNKNOWN_./REPRODUCE.SH": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 12003.545454545454,
+      "total_tokens_attributed": 12003.545454545454,
+      "by_agent": {
+        "GPT-4": 1
+      }
+    },
+    "UNKNOWN_SPHINX-QUICKSTART": {
+      "occurrences": 3,
+      "n_trajectories": 3,
+      "mean_tokens_per_use": 12705.875578444544,
+      "total_tokens_attributed": 38117.62673533363,
+      "by_agent": {
+        "GPT-4": 1,
+        "GPT-4o": 2
+      }
+    },
+    "CREATE_DOC": {
+      "occurrences": 27,
+      "n_trajectories": 23,
+      "mean_tokens_per_use": 15417.891896691754,
+      "total_tokens_attributed": 416283.08121067734,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 11,
+        "GPT-4o": 10
+      }
+    },
+    "NAV_REPRO_PY": {
+      "occurrences": 6,
+      "n_trajectories": 3,
+      "mean_tokens_per_use": 12952.454393618895,
+      "total_tokens_attributed": 77714.72636171337,
+      "by_agent": {
+        "GPT-4": 1,
+        "GPT-4o": 5
+      }
+    },
+    "RUN_PYTHON_CONFIG_PY": {
+      "occurrences": 28,
+      "n_trajectories": 11,
+      "mean_tokens_per_use": 15716.038724168278,
+      "total_tokens_attributed": 440049.0842767118,
+      "by_agent": {
+        "Claude-3.5": 23,
+        "GPT-4o": 5
+      }
+    },
+    "RUN_PIP": {
+      "occurrences": 42,
+      "n_trajectories": 20,
+      "mean_tokens_per_use": 14564.807161078175,
+      "total_tokens_attributed": 611721.9007652834,
+      "by_agent": {
+        "Claude-3.5": 24,
+        "GPT-4o": 18
+      }
+    },
+    "UNKNOWN_CYTHON": {
+      "occurrences": 4,
+      "n_trajectories": 3,
+      "mean_tokens_per_use": 17149.957924836603,
+      "total_tokens_attributed": 68599.83169934641,
+      "by_agent": {
+        "Claude-3.5": 4
+      }
+    },
+    "EDIT": {
+      "occurrences": 5,
+      "n_trajectories": 5,
+      "mean_tokens_per_use": 19071.5804158215,
+      "total_tokens_attributed": 95357.9020791075,
+      "by_agent": {
+        "Claude-3.5": 4,
+        "GPT-4o": 1
+      }
+    },
+    "SHELL_PWD": {
+      "occurrences": 22,
+      "n_trajectories": 17,
+      "mean_tokens_per_use": 15675.969753531828,
+      "total_tokens_attributed": 344871.33457770024,
+      "by_agent": {
+        "Claude-3.5": 22
+      }
+    },
+    "RUN_PYTEST_ALL": {
+      "occurrences": 13,
+      "n_trajectories": 8,
+      "mean_tokens_per_use": 23015.19003937116,
+      "total_tokens_attributed": 299197.47051182506,
+      "by_agent": {
+        "Claude-3.5": 9,
+        "GPT-4o": 4
+      }
+    },
+    "SHELL_ECHO": {
+      "occurrences": 27,
+      "n_trajectories": 10,
+      "mean_tokens_per_use": 14010.12453192807,
+      "total_tokens_attributed": 378273.3623620579,
+      "by_agent": {
+        "Claude-3.5": 27
+      }
+    },
+    "SHELL_SED": {
+      "occurrences": 7,
+      "n_trajectories": 2,
+      "mean_tokens_per_use": 17352.596378269613,
+      "total_tokens_attributed": 121468.1746478873,
+      "by_agent": {
+        "Claude-3.5": 7
+      }
+    },
+    "SHELL_CP": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 18048.295774647886,
+      "total_tokens_attributed": 18048.295774647886,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_DIFF": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 18048.295774647886,
+      "total_tokens_attributed": 18048.295774647886,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_/DURATIONFIELD": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 22340.91379310345,
+      "total_tokens_attributed": 22340.91379310345,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_CURL": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 12200.888888888889,
+      "total_tokens_attributed": 12200.888888888889,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_WGET": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 12200.888888888889,
+      "total_tokens_attributed": 12200.888888888889,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "RUN_PYTEST_SRC_PY": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 10556.785714285714,
+      "total_tokens_attributed": 10556.785714285714,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_NOX": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 14668.88,
+      "total_tokens_attributed": 14668.88,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_./RUN_TEST.SH": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 10893.842105263158,
+      "total_tokens_attributed": 10893.842105263158,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_TOX": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 29810.4,
+      "total_tokens_attributed": 29810.4,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "RUN_MAKE": {
+      "occurrences": 12,
+      "n_trajectories": 4,
+      "mean_tokens_per_use": 14419.86301079999,
+      "total_tokens_attributed": 173038.35612959988,
+      "by_agent": {
+        "Claude-3.5": 5,
+        "GPT-4o": 7
+      }
+    },
+    "RUN_DOCBUILD": {
+      "occurrences": 29,
+      "n_trajectories": 10,
+      "mean_tokens_per_use": 15632.106397990028,
+      "total_tokens_attributed": 453331.08554171084,
+      "by_agent": {
+        "Claude-3.5": 1,
+        "GPT-4o": 28
+      }
+    },
+    "SHELL_EXPORT": {
+      "occurrences": 103,
+      "n_trajectories": 29,
+      "mean_tokens_per_use": 13347.208860437928,
+      "total_tokens_attributed": 1374762.5126251066,
+      "by_agent": {
+        "GPT-4o": 103
+      }
+    },
+    "UNKNOWN_EXIT_FORMAT": {
+      "occurrences": 4,
+      "n_trajectories": 4,
+      "mean_tokens_per_use": 13608.605721003136,
+      "total_tokens_attributed": 54434.42288401254,
+      "by_agent": {
+        "GPT-4o": 4
+      }
+    },
+    "UNKNOWN_PKILL": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 11889.030303030304,
+      "total_tokens_attributed": 11889.030303030304,
+      "by_agent": {
+        "GPT-4o": 1
+      }
+    },
+    "UNKNOWN_./RUNTESTS.PY": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 11261.25,
+      "total_tokens_attributed": 11261.25,
+      "by_agent": {
+        "GPT-4o": 1
+      }
+    },
+    "UNKNOWN_./BUILD_DOCS.SH": {
+      "occurrences": 1,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 12184.640625,
+      "total_tokens_attributed": 12184.640625,
+      "by_agent": {
+        "GPT-4o": 1
+      }
+    },
+    "UNKNOWN_ANTLR4": {
+      "occurrences": 2,
+      "n_trajectories": 1,
+      "mean_tokens_per_use": 12076.353846153846,
+      "total_tokens_attributed": 24152.707692307693,
+      "by_agent": {
+        "GPT-4o": 2
+      }
+    }
+  },
+  "motifs": {
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+SEARCH+OPEN_SRC_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+SEARCH+OPEN_SRC_PY",
+      "n_atoms": 5,
+      "occurrences": 46,
+      "n_trajectories_with": 46,
+      "mean_tokens_per_use": 57814.17372478522,
+      "success_rate_when_used": 0.10869565217391304,
+      "success_rate_vs_base": -0.043553482774183847,
+      "by_agent": {
+        "GPT-4": 23,
+        "Claude-3.5": 1,
+        "GPT-4o": 22
+      }
+    },
+    "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY": {
+      "motif": "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 45,
+      "n_trajectories_with": 42,
+      "mean_tokens_per_use": 37303.31559254264,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 32,
+        "Claude-3.5": 3,
+        "GPT-4o": 10
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 12,
+      "occurrences": 22,
+      "n_trajectories_with": 22,
+      "mean_tokens_per_use": 163049.0728059572,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 1,
+        "GPT-4o": 12
+      }
+    },
+    "RUN_PYTHON_REPRO_PY": {
+      "motif": "RUN_PYTHON_REPRO_PY",
+      "n_atoms": 1,
+      "occurrences": 125,
+      "n_trajectories_with": 71,
+      "mean_tokens_per_use": 13508.283856238595,
+      "success_rate_when_used": 0.07042253521126761,
+      "success_rate_vs_base": -0.08182659973682928,
+      "by_agent": {
+        "GPT-4": 25,
+        "Claude-3.5": 42,
+        "GPT-4o": 58
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 3,
+      "occurrences": 104,
+      "n_trajectories_with": 85,
+      "mean_tokens_per_use": 37510.1106462522,
+      "success_rate_when_used": 0.11764705882352941,
+      "success_rate_vs_base": -0.03460207612456748,
+      "by_agent": {
+        "GPT-4": 34,
+        "Claude-3.5": 26,
+        "GPT-4o": 44
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 8,
+      "occurrences": 46,
+      "n_trajectories_with": 45,
+      "mean_tokens_per_use": 109961.41698877359,
+      "success_rate_when_used": 0.022222222222222223,
+      "success_rate_vs_base": -0.13002691272587466,
+      "by_agent": {
+        "GPT-4": 21,
+        "Claude-3.5": 8,
+        "GPT-4o": 17
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 119,
+      "n_trajectories_with": 108,
+      "mean_tokens_per_use": 43852.246864129724,
+      "success_rate_when_used": 0.1111111111111111,
+      "success_rate_vs_base": -0.04113802383698578,
+      "by_agent": {
+        "GPT-4": 24,
+        "Claude-3.5": 71,
+        "GPT-4o": 24
+      }
+    },
+    "EXIT_ERROR": {
+      "motif": "EXIT_ERROR",
+      "n_atoms": 1,
+      "occurrences": 246,
+      "n_trajectories_with": 246,
+      "mean_tokens_per_use": 14211.997308627864,
+      "success_rate_when_used": 0.06504065040650407,
+      "success_rate_vs_base": -0.08720848454159282,
+      "by_agent": {
+        "GPT-4": 88,
+        "Claude-3.5": 40,
+        "GPT-4o": 118
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY",
+      "n_atoms": 5,
+      "occurrences": 53,
+      "n_trajectories_with": 53,
+      "mean_tokens_per_use": 55190.25917753561,
+      "success_rate_when_used": 0.22641509433962265,
+      "success_rate_vs_base": 0.07416595939152576,
+      "by_agent": {
+        "GPT-4": 33,
+        "Claude-3.5": 7,
+        "GPT-4o": 13
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 4,
+      "occurrences": 26,
+      "n_trajectories_with": 23,
+      "mean_tokens_per_use": 54393.35719220872,
+      "success_rate_when_used": 0.043478260869565216,
+      "success_rate_vs_base": -0.10877087407853167,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 7,
+        "GPT-4o": 12
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 208,
+      "n_trajectories_with": 162,
+      "mean_tokens_per_use": 28167.803721965858,
+      "success_rate_when_used": 0.13580246913580246,
+      "success_rate_vs_base": -0.016446665812294425,
+      "by_agent": {
+        "GPT-4": 46,
+        "Claude-3.5": 113,
+        "GPT-4o": 49
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 8,
+      "occurrences": 23,
+      "n_trajectories_with": 21,
+      "mean_tokens_per_use": 116409.14968195905,
+      "success_rate_when_used": 0.047619047619047616,
+      "success_rate_vs_base": -0.10463008732904927,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 3,
+        "GPT-4o": 18
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 2,
+      "occurrences": 145,
+      "n_trajectories_with": 107,
+      "mean_tokens_per_use": 25825.854190088383,
+      "success_rate_when_used": 0.056074766355140186,
+      "success_rate_vs_base": -0.0961743685929567,
+      "by_agent": {
+        "GPT-4": 38,
+        "Claude-3.5": 30,
+        "GPT-4o": 77
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 4,
+      "occurrences": 58,
+      "n_trajectories_with": 54,
+      "mean_tokens_per_use": 50002.86709330372,
+      "success_rate_when_used": 0.12962962962962962,
+      "success_rate_vs_base": -0.022619505318467265,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 12,
+        "GPT-4o": 34
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 133,
+      "n_trajectories_with": 115,
+      "mean_tokens_per_use": 58145.546479012715,
+      "success_rate_when_used": 0.08695652173913043,
+      "success_rate_vs_base": -0.06529261320896645,
+      "by_agent": {
+        "GPT-4": 36,
+        "Claude-3.5": 60,
+        "GPT-4o": 37
+      }
+    },
+    "SHELL_RM+SUBMIT": {
+      "motif": "SHELL_RM+SUBMIT",
+      "n_atoms": 2,
+      "occurrences": 133,
+      "n_trajectories_with": 133,
+      "mean_tokens_per_use": 20334.910976020106,
+      "success_rate_when_used": 0.22556390977443608,
+      "success_rate_vs_base": 0.07331477482633919,
+      "by_agent": {
+        "GPT-4": 57,
+        "Claude-3.5": 4,
+        "GPT-4o": 72
+      }
+    },
+    "SEARCH+SEARCH": {
+      "motif": "SEARCH+SEARCH",
+      "n_atoms": 2,
+      "occurrences": 157,
+      "n_trajectories_with": 118,
+      "mean_tokens_per_use": 25752.265763409912,
+      "success_rate_when_used": 0.05084745762711865,
+      "success_rate_vs_base": -0.10140167732097824,
+      "by_agent": {
+        "GPT-4": 44,
+        "Claude-3.5": 34,
+        "GPT-4o": 79
+      }
+    },
+    "SEARCH+OPEN_SRC_PY": {
+      "motif": "SEARCH+OPEN_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 188,
+      "n_trajectories_with": 132,
+      "mean_tokens_per_use": 25940.525586712745,
+      "success_rate_when_used": 0.11363636363636363,
+      "success_rate_vs_base": -0.038612771311733254,
+      "by_agent": {
+        "GPT-4": 63,
+        "Claude-3.5": 48,
+        "GPT-4o": 77
+      }
+    },
+    "OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY": {
+      "motif": "OPEN_SRC_PY+SEARCH+SEARCH+NAV_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 27,
+      "n_trajectories_with": 23,
+      "mean_tokens_per_use": 51649.908682217254,
+      "success_rate_when_used": 0.043478260869565216,
+      "success_rate_vs_base": -0.10877087407853167,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 18,
+        "GPT-4o": 3
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+SHELL_RM+SUBMIT",
+      "n_atoms": 4,
+      "occurrences": 93,
+      "n_trajectories_with": 93,
+      "mean_tokens_per_use": 37704.44179243706,
+      "success_rate_when_used": 0.3010752688172043,
+      "success_rate_vs_base": 0.14882613386910742,
+      "by_agent": {
+        "GPT-4": 40,
+        "GPT-4o": 53
+      }
+    },
+    "FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 109,
+      "n_trajectories_with": 91,
+      "mean_tokens_per_use": 55354.16077811421,
+      "success_rate_when_used": 0.18681318681318682,
+      "success_rate_vs_base": 0.03456405186508993,
+      "by_agent": {
+        "GPT-4": 39,
+        "Claude-3.5": 61,
+        "GPT-4o": 9
+      }
+    },
+    "EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY",
+      "n_atoms": 1,
+      "occurrences": 264,
+      "n_trajectories_with": 188,
+      "mean_tokens_per_use": 14721.91015124141,
+      "success_rate_when_used": 0.18085106382978725,
+      "success_rate_vs_base": 0.02860192888169036,
+      "by_agent": {
+        "GPT-4": 45,
+        "Claude-3.5": 143,
+        "GPT-4o": 76
+      }
+    },
+    "CREATE_TEST_PY": {
+      "motif": "CREATE_TEST_PY",
+      "n_atoms": 1,
+      "occurrences": 92,
+      "n_trajectories_with": 66,
+      "mean_tokens_per_use": 13677.504680136475,
+      "success_rate_when_used": 0.18181818181818182,
+      "success_rate_vs_base": 0.029569046870084936,
+      "by_agent": {
+        "GPT-4": 11,
+        "Claude-3.5": 39,
+        "GPT-4o": 42
+      }
+    },
+    "EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 6,
+      "occurrences": 30,
+      "n_trajectories_with": 26,
+      "mean_tokens_per_use": 86515.41106572439,
+      "success_rate_when_used": 0.07692307692307693,
+      "success_rate_vs_base": -0.07532605802501996,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 17,
+        "GPT-4o": 9
+      }
+    },
+    "OPEN_SRC_PY+SEARCH": {
+      "motif": "OPEN_SRC_PY+SEARCH",
+      "n_atoms": 2,
+      "occurrences": 56,
+      "n_trajectories_with": 43,
+      "mean_tokens_per_use": 30924.192417337814,
+      "success_rate_when_used": 0.06976744186046512,
+      "success_rate_vs_base": -0.08248169308763177,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 48,
+        "GPT-4o": 2
+      }
+    },
+    "OPEN_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "OPEN_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 3,
+      "occurrences": 53,
+      "n_trajectories_with": 30,
+      "mean_tokens_per_use": 47602.69022041877,
+      "success_rate_when_used": 0.03333333333333333,
+      "success_rate_vs_base": -0.11891580161476356,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 39,
+        "GPT-4o": 7
+      }
+    },
+    "OPEN_SRC_PY+NAV_SRC_PY": {
+      "motif": "OPEN_SRC_PY+NAV_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 146,
+      "n_trajectories_with": 114,
+      "mean_tokens_per_use": 26724.737369255377,
+      "success_rate_when_used": 0.06140350877192982,
+      "success_rate_vs_base": -0.09084562617616707,
+      "by_agent": {
+        "GPT-4": 56,
+        "Claude-3.5": 64,
+        "GPT-4o": 26
+      }
+    },
+    "EDIT_SRC_PY+CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_SRC_PY+CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 4,
+      "occurrences": 42,
+      "n_trajectories_with": 42,
+      "mean_tokens_per_use": 48592.385814494526,
+      "success_rate_when_used": 0.11904761904761904,
+      "success_rate_vs_base": -0.033201515900477846,
+      "by_agent": {
+        "GPT-4": 14,
+        "Claude-3.5": 17,
+        "GPT-4o": 11
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 76,
+      "n_trajectories_with": 51,
+      "mean_tokens_per_use": 29138.718661574996,
+      "success_rate_when_used": 0.0392156862745098,
+      "success_rate_vs_base": -0.11303344867358708,
+      "by_agent": {
+        "GPT-4": 19,
+        "Claude-3.5": 41,
+        "GPT-4o": 16
+      }
+    },
+    "OPEN_TEST_PY+EDIT_TEST_PY": {
+      "motif": "OPEN_TEST_PY+EDIT_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 66,
+      "n_trajectories_with": 54,
+      "mean_tokens_per_use": 29561.850931794786,
+      "success_rate_when_used": 0.09259259259259259,
+      "success_rate_vs_base": -0.0596565423555043,
+      "by_agent": {
+        "GPT-4": 10,
+        "Claude-3.5": 37,
+        "GPT-4o": 19
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY",
+      "n_atoms": 2,
+      "occurrences": 24,
+      "n_trajectories_with": 23,
+      "mean_tokens_per_use": 24436.238688768135,
+      "success_rate_when_used": 0.08695652173913043,
+      "success_rate_vs_base": -0.06529261320896645,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 6,
+        "GPT-4o": 9
+      }
+    },
+    "FIND_FILE": {
+      "motif": "FIND_FILE",
+      "n_atoms": 1,
+      "occurrences": 188,
+      "n_trajectories_with": 150,
+      "mean_tokens_per_use": 13314.521332812139,
+      "success_rate_when_used": 0.12,
+      "success_rate_vs_base": -0.03224913494809689,
+      "by_agent": {
+        "GPT-4": 50,
+        "Claude-3.5": 86,
+        "GPT-4o": 52
+      }
+    },
+    "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 2,
+      "occurrences": 98,
+      "n_trajectories_with": 65,
+      "mean_tokens_per_use": 25900.43076065586,
+      "success_rate_when_used": 0.046153846153846156,
+      "success_rate_vs_base": -0.10609528879425073,
+      "by_agent": {
+        "GPT-4": 20,
+        "Claude-3.5": 33,
+        "GPT-4o": 45
+      }
+    },
+    "EDIT_REPRO_PY+EDIT_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+EDIT_REPRO_PY",
+      "n_atoms": 2,
+      "occurrences": 61,
+      "n_trajectories_with": 38,
+      "mean_tokens_per_use": 25517.4686330452,
+      "success_rate_when_used": 0.02631578947368421,
+      "success_rate_vs_base": -0.12593334547441268,
+      "by_agent": {
+        "GPT-4": 22,
+        "Claude-3.5": 15,
+        "GPT-4o": 24
+      }
+    },
+    "FIND_FILE+OPEN_SRC_PY": {
+      "motif": "FIND_FILE+OPEN_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 156,
+      "n_trajectories_with": 131,
+      "mean_tokens_per_use": 25868.364282472805,
+      "success_rate_when_used": 0.20610687022900764,
+      "success_rate_vs_base": 0.05385773528091076,
+      "by_agent": {
+        "GPT-4": 54,
+        "Claude-3.5": 75,
+        "GPT-4o": 27
+      }
+    },
+    "NAV_SRC_PY": {
+      "motif": "NAV_SRC_PY",
+      "n_atoms": 1,
+      "occurrences": 200,
+      "n_trajectories_with": 162,
+      "mean_tokens_per_use": 13405.31196421644,
+      "success_rate_when_used": 0.1111111111111111,
+      "success_rate_vs_base": -0.04113802383698578,
+      "by_agent": {
+        "GPT-4": 78,
+        "Claude-3.5": 74,
+        "GPT-4o": 48
+      }
+    },
+    "UNKNOWN_CLOSE": {
+      "motif": "UNKNOWN_CLOSE",
+      "n_atoms": 1,
+      "occurrences": 2,
+      "n_trajectories_with": 2,
+      "mean_tokens_per_use": 11471.568181818182,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 1
+      }
+    },
+    "SUBMIT": {
+      "motif": "SUBMIT",
+      "n_atoms": 1,
+      "occurrences": 330,
+      "n_trajectories_with": 330,
+      "mean_tokens_per_use": 12826.304588540012,
+      "success_rate_when_used": 0.16363636363636364,
+      "success_rate_vs_base": 0.011387228688266748,
+      "by_agent": {
+        "GPT-4": 88,
+        "Claude-3.5": 231,
+        "GPT-4o": 11
+      }
+    },
+    "SEARCH": {
+      "motif": "SEARCH",
+      "n_atoms": 1,
+      "occurrences": 227,
+      "n_trajectories_with": 143,
+      "mean_tokens_per_use": 14022.515467926083,
+      "success_rate_when_used": 0.07692307692307693,
+      "success_rate_vs_base": -0.07532605802501996,
+      "by_agent": {
+        "GPT-4": 71,
+        "Claude-3.5": 80,
+        "GPT-4o": 76
+      }
+    },
+    "OPEN_CONFIG_PY": {
+      "motif": "OPEN_CONFIG_PY",
+      "n_atoms": 1,
+      "occurrences": 40,
+      "n_trajectories_with": 29,
+      "mean_tokens_per_use": 12389.573096982374,
+      "success_rate_when_used": 0.20689655172413793,
+      "success_rate_vs_base": 0.05464741677604104,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 6,
+        "GPT-4o": 29
+      }
+    },
+    "EDIT_CONFIG_PY": {
+      "motif": "EDIT_CONFIG_PY",
+      "n_atoms": 1,
+      "occurrences": 40,
+      "n_trajectories_with": 27,
+      "mean_tokens_per_use": 12981.97926139815,
+      "success_rate_when_used": 0.14814814814814814,
+      "success_rate_vs_base": -0.004100986799948747,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 12,
+        "GPT-4o": 27
+      }
+    },
+    "OPEN_OTHER": {
+      "motif": "OPEN_OTHER",
+      "n_atoms": 1,
+      "occurrences": 12,
+      "n_trajectories_with": 11,
+      "mean_tokens_per_use": 13201.10748301632,
+      "success_rate_when_used": 0.2727272727272727,
+      "success_rate_vs_base": 0.12047813777917582,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 10
+      }
+    },
+    "EDIT_OTHER": {
+      "motif": "EDIT_OTHER",
+      "n_atoms": 1,
+      "occurrences": 75,
+      "n_trajectories_with": 38,
+      "mean_tokens_per_use": 14238.681505340617,
+      "success_rate_when_used": 0.10526315789473684,
+      "success_rate_vs_base": -0.04698597705336005,
+      "by_agent": {
+        "GPT-4": 8,
+        "Claude-3.5": 52,
+        "GPT-4o": 15
+      }
+    },
+    "SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 146,
+      "n_trajectories_with": 124,
+      "mean_tokens_per_use": 50338.053848881995,
+      "success_rate_when_used": 0.11290322580645161,
+      "success_rate_vs_base": -0.03934590914164528,
+      "by_agent": {
+        "GPT-4": 44,
+        "Claude-3.5": 28,
+        "GPT-4o": 74
+      }
+    },
+    "EDIT_TEST_PY+EDIT_TEST_PY": {
+      "motif": "EDIT_TEST_PY+EDIT_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 79,
+      "n_trajectories_with": 58,
+      "mean_tokens_per_use": 28986.52523780832,
+      "success_rate_when_used": 0.13793103448275862,
+      "success_rate_vs_base": -0.014318100465338268,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 39,
+        "GPT-4o": 33
+      }
+    },
+    "EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 8,
+      "occurrences": 35,
+      "n_trajectories_with": 21,
+      "mean_tokens_per_use": 116696.21452662528,
+      "success_rate_when_used": 0.047619047619047616,
+      "success_rate_vs_base": -0.10463008732904927,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 17,
+        "GPT-4o": 16
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 3,
+      "occurrences": 190,
+      "n_trajectories_with": 182,
+      "mean_tokens_per_use": 36989.19829207242,
+      "success_rate_when_used": 0.14285714285714285,
+      "success_rate_vs_base": -0.009391992090954038,
+      "by_agent": {
+        "GPT-4": 51,
+        "Claude-3.5": 62,
+        "GPT-4o": 77
+      }
+    },
+    "CREATE_SRC_PY": {
+      "motif": "CREATE_SRC_PY",
+      "n_atoms": 1,
+      "occurrences": 61,
+      "n_trajectories_with": 45,
+      "mean_tokens_per_use": 12337.44507509395,
+      "success_rate_when_used": 0.06666666666666667,
+      "success_rate_vs_base": -0.08558246828143022,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 10,
+        "GPT-4o": 39
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 37,
+      "n_trajectories_with": 15,
+      "mean_tokens_per_use": 60822.43382309298,
+      "success_rate_when_used": 0.13333333333333333,
+      "success_rate_vs_base": -0.018915801614763555,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 17,
+        "GPT-4o": 8
+      }
+    },
+    "NAV_SRC_PY+EDIT_SRC_PY": {
+      "motif": "NAV_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 62,
+      "n_trajectories_with": 52,
+      "mean_tokens_per_use": 25769.281334552394,
+      "success_rate_when_used": 0.17307692307692307,
+      "success_rate_vs_base": 0.020827788128826186,
+      "by_agent": {
+        "GPT-4": 27,
+        "Claude-3.5": 27,
+        "GPT-4o": 8
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 6,
+      "occurrences": 23,
+      "n_trajectories_with": 23,
+      "mean_tokens_per_use": 68455.93486574685,
+      "success_rate_when_used": 0.17391304347826086,
+      "success_rate_vs_base": 0.021663908530163978,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 2,
+        "GPT-4o": 12
+      }
+    },
+    "NAV_SRC_PY+NAV_SRC_PY": {
+      "motif": "NAV_SRC_PY+NAV_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 79,
+      "n_trajectories_with": 71,
+      "mean_tokens_per_use": 24469.64663712197,
+      "success_rate_when_used": 0.08450704225352113,
+      "success_rate_vs_base": -0.06774209269457576,
+      "by_agent": {
+        "GPT-4": 55,
+        "Claude-3.5": 10,
+        "GPT-4o": 14
+      }
+    },
+    "OPEN_TEST_PY": {
+      "motif": "OPEN_TEST_PY",
+      "n_atoms": 1,
+      "occurrences": 125,
+      "n_trajectories_with": 84,
+      "mean_tokens_per_use": 14532.590556964335,
+      "success_rate_when_used": 0.11904761904761904,
+      "success_rate_vs_base": -0.033201515900477846,
+      "by_agent": {
+        "GPT-4": 19,
+        "Claude-3.5": 64,
+        "GPT-4o": 42
+      }
+    },
+    "NAV_TEST_PY": {
+      "motif": "NAV_TEST_PY",
+      "n_atoms": 1,
+      "occurrences": 70,
+      "n_trajectories_with": 45,
+      "mean_tokens_per_use": 15419.68146321381,
+      "success_rate_when_used": 0.1111111111111111,
+      "success_rate_vs_base": -0.04113802383698578,
+      "by_agent": {
+        "GPT-4": 20,
+        "Claude-3.5": 37,
+        "GPT-4o": 13
+      }
+    },
+    "EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY": {
+      "motif": "EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY",
+      "n_atoms": 8,
+      "occurrences": 23,
+      "n_trajectories_with": 8,
+      "mean_tokens_per_use": 105552.0977954558,
+      "success_rate_when_used": 0.125,
+      "success_rate_vs_base": -0.027249134948096887,
+      "by_agent": {
+        "GPT-4": 4,
+        "GPT-4o": 19
+      }
+    },
+    "EDIT_TEST_PY": {
+      "motif": "EDIT_TEST_PY",
+      "n_atoms": 1,
+      "occurrences": 126,
+      "n_trajectories_with": 75,
+      "mean_tokens_per_use": 14401.55660180932,
+      "success_rate_when_used": 0.14666666666666667,
+      "success_rate_vs_base": -0.0055824682814302196,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 64,
+        "GPT-4o": 50
+      }
+    },
+    "SEARCH+SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "SEARCH+SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 5,
+      "occurrences": 24,
+      "n_trajectories_with": 21,
+      "mean_tokens_per_use": 67150.09826907863,
+      "success_rate_when_used": 0.09523809523809523,
+      "success_rate_vs_base": -0.057011039710001654,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 1,
+        "GPT-4o": 14
+      }
+    },
+    "FIND_FILE+FIND_FILE": {
+      "motif": "FIND_FILE+FIND_FILE",
+      "n_atoms": 2,
+      "occurrences": 189,
+      "n_trajectories_with": 151,
+      "mean_tokens_per_use": 28703.712463233547,
+      "success_rate_when_used": 0.11920529801324503,
+      "success_rate_vs_base": -0.033043836934851856,
+      "by_agent": {
+        "GPT-4": 34,
+        "Claude-3.5": 132,
+        "GPT-4o": 23
+      }
+    },
+    "OPEN_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "OPEN_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 58,
+      "n_trajectories_with": 49,
+      "mean_tokens_per_use": 44109.03314486225,
+      "success_rate_when_used": 0.061224489795918366,
+      "success_rate_vs_base": -0.09102464515217852,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 32,
+        "GPT-4o": 20
+      }
+    },
+    "CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "CREATE_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 3,
+      "occurrences": 80,
+      "n_trajectories_with": 71,
+      "mean_tokens_per_use": 38072.54378515682,
+      "success_rate_when_used": 0.16901408450704225,
+      "success_rate_vs_base": 0.016764949558945363,
+      "by_agent": {
+        "GPT-4": 21,
+        "Claude-3.5": 35,
+        "GPT-4o": 24
+      }
+    },
+    "EDIT_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 3,
+      "occurrences": 40,
+      "n_trajectories_with": 26,
+      "mean_tokens_per_use": 38217.75828019051,
+      "success_rate_when_used": 0.15384615384615385,
+      "success_rate_vs_base": 0.0015970188980569677,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 6,
+        "GPT-4o": 25
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 7,
+      "occurrences": 26,
+      "n_trajectories_with": 25,
+      "mean_tokens_per_use": 88676.98945158148,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 8,
+        "Claude-3.5": 14,
+        "GPT-4o": 4
+      }
+    },
+    "OPEN_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "OPEN_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 3,
+      "occurrences": 91,
+      "n_trajectories_with": 69,
+      "mean_tokens_per_use": 38857.867579345046,
+      "success_rate_when_used": 0.043478260869565216,
+      "success_rate_vs_base": -0.10877087407853167,
+      "by_agent": {
+        "GPT-4": 19,
+        "Claude-3.5": 42,
+        "GPT-4o": 30
+      }
+    },
+    "EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 40,
+      "n_trajectories_with": 34,
+      "mean_tokens_per_use": 27553.025871718353,
+      "success_rate_when_used": 0.14705882352941177,
+      "success_rate_vs_base": -0.005190311418685117,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 16,
+        "GPT-4o": 17
+      }
+    },
+    "CREATE_SRC_PY+EDIT_SRC_PY": {
+      "motif": "CREATE_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 49,
+      "n_trajectories_with": 32,
+      "mean_tokens_per_use": 27879.749214367614,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 16,
+        "Claude-3.5": 9,
+        "GPT-4o": 24
+      }
+    },
+    "CREATE_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY": {
+      "motif": "CREATE_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 37,
+      "n_trajectories_with": 36,
+      "mean_tokens_per_use": 36011.39883947245,
+      "success_rate_when_used": 0.027777777777777776,
+      "success_rate_vs_base": -0.12447135717031911,
+      "by_agent": {
+        "GPT-4": 10,
+        "Claude-3.5": 13,
+        "GPT-4o": 14
+      }
+    },
+    "OPEN_SRC_PY+EDIT_SRC_PY": {
+      "motif": "OPEN_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 77,
+      "n_trajectories_with": 57,
+      "mean_tokens_per_use": 28791.938963941644,
+      "success_rate_when_used": 0.07017543859649122,
+      "success_rate_vs_base": -0.08207369635160566,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 45,
+        "GPT-4o": 23
+      }
+    },
+    "SEARCH+NAV_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "SEARCH+NAV_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 57,
+      "n_trajectories_with": 46,
+      "mean_tokens_per_use": 55779.96806670096,
+      "success_rate_when_used": 0.043478260869565216,
+      "success_rate_vs_base": -0.10877087407853167,
+      "by_agent": {
+        "GPT-4": 13,
+        "Claude-3.5": 29,
+        "GPT-4o": 15
+      }
+    },
+    "SEARCH+FIND_FILE+OPEN_SRC_PY": {
+      "motif": "SEARCH+FIND_FILE+OPEN_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 22,
+      "n_trajectories_with": 21,
+      "mean_tokens_per_use": 37476.07944656772,
+      "success_rate_when_used": 0.047619047619047616,
+      "success_rate_vs_base": -0.10463008732904927,
+      "by_agent": {
+        "GPT-4": 17,
+        "Claude-3.5": 4,
+        "GPT-4o": 1
+      }
+    },
+    "EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_TEST_PY+RUN_PYTHON_TEST_PY+EDIT_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 4,
+      "occurrences": 48,
+      "n_trajectories_with": 40,
+      "mean_tokens_per_use": 56081.99616503695,
+      "success_rate_when_used": 0.175,
+      "success_rate_vs_base": 0.022750865051903102,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 30,
+        "GPT-4o": 11
+      }
+    },
+    "OPEN_SRC_PY": {
+      "motif": "OPEN_SRC_PY",
+      "n_atoms": 1,
+      "occurrences": 234,
+      "n_trajectories_with": 166,
+      "mean_tokens_per_use": 14393.470040193779,
+      "success_rate_when_used": 0.0963855421686747,
+      "success_rate_vs_base": -0.05586359277942218,
+      "by_agent": {
+        "GPT-4": 42,
+        "Claude-3.5": 120,
+        "GPT-4o": 72
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_TEST_PY+EDIT_SRC_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_TEST_PY+EDIT_SRC_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 4,
+      "occurrences": 52,
+      "n_trajectories_with": 27,
+      "mean_tokens_per_use": 61475.71801615298,
+      "success_rate_when_used": 0.07407407407407407,
+      "success_rate_vs_base": -0.07817506087402282,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 33,
+        "GPT-4o": 15
+      }
+    },
+    "SEARCH+NAV_SRC_PY": {
+      "motif": "SEARCH+NAV_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 135,
+      "n_trajectories_with": 105,
+      "mean_tokens_per_use": 28003.097259403694,
+      "success_rate_when_used": 0.11428571428571428,
+      "success_rate_vs_base": -0.037963420662382605,
+      "by_agent": {
+        "GPT-4": 39,
+        "Claude-3.5": 58,
+        "GPT-4o": 38
+      }
+    },
+    "EDIT_SRC_PY+SUBMIT": {
+      "motif": "EDIT_SRC_PY+SUBMIT",
+      "n_atoms": 2,
+      "occurrences": 27,
+      "n_trajectories_with": 27,
+      "mean_tokens_per_use": 23141.50096407852,
+      "success_rate_when_used": 0.1111111111111111,
+      "success_rate_vs_base": -0.04113802383698578,
+      "by_agent": {
+        "GPT-4": 18,
+        "Claude-3.5": 9
+      }
+    },
+    "SEARCH+SEARCH+NAV_SRC_PY": {
+      "motif": "SEARCH+SEARCH+NAV_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 41,
+      "n_trajectories_with": 38,
+      "mean_tokens_per_use": 41493.238500206055,
+      "success_rate_when_used": 0.02631578947368421,
+      "success_rate_vs_base": -0.12593334547441268,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 12,
+        "GPT-4o": 17
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 16,
+      "occurrences": 36,
+      "n_trajectories_with": 36,
+      "mean_tokens_per_use": 221842.47677688175,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 11,
+        "Claude-3.5": 1,
+        "GPT-4o": 24
+      }
+    },
+    "EDIT_SRC_PY+EXIT_ERROR": {
+      "motif": "EDIT_SRC_PY+EXIT_ERROR",
+      "n_atoms": 2,
+      "occurrences": 35,
+      "n_trajectories_with": 35,
+      "mean_tokens_per_use": 27833.92705135374,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 5,
+        "GPT-4o": 21
+      }
+    },
+    "RUN_PYTHON_SRC_PY": {
+      "motif": "RUN_PYTHON_SRC_PY",
+      "n_atoms": 1,
+      "occurrences": 176,
+      "n_trajectories_with": 65,
+      "mean_tokens_per_use": 12603.457833142369,
+      "success_rate_when_used": 0.18461538461538463,
+      "success_rate_vs_base": 0.03236624966728774,
+      "by_agent": {
+        "GPT-4": 8,
+        "Claude-3.5": 58,
+        "GPT-4o": 110
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 6,
+      "occurrences": 31,
+      "n_trajectories_with": 31,
+      "mean_tokens_per_use": 81184.31325733957,
+      "success_rate_when_used": 0.06451612903225806,
+      "success_rate_vs_base": -0.08773300591583882,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 13,
+        "GPT-4o": 11
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_SRC_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 55,
+      "n_trajectories_with": 36,
+      "mean_tokens_per_use": 27906.072152537574,
+      "success_rate_when_used": 0.19444444444444445,
+      "success_rate_vs_base": 0.04219530949634756,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 37,
+        "GPT-4o": 11
+      }
+    },
+    "COMMENT": {
+      "motif": "COMMENT",
+      "n_atoms": 1,
+      "occurrences": 19,
+      "n_trajectories_with": 7,
+      "mean_tokens_per_use": 11606.913934707502,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 19
+      }
+    },
+    "SHELL_LS": {
+      "motif": "SHELL_LS",
+      "n_atoms": 1,
+      "occurrences": 180,
+      "n_trajectories_with": 142,
+      "mean_tokens_per_use": 14684.896316079645,
+      "success_rate_when_used": 0.13380281690140844,
+      "success_rate_vs_base": -0.018446318046688448,
+      "by_agent": {
+        "GPT-4": 15,
+        "Claude-3.5": 106,
+        "GPT-4o": 59
+      }
+    },
+    "OPEN_SRC_PY+SEARCH+NAV_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "OPEN_SRC_PY+SEARCH+NAV_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 5,
+      "occurrences": 42,
+      "n_trajectories_with": 34,
+      "mean_tokens_per_use": 74993.05279745396,
+      "success_rate_when_used": 0.029411764705882353,
+      "success_rate_vs_base": -0.12283737024221453,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 33,
+        "GPT-4o": 5
+      }
+    },
+    "NAV_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "NAV_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 28,
+      "n_trajectories_with": 24,
+      "mean_tokens_per_use": 42865.68452084223,
+      "success_rate_when_used": 0.08333333333333333,
+      "success_rate_vs_base": -0.06891580161476356,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 12,
+        "GPT-4o": 4
+      }
+    },
+    "EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 5,
+      "occurrences": 38,
+      "n_trajectories_with": 35,
+      "mean_tokens_per_use": 61468.47757105861,
+      "success_rate_when_used": 0.11428571428571428,
+      "success_rate_vs_base": -0.037963420662382605,
+      "by_agent": {
+        "GPT-4": 15,
+        "Claude-3.5": 8,
+        "GPT-4o": 15
+      }
+    },
+    "SHELL_MKDIR": {
+      "motif": "SHELL_MKDIR",
+      "n_atoms": 1,
+      "occurrences": 77,
+      "n_trajectories_with": 56,
+      "mean_tokens_per_use": 13933.829550150782,
+      "success_rate_when_used": 0.07142857142857142,
+      "success_rate_vs_base": -0.08082056351952546,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 36,
+        "GPT-4o": 32
+      }
+    },
+    "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY": {
+      "motif": "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 54,
+      "n_trajectories_with": 50,
+      "mean_tokens_per_use": 49426.18715768528,
+      "success_rate_when_used": 0.04,
+      "success_rate_vs_base": -0.11224913494809688,
+      "by_agent": {
+        "GPT-4": 50,
+        "Claude-3.5": 1,
+        "GPT-4o": 3
+      }
+    },
+    "OPEN_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "OPEN_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 3,
+      "occurrences": 26,
+      "n_trajectories_with": 16,
+      "mean_tokens_per_use": 44642.437766831215,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 15,
+        "GPT-4o": 10
+      }
+    },
+    "SHELL_RM": {
+      "motif": "SHELL_RM",
+      "n_atoms": 1,
+      "occurrences": 33,
+      "n_trajectories_with": 19,
+      "mean_tokens_per_use": 12691.386133128957,
+      "success_rate_when_used": 0.21052631578947367,
+      "success_rate_vs_base": 0.058277180841376786,
+      "by_agent": {
+        "GPT-4": 18,
+        "Claude-3.5": 6,
+        "GPT-4o": 9
+      }
+    },
+    "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 8,
+      "occurrences": 43,
+      "n_trajectories_with": 30,
+      "mean_tokens_per_use": 109835.72990240058,
+      "success_rate_when_used": 0.1,
+      "success_rate_vs_base": -0.05224913494809688,
+      "by_agent": {
+        "GPT-4": 8,
+        "Claude-3.5": 17,
+        "GPT-4o": 18
+      }
+    },
+    "EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY",
+      "n_atoms": 4,
+      "occurrences": 30,
+      "n_trajectories_with": 17,
+      "mean_tokens_per_use": 46221.60348258596,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 11,
+        "GPT-4o": 19
+      }
+    },
+    "FIND_FILE+FIND_FILE+OPEN_SRC_PY": {
+      "motif": "FIND_FILE+FIND_FILE+OPEN_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 26,
+      "n_trajectories_with": 26,
+      "mean_tokens_per_use": 41391.722993320385,
+      "success_rate_when_used": 0.07692307692307693,
+      "success_rate_vs_base": -0.07532605802501996,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 20,
+        "GPT-4o": 2
+      }
+    },
+    "CREATE_OTHER": {
+      "motif": "CREATE_OTHER",
+      "n_atoms": 1,
+      "occurrences": 18,
+      "n_trajectories_with": 16,
+      "mean_tokens_per_use": 12660.635589596564,
+      "success_rate_when_used": 0.0625,
+      "success_rate_vs_base": -0.08974913494809689,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 14,
+        "GPT-4o": 1
+      }
+    },
+    "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY": {
+      "motif": "NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+      "n_atoms": 8,
+      "occurrences": 27,
+      "n_trajectories_with": 20,
+      "mean_tokens_per_use": 100351.85849942919,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 22,
+        "Claude-3.5": 1,
+        "GPT-4o": 4
+      }
+    },
+    "FIND_FILE+OPEN_TEST_PY": {
+      "motif": "FIND_FILE+OPEN_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 28,
+      "n_trajectories_with": 24,
+      "mean_tokens_per_use": 29769.489666904195,
+      "success_rate_when_used": 0.20833333333333334,
+      "success_rate_vs_base": 0.056084198385236456,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 15,
+        "GPT-4o": 8
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+FIND_FILE": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+FIND_FILE",
+      "n_atoms": 5,
+      "occurrences": 58,
+      "n_trajectories_with": 58,
+      "mean_tokens_per_use": 63366.0477486919,
+      "success_rate_when_used": 0.08620689655172414,
+      "success_rate_vs_base": -0.06604223839637274,
+      "by_agent": {
+        "GPT-4": 11,
+        "Claude-3.5": 38,
+        "GPT-4o": 9
+      }
+    },
+    "RUN_TEST_SCRIPT": {
+      "motif": "RUN_TEST_SCRIPT",
+      "n_atoms": 1,
+      "occurrences": 60,
+      "n_trajectories_with": 16,
+      "mean_tokens_per_use": 16605.17545973599,
+      "success_rate_when_used": 0.1875,
+      "success_rate_vs_base": 0.03525086505190311,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 43,
+        "GPT-4o": 16
+      }
+    },
+    "RUN_PYTHON_TEST_PY": {
+      "motif": "RUN_PYTHON_TEST_PY",
+      "n_atoms": 1,
+      "occurrences": 157,
+      "n_trajectories_with": 89,
+      "mean_tokens_per_use": 14525.047026145065,
+      "success_rate_when_used": 0.1797752808988764,
+      "success_rate_vs_base": 0.027526145950779513,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 110,
+        "GPT-4o": 44
+      }
+    },
+    "OPEN_TEST_PY+SEARCH": {
+      "motif": "OPEN_TEST_PY+SEARCH",
+      "n_atoms": 2,
+      "occurrences": 49,
+      "n_trajectories_with": 22,
+      "mean_tokens_per_use": 27267.53829455658,
+      "success_rate_when_used": 0.045454545454545456,
+      "success_rate_vs_base": -0.10679458949355143,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 13,
+        "GPT-4o": 29
+      }
+    },
+    "CREATE_REPRO_PY": {
+      "motif": "CREATE_REPRO_PY",
+      "n_atoms": 1,
+      "occurrences": 26,
+      "n_trajectories_with": 26,
+      "mean_tokens_per_use": 12335.507710080272,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 14,
+        "Claude-3.5": 5,
+        "GPT-4o": 7
+      }
+    },
+    "EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 3,
+      "occurrences": 66,
+      "n_trajectories_with": 52,
+      "mean_tokens_per_use": 37344.92289418304,
+      "success_rate_when_used": 0.038461538461538464,
+      "success_rate_vs_base": -0.11378759648655842,
+      "by_agent": {
+        "GPT-4": 29,
+        "Claude-3.5": 16,
+        "GPT-4o": 21
+      }
+    },
+    "OPEN_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 181,
+      "n_trajectories_with": 118,
+      "mean_tokens_per_use": 44476.27525597587,
+      "success_rate_when_used": 0.0847457627118644,
+      "success_rate_vs_base": -0.06750337223623248,
+      "by_agent": {
+        "GPT-4": 26,
+        "Claude-3.5": 127,
+        "GPT-4o": 28
+      }
+    },
+    "OPEN_CONFIG_PY+OPEN_CONFIG_PY+OPEN_CONFIG_PY+OPEN_CONFIG_PY": {
+      "motif": "OPEN_CONFIG_PY+OPEN_CONFIG_PY+OPEN_CONFIG_PY+OPEN_CONFIG_PY",
+      "n_atoms": 4,
+      "occurrences": 19,
+      "n_trajectories_with": 5,
+      "mean_tokens_per_use": 41608.809778114046,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1,
+        "GPT-4o": 18
+      }
+    },
+    "CREATE_TEST_PY+EDIT_TEST_PY": {
+      "motif": "CREATE_TEST_PY+EDIT_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 83,
+      "n_trajectories_with": 62,
+      "mean_tokens_per_use": 29167.65369984137,
+      "success_rate_when_used": 0.14516129032258066,
+      "success_rate_vs_base": -0.007087844625516232,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 62,
+        "GPT-4o": 14
+      }
+    },
+    "FIND_FILE+SHELL_CD": {
+      "motif": "FIND_FILE+SHELL_CD",
+      "n_atoms": 2,
+      "occurrences": 30,
+      "n_trajectories_with": 22,
+      "mean_tokens_per_use": 24220.242430885228,
+      "success_rate_when_used": 0.18181818181818182,
+      "success_rate_vs_base": 0.029569046870084936,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 7,
+        "GPT-4o": 21
+      }
+    },
+    "SHELL_TOUCH": {
+      "motif": "SHELL_TOUCH",
+      "n_atoms": 1,
+      "occurrences": 20,
+      "n_trajectories_with": 17,
+      "mean_tokens_per_use": 14365.504608729947,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 14,
+        "GPT-4o": 2
+      }
+    },
+    "SHELL_CD": {
+      "motif": "SHELL_CD",
+      "n_atoms": 1,
+      "occurrences": 141,
+      "n_trajectories_with": 68,
+      "mean_tokens_per_use": 13289.484574754266,
+      "success_rate_when_used": 0.16176470588235295,
+      "success_rate_vs_base": 0.009515570934256062,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 45,
+        "GPT-4o": 89
+      }
+    },
+    "CREATE_CONFIG_PY": {
+      "motif": "CREATE_CONFIG_PY",
+      "n_atoms": 1,
+      "occurrences": 32,
+      "n_trajectories_with": 32,
+      "mean_tokens_per_use": 13941.149400233448,
+      "success_rate_when_used": 0.09375,
+      "success_rate_vs_base": -0.05849913494809689,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 12,
+        "GPT-4o": 18
+      }
+    },
+    "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 3,
+      "occurrences": 26,
+      "n_trajectories_with": 23,
+      "mean_tokens_per_use": 41758.878526283,
+      "success_rate_when_used": 0.17391304347826086,
+      "success_rate_vs_base": 0.021663908530163978,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 6,
+        "GPT-4o": 18
+      }
+    },
+    "EDIT_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY",
+      "n_atoms": 1,
+      "occurrences": 49,
+      "n_trajectories_with": 40,
+      "mean_tokens_per_use": 12777.922450263377,
+      "success_rate_when_used": 0.025,
+      "success_rate_vs_base": -0.1272491349480969,
+      "by_agent": {
+        "GPT-4": 17,
+        "Claude-3.5": 11,
+        "GPT-4o": 21
+      }
+    },
+    "OPEN_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "OPEN_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 2,
+      "occurrences": 50,
+      "n_trajectories_with": 32,
+      "mean_tokens_per_use": 26814.41604483834,
+      "success_rate_when_used": 0.125,
+      "success_rate_vs_base": -0.027249134948096887,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 22,
+        "GPT-4o": 25
+      }
+    },
+    "OPEN_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "OPEN_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 3,
+      "occurrences": 47,
+      "n_trajectories_with": 37,
+      "mean_tokens_per_use": 37382.74583154942,
+      "success_rate_when_used": 0.16216216216216217,
+      "success_rate_vs_base": 0.009913027214065284,
+      "by_agent": {
+        "GPT-4": 13,
+        "Claude-3.5": 21,
+        "GPT-4o": 13
+      }
+    },
+    "OPEN_SRC_PY+OPEN_SRC_PY": {
+      "motif": "OPEN_SRC_PY+OPEN_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 37,
+      "n_trajectories_with": 25,
+      "mean_tokens_per_use": 28841.224528991108,
+      "success_rate_when_used": 0.08,
+      "success_rate_vs_base": -0.07224913494809689,
+      "by_agent": {
+        "GPT-4": 8,
+        "Claude-3.5": 25,
+        "GPT-4o": 4
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 5,
+      "occurrences": 37,
+      "n_trajectories_with": 37,
+      "mean_tokens_per_use": 60360.0750896161,
+      "success_rate_when_used": 0.16216216216216217,
+      "success_rate_vs_base": 0.009913027214065284,
+      "by_agent": {
+        "GPT-4": 14,
+        "Claude-3.5": 10,
+        "GPT-4o": 13
+      }
+    },
+    "EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 6,
+      "occurrences": 22,
+      "n_trajectories_with": 15,
+      "mean_tokens_per_use": 72810.70433162,
+      "success_rate_when_used": 0.06666666666666667,
+      "success_rate_vs_base": -0.08558246828143022,
+      "by_agent": {
+        "GPT-4": 3,
+        "GPT-4o": 19
+      }
+    },
+    "OPEN_SRC_PY+SEARCH+OPEN_SRC_PY": {
+      "motif": "OPEN_SRC_PY+SEARCH+OPEN_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 29,
+      "n_trajectories_with": 18,
+      "mean_tokens_per_use": 42539.259274445874,
+      "success_rate_when_used": 0.16666666666666666,
+      "success_rate_vs_base": 0.01441753171856977,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 18,
+        "GPT-4o": 6
+      }
+    },
+    "SHELL_LS+SHELL_LS": {
+      "motif": "SHELL_LS+SHELL_LS",
+      "n_atoms": 2,
+      "occurrences": 64,
+      "n_trajectories_with": 52,
+      "mean_tokens_per_use": 29922.710518259257,
+      "success_rate_when_used": 0.09615384615384616,
+      "success_rate_vs_base": -0.05609528879425073,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 46,
+        "GPT-4o": 12
+      }
+    },
+    "EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY+EDIT_REPRO_PY",
+      "n_atoms": 8,
+      "occurrences": 27,
+      "n_trajectories_with": 10,
+      "mean_tokens_per_use": 102048.07192961003,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 10,
+        "GPT-4o": 17
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+FIND_FILE+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 7,
+      "occurrences": 32,
+      "n_trajectories_with": 32,
+      "mean_tokens_per_use": 81289.51699935122,
+      "success_rate_when_used": 0.15625,
+      "success_rate_vs_base": 0.004000865051903113,
+      "by_agent": {
+        "GPT-4": 19,
+        "Claude-3.5": 8,
+        "GPT-4o": 5
+      }
+    },
+    "OPEN_REPRO_PY": {
+      "motif": "OPEN_REPRO_PY",
+      "n_atoms": 1,
+      "occurrences": 52,
+      "n_trajectories_with": 40,
+      "mean_tokens_per_use": 12432.905869352315,
+      "success_rate_when_used": 0.075,
+      "success_rate_vs_base": -0.07724913494809689,
+      "by_agent": {
+        "GPT-4": 11,
+        "Claude-3.5": 11,
+        "GPT-4o": 30
+      }
+    },
+    "OPEN_SRC_PY+SEARCH+NAV_SRC_PY+EDIT_SRC_PY": {
+      "motif": "OPEN_SRC_PY+SEARCH+NAV_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 4,
+      "occurrences": 34,
+      "n_trajectories_with": 31,
+      "mean_tokens_per_use": 60275.676302311105,
+      "success_rate_when_used": 0.1935483870967742,
+      "success_rate_vs_base": 0.0412992521486773,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 27,
+        "GPT-4o": 6
+      }
+    },
+    "OPEN_DOC": {
+      "motif": "OPEN_DOC",
+      "n_atoms": 1,
+      "occurrences": 32,
+      "n_trajectories_with": 25,
+      "mean_tokens_per_use": 13516.759928463665,
+      "success_rate_when_used": 0.08,
+      "success_rate_vs_base": -0.07224913494809689,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 19,
+        "GPT-4o": 8
+      }
+    },
+    "OPEN_UNKNOWN": {
+      "motif": "OPEN_UNKNOWN",
+      "n_atoms": 1,
+      "occurrences": 29,
+      "n_trajectories_with": 16,
+      "mean_tokens_per_use": 15169.655171906918,
+      "success_rate_when_used": 0.0625,
+      "success_rate_vs_base": -0.08974913494809689,
+      "by_agent": {
+        "GPT-4": 10,
+        "Claude-3.5": 12,
+        "GPT-4o": 7
+      }
+    },
+    "SHELL_MV": {
+      "motif": "SHELL_MV",
+      "n_atoms": 1,
+      "occurrences": 27,
+      "n_trajectories_with": 16,
+      "mean_tokens_per_use": 12763.879812515619,
+      "success_rate_when_used": 0.125,
+      "success_rate_vs_base": -0.027249134948096887,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 5,
+        "GPT-4o": 20
+      }
+    },
+    "RUN_PYTHON_SRC_PY+SHELL_LS": {
+      "motif": "RUN_PYTHON_SRC_PY+SHELL_LS",
+      "n_atoms": 2,
+      "occurrences": 29,
+      "n_trajectories_with": 27,
+      "mean_tokens_per_use": 28072.530365758186,
+      "success_rate_when_used": 0.2222222222222222,
+      "success_rate_vs_base": 0.06997308727412532,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 24,
+        "GPT-4o": 4
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 3,
+      "occurrences": 22,
+      "n_trajectories_with": 18,
+      "mean_tokens_per_use": 44098.43700980485,
+      "success_rate_when_used": 0.05555555555555555,
+      "success_rate_vs_base": -0.09669357939254133,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 13,
+        "GPT-4o": 7
+      }
+    },
+    "OPEN_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "OPEN_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 5,
+      "occurrences": 25,
+      "n_trajectories_with": 18,
+      "mean_tokens_per_use": 67021.46849478893,
+      "success_rate_when_used": 0.1111111111111111,
+      "success_rate_vs_base": -0.04113802383698578,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 13,
+        "GPT-4o": 7
+      }
+    },
+    "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 4,
+      "occurrences": 20,
+      "n_trajectories_with": 15,
+      "mean_tokens_per_use": 54394.90439290883,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 8,
+        "GPT-4o": 10
+      }
+    },
+    "OPEN_SRC_PY+NAV_SRC_PY+NAV_SRC_PY": {
+      "motif": "OPEN_SRC_PY+NAV_SRC_PY+NAV_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 24,
+      "n_trajectories_with": 22,
+      "mean_tokens_per_use": 42068.694840649514,
+      "success_rate_when_used": 0.09090909090909091,
+      "success_rate_vs_base": -0.061340044039005975,
+      "by_agent": {
+        "GPT-4": 9,
+        "Claude-3.5": 8,
+        "GPT-4o": 7
+      }
+    },
+    "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY": {
+      "motif": "CREATE_REPRO_PY+EDIT_REPRO_PY+RUN_PYTHON_REPRO_PY+SEARCH+OPEN_SRC_PY+SEARCH+NAV_SRC_PY",
+      "n_atoms": 7,
+      "occurrences": 43,
+      "n_trajectories_with": 43,
+      "mean_tokens_per_use": 77735.98675017568,
+      "success_rate_when_used": 0.06976744186046512,
+      "success_rate_vs_base": -0.08248169308763177,
+      "by_agent": {
+        "GPT-4": 18,
+        "GPT-4o": 25
+      }
+    },
+    "SEARCH+SEARCH+OPEN_SRC_PY": {
+      "motif": "SEARCH+SEARCH+OPEN_SRC_PY",
+      "n_atoms": 3,
+      "occurrences": 22,
+      "n_trajectories_with": 20,
+      "mean_tokens_per_use": 40613.0876789301,
+      "success_rate_when_used": 0.1,
+      "success_rate_vs_base": -0.05224913494809688,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 7,
+        "GPT-4o": 8
+      }
+    },
+    "SEARCH+SEARCH+SEARCH+SEARCH": {
+      "motif": "SEARCH+SEARCH+SEARCH+SEARCH",
+      "n_atoms": 4,
+      "occurrences": 35,
+      "n_trajectories_with": 11,
+      "mean_tokens_per_use": 48965.82214233535,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 4,
+        "GPT-4o": 28
+      }
+    },
+    "NAV_OTHER": {
+      "motif": "NAV_OTHER",
+      "n_atoms": 1,
+      "occurrences": 10,
+      "n_trajectories_with": 7,
+      "mean_tokens_per_use": 12570.02716079547,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 6
+      }
+    },
+    "CREATE_UNKNOWN": {
+      "motif": "CREATE_UNKNOWN",
+      "n_atoms": 1,
+      "occurrences": 13,
+      "n_trajectories_with": 11,
+      "mean_tokens_per_use": 12578.9949983162,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 4,
+        "GPT-4o": 6
+      }
+    },
+    "FIND_FILE+SHELL_LS": {
+      "motif": "FIND_FILE+SHELL_LS",
+      "n_atoms": 2,
+      "occurrences": 50,
+      "n_trajectories_with": 47,
+      "mean_tokens_per_use": 26132.535463197095,
+      "success_rate_when_used": 0.1702127659574468,
+      "success_rate_vs_base": 0.017963631009349917,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 29,
+        "GPT-4o": 14
+      }
+    },
+    "OPEN_REPRO_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "OPEN_REPRO_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 2,
+      "occurrences": 32,
+      "n_trajectories_with": 30,
+      "mean_tokens_per_use": 26461.433409973502,
+      "success_rate_when_used": 0.1,
+      "success_rate_vs_base": -0.05224913494809688,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 28,
+        "GPT-4o": 2
+      }
+    },
+    "SHELL_GREP": {
+      "motif": "SHELL_GREP",
+      "n_atoms": 1,
+      "occurrences": 87,
+      "n_trajectories_with": 53,
+      "mean_tokens_per_use": 13798.586670323399,
+      "success_rate_when_used": 0.11320754716981132,
+      "success_rate_vs_base": -0.039041587778285564,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 50,
+        "GPT-4o": 33
+      }
+    },
+    "SHELL_CAT": {
+      "motif": "SHELL_CAT",
+      "n_atoms": 1,
+      "occurrences": 139,
+      "n_trajectories_with": 46,
+      "mean_tokens_per_use": 15451.425907868044,
+      "success_rate_when_used": 0.10869565217391304,
+      "success_rate_vs_base": -0.043553482774183847,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 98,
+        "GPT-4o": 36
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 6,
+      "occurrences": 22,
+      "n_trajectories_with": 21,
+      "mean_tokens_per_use": 86213.82305693699,
+      "success_rate_when_used": 0.19047619047619047,
+      "success_rate_vs_base": 0.03822705552809358,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 11,
+        "GPT-4o": 10
+      }
+    },
+    "RUN_PYTHON_ALL": {
+      "motif": "RUN_PYTHON_ALL",
+      "n_atoms": 1,
+      "occurrences": 164,
+      "n_trajectories_with": 62,
+      "mean_tokens_per_use": 14008.386737719848,
+      "success_rate_when_used": 0.16129032258064516,
+      "success_rate_vs_base": 0.00904118763254827,
+      "by_agent": {
+        "GPT-4": 6,
+        "Claude-3.5": 76,
+        "GPT-4o": 82
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 6,
+      "occurrences": 20,
+      "n_trajectories_with": 12,
+      "mean_tokens_per_use": 86274.75374414057,
+      "success_rate_when_used": 0.08333333333333333,
+      "success_rate_vs_base": -0.06891580161476356,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 3,
+        "GPT-4o": 15
+      }
+    },
+    "NAV_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "NAV_SRC_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 3,
+      "occurrences": 30,
+      "n_trajectories_with": 25,
+      "mean_tokens_per_use": 39136.651608537024,
+      "success_rate_when_used": 0.12,
+      "success_rate_vs_base": -0.03224913494809689,
+      "by_agent": {
+        "GPT-4": 12,
+        "Claude-3.5": 4,
+        "GPT-4o": 14
+      }
+    },
+    "RUN_LINT": {
+      "motif": "RUN_LINT",
+      "n_atoms": 1,
+      "occurrences": 44,
+      "n_trajectories_with": 11,
+      "mean_tokens_per_use": 16707.277274533793,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 30,
+        "GPT-4o": 10
+      }
+    },
+    "NAV_CONFIG_PY": {
+      "motif": "NAV_CONFIG_PY",
+      "n_atoms": 1,
+      "occurrences": 4,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 14722.800308641976,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 1,
+        "GPT-4o": 1
+      }
+    },
+    "EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY": {
+      "motif": "EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY+EDIT_TEST_PY",
+      "n_atoms": 4,
+      "occurrences": 13,
+      "n_trajectories_with": 11,
+      "mean_tokens_per_use": 58325.3178304346,
+      "success_rate_when_used": 0.18181818181818182,
+      "success_rate_vs_base": 0.029569046870084936,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 5,
+        "GPT-4o": 7
+      }
+    },
+    "RUN_PYTEST_REPRO_PY": {
+      "motif": "RUN_PYTEST_REPRO_PY",
+      "n_atoms": 1,
+      "occurrences": 15,
+      "n_trajectories_with": 6,
+      "mean_tokens_per_use": 11070.881145198886,
+      "success_rate_when_used": 0.16666666666666666,
+      "success_rate_vs_base": 0.01441753171856977,
+      "by_agent": {
+        "GPT-4": 3,
+        "GPT-4o": 12
+      }
+    },
+    "RUN_PYTEST_TEST_PY": {
+      "motif": "RUN_PYTEST_TEST_PY",
+      "n_atoms": 1,
+      "occurrences": 60,
+      "n_trajectories_with": 31,
+      "mean_tokens_per_use": 15737.672225715876,
+      "success_rate_when_used": 0.12903225806451613,
+      "success_rate_vs_base": -0.02321687688358076,
+      "by_agent": {
+        "GPT-4": 5,
+        "Claude-3.5": 45,
+        "GPT-4o": 10
+      }
+    },
+    "EDIT_TEST_PY+RUN_PYTEST_TEST_PY": {
+      "motif": "EDIT_TEST_PY+RUN_PYTEST_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 36,
+      "n_trajectories_with": 15,
+      "mean_tokens_per_use": 30655.531956333867,
+      "success_rate_when_used": 0.13333333333333333,
+      "success_rate_vs_base": -0.018915801614763555,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 29,
+        "GPT-4o": 5
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTEST_TEST_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTEST_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 32,
+      "n_trajectories_with": 12,
+      "mean_tokens_per_use": 40292.692245285536,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 3,
+        "Claude-3.5": 27,
+        "GPT-4o": 2
+      }
+    },
+    "EDIT_DOC": {
+      "motif": "EDIT_DOC",
+      "n_atoms": 1,
+      "occurrences": 15,
+      "n_trajectories_with": 14,
+      "mean_tokens_per_use": 12742.038553845377,
+      "success_rate_when_used": 0.07142857142857142,
+      "success_rate_vs_base": -0.08082056351952546,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 9,
+        "GPT-4o": 4
+      }
+    },
+    "NAV_DOC": {
+      "motif": "NAV_DOC",
+      "n_atoms": 1,
+      "occurrences": 9,
+      "n_trajectories_with": 8,
+      "mean_tokens_per_use": 13353.527253704902,
+      "success_rate_when_used": 0.125,
+      "success_rate_vs_base": -0.027249134948096887,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 6,
+        "GPT-4o": 1
+      }
+    },
+    "SHELL_CD+SHELL_LS": {
+      "motif": "SHELL_CD+SHELL_LS",
+      "n_atoms": 2,
+      "occurrences": 27,
+      "n_trajectories_with": 15,
+      "mean_tokens_per_use": 24153.99547802045,
+      "success_rate_when_used": 0.06666666666666667,
+      "success_rate_vs_base": -0.08558246828143022,
+      "by_agent": {
+        "GPT-4": 7,
+        "Claude-3.5": 3,
+        "GPT-4o": 17
+      }
+    },
+    "SHELL_CHMOD": {
+      "motif": "SHELL_CHMOD",
+      "n_atoms": 1,
+      "occurrences": 4,
+      "n_trajectories_with": 4,
+      "mean_tokens_per_use": 11950.785272008605,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1,
+        "Claude-3.5": 1,
+        "GPT-4o": 2
+      }
+    },
+    "UNKNOWN_./REPRODUCE.SH": {
+      "motif": "UNKNOWN_./REPRODUCE.SH",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 12003.545454545454,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1
+      }
+    },
+    "UNKNOWN_SPHINX-QUICKSTART": {
+      "motif": "UNKNOWN_SPHINX-QUICKSTART",
+      "n_atoms": 1,
+      "occurrences": 3,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 12705.875578444544,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1,
+        "GPT-4o": 2
+      }
+    },
+    "CREATE_DOC": {
+      "motif": "CREATE_DOC",
+      "n_atoms": 1,
+      "occurrences": 4,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 17138.037012987013,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 2,
+        "Claude-3.5": 1,
+        "GPT-4o": 1
+      }
+    },
+    "CREATE_DOC+EDIT_DOC": {
+      "motif": "CREATE_DOC+EDIT_DOC",
+      "n_atoms": 2,
+      "occurrences": 23,
+      "n_trajectories_with": 21,
+      "mean_tokens_per_use": 30237.47244858515,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 4,
+        "Claude-3.5": 10,
+        "GPT-4o": 9
+      }
+    },
+    "NAV_REPRO_PY": {
+      "motif": "NAV_REPRO_PY",
+      "n_atoms": 1,
+      "occurrences": 6,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 12952.454393618895,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4": 1,
+        "GPT-4o": 5
+      }
+    },
+    "RUN_PYTHON_CONFIG_PY": {
+      "motif": "RUN_PYTHON_CONFIG_PY",
+      "n_atoms": 1,
+      "occurrences": 28,
+      "n_trajectories_with": 11,
+      "mean_tokens_per_use": 15716.038724168278,
+      "success_rate_when_used": 0.2727272727272727,
+      "success_rate_vs_base": 0.12047813777917582,
+      "by_agent": {
+        "Claude-3.5": 23,
+        "GPT-4o": 5
+      }
+    },
+    "RUN_PIP": {
+      "motif": "RUN_PIP",
+      "n_atoms": 1,
+      "occurrences": 42,
+      "n_trajectories_with": 20,
+      "mean_tokens_per_use": 14564.807161078175,
+      "success_rate_when_used": 0.1,
+      "success_rate_vs_base": -0.05224913494809688,
+      "by_agent": {
+        "Claude-3.5": 24,
+        "GPT-4o": 18
+      }
+    },
+    "UNKNOWN_CYTHON": {
+      "motif": "UNKNOWN_CYTHON",
+      "n_atoms": 1,
+      "occurrences": 4,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 17149.957924836603,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 4
+      }
+    },
+    "EDIT": {
+      "motif": "EDIT",
+      "n_atoms": 1,
+      "occurrences": 5,
+      "n_trajectories_with": 5,
+      "mean_tokens_per_use": 19071.5804158215,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 4,
+        "GPT-4o": 1
+      }
+    },
+    "SHELL_PWD": {
+      "motif": "SHELL_PWD",
+      "n_atoms": 1,
+      "occurrences": 22,
+      "n_trajectories_with": 17,
+      "mean_tokens_per_use": 15675.969753531828,
+      "success_rate_when_used": 0.23529411764705882,
+      "success_rate_vs_base": 0.08304498269896193,
+      "by_agent": {
+        "Claude-3.5": 22
+      }
+    },
+    "EDIT_DOC+EDIT_DOC": {
+      "motif": "EDIT_DOC+EDIT_DOC",
+      "n_atoms": 2,
+      "occurrences": 29,
+      "n_trajectories_with": 6,
+      "mean_tokens_per_use": 27392.403221511413,
+      "success_rate_when_used": 0.16666666666666666,
+      "success_rate_vs_base": 0.01441753171856977,
+      "by_agent": {
+        "Claude-3.5": 5,
+        "GPT-4o": 24
+      }
+    },
+    "RUN_PYTEST_ALL": {
+      "motif": "RUN_PYTEST_ALL",
+      "n_atoms": 1,
+      "occurrences": 13,
+      "n_trajectories_with": 8,
+      "mean_tokens_per_use": 23015.19003937116,
+      "success_rate_when_used": 0.125,
+      "success_rate_vs_base": -0.027249134948096887,
+      "by_agent": {
+        "Claude-3.5": 9,
+        "GPT-4o": 4
+      }
+    },
+    "SHELL_CD+SHELL_CD": {
+      "motif": "SHELL_CD+SHELL_CD",
+      "n_atoms": 2,
+      "occurrences": 65,
+      "n_trajectories_with": 18,
+      "mean_tokens_per_use": 23208.574673382005,
+      "success_rate_when_used": 0.2222222222222222,
+      "success_rate_vs_base": 0.06997308727412532,
+      "by_agent": {
+        "Claude-3.5": 6,
+        "GPT-4o": 59
+      }
+    },
+    "RUN_PYTHON_TEST_PY+RUN_PYTHON_TEST_PY": {
+      "motif": "RUN_PYTHON_TEST_PY+RUN_PYTHON_TEST_PY",
+      "n_atoms": 2,
+      "occurrences": 23,
+      "n_trajectories_with": 14,
+      "mean_tokens_per_use": 33702.74461266158,
+      "success_rate_when_used": 0.2857142857142857,
+      "success_rate_vs_base": 0.1334651507661888,
+      "by_agent": {
+        "Claude-3.5": 20,
+        "GPT-4o": 3
+      }
+    },
+    "CREATE_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "CREATE_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 2,
+      "occurrences": 36,
+      "n_trajectories_with": 34,
+      "mean_tokens_per_use": 28149.722432240964,
+      "success_rate_when_used": 0.17647058823529413,
+      "success_rate_vs_base": 0.024221453287197242,
+      "by_agent": {
+        "Claude-3.5": 13,
+        "GPT-4o": 23
+      }
+    },
+    "SHELL_ECHO": {
+      "motif": "SHELL_ECHO",
+      "n_atoms": 1,
+      "occurrences": 27,
+      "n_trajectories_with": 10,
+      "mean_tokens_per_use": 14010.12453192807,
+      "success_rate_when_used": 0.1,
+      "success_rate_vs_base": -0.05224913494809688,
+      "by_agent": {
+        "Claude-3.5": 27
+      }
+    },
+    "SHELL_SED": {
+      "motif": "SHELL_SED",
+      "n_atoms": 1,
+      "occurrences": 7,
+      "n_trajectories_with": 2,
+      "mean_tokens_per_use": 17352.596378269613,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 7
+      }
+    },
+    "SHELL_LS+SHELL_CD+SHELL_CD": {
+      "motif": "SHELL_LS+SHELL_CD+SHELL_CD",
+      "n_atoms": 3,
+      "occurrences": 34,
+      "n_trajectories_with": 28,
+      "mean_tokens_per_use": 40465.72317341808,
+      "success_rate_when_used": 0.17857142857142858,
+      "success_rate_vs_base": 0.02632229362333169,
+      "by_agent": {
+        "Claude-3.5": 11,
+        "GPT-4o": 23
+      }
+    },
+    "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 4,
+      "occurrences": 15,
+      "n_trajectories_with": 14,
+      "mean_tokens_per_use": 53863.52931330002,
+      "success_rate_when_used": 0.21428571428571427,
+      "success_rate_vs_base": 0.06203657933761739,
+      "by_agent": {
+        "Claude-3.5": 2,
+        "GPT-4o": 13
+      }
+    },
+    "EDIT_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 2,
+      "occurrences": 37,
+      "n_trajectories_with": 22,
+      "mean_tokens_per_use": 25279.335228780856,
+      "success_rate_when_used": 0.09090909090909091,
+      "success_rate_vs_base": -0.061340044039005975,
+      "by_agent": {
+        "Claude-3.5": 4,
+        "GPT-4o": 33
+      }
+    },
+    "RUN_PYTHON_SRC_PY+RUN_PYTHON_SRC_PY": {
+      "motif": "RUN_PYTHON_SRC_PY+RUN_PYTHON_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 32,
+      "n_trajectories_with": 13,
+      "mean_tokens_per_use": 23181.948911838008,
+      "success_rate_when_used": 0.15384615384615385,
+      "success_rate_vs_base": 0.0015970188980569677,
+      "by_agent": {
+        "Claude-3.5": 2,
+        "GPT-4o": 30
+      }
+    },
+    "SHELL_GREP+SHELL_GREP": {
+      "motif": "SHELL_GREP+SHELL_GREP",
+      "n_atoms": 2,
+      "occurrences": 20,
+      "n_trajectories_with": 9,
+      "mean_tokens_per_use": 46565.54363134001,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 10,
+        "GPT-4o": 10
+      }
+    },
+    "SHELL_CP": {
+      "motif": "SHELL_CP",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 18048.295774647886,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_DIFF": {
+      "motif": "UNKNOWN_DIFF",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 18048.295774647886,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_/DURATIONFIELD": {
+      "motif": "UNKNOWN_/DURATIONFIELD",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 22340.91379310345,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_CURL": {
+      "motif": "UNKNOWN_CURL",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 12200.888888888889,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_WGET": {
+      "motif": "UNKNOWN_WGET",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 12200.888888888889,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "RUN_PYTEST_SRC_PY": {
+      "motif": "RUN_PYTEST_SRC_PY",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 10556.785714285714,
+      "success_rate_when_used": 1.0,
+      "success_rate_vs_base": 0.8477508650519031,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_NOX": {
+      "motif": "UNKNOWN_NOX",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 14668.88,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_./RUN_TEST.SH": {
+      "motif": "UNKNOWN_./RUN_TEST.SH",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 10893.842105263158,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "UNKNOWN_TOX": {
+      "motif": "UNKNOWN_TOX",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 29810.4,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1
+      }
+    },
+    "RUN_MAKE": {
+      "motif": "RUN_MAKE",
+      "n_atoms": 1,
+      "occurrences": 12,
+      "n_trajectories_with": 4,
+      "mean_tokens_per_use": 14419.86301079999,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 5,
+        "GPT-4o": 7
+      }
+    },
+    "RUN_DOCBUILD": {
+      "motif": "RUN_DOCBUILD",
+      "n_atoms": 1,
+      "occurrences": 29,
+      "n_trajectories_with": 10,
+      "mean_tokens_per_use": 15632.106397990028,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "Claude-3.5": 1,
+        "GPT-4o": 28
+      }
+    },
+    "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY": {
+      "motif": "EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY+EDIT_SRC_PY",
+      "n_atoms": 32,
+      "occurrences": 23,
+      "n_trajectories_with": 23,
+      "mean_tokens_per_use": 434184.25448282174,
+      "success_rate_when_used": 0.08695652173913043,
+      "success_rate_vs_base": -0.06529261320896645,
+      "by_agent": {
+        "GPT-4o": 23
+      }
+    },
+    "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY": {
+      "motif": "EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY+EDIT_SRC_PY+RUN_PYTHON_REPRO_PY",
+      "n_atoms": 16,
+      "occurrences": 26,
+      "n_trajectories_with": 16,
+      "mean_tokens_per_use": 210234.4948133608,
+      "success_rate_when_used": 0.0625,
+      "success_rate_vs_base": -0.08974913494809689,
+      "by_agent": {
+        "GPT-4o": 26
+      }
+    },
+    "SHELL_EXPORT": {
+      "motif": "SHELL_EXPORT",
+      "n_atoms": 1,
+      "occurrences": 59,
+      "n_trajectories_with": 28,
+      "mean_tokens_per_use": 12492.631768136003,
+      "success_rate_when_used": 0.2857142857142857,
+      "success_rate_vs_base": 0.1334651507661888,
+      "by_agent": {
+        "GPT-4o": 59
+      }
+    },
+    "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 16,
+      "occurrences": 18,
+      "n_trajectories_with": 10,
+      "mean_tokens_per_use": 217126.91014294274,
+      "success_rate_when_used": 0.4,
+      "success_rate_vs_base": 0.24775086505190314,
+      "by_agent": {
+        "GPT-4o": 18
+      }
+    },
+    "UNKNOWN_EXIT_FORMAT": {
+      "motif": "UNKNOWN_EXIT_FORMAT",
+      "n_atoms": 1,
+      "occurrences": 4,
+      "n_trajectories_with": 4,
+      "mean_tokens_per_use": 13608.605721003136,
+      "success_rate_when_used": 0.25,
+      "success_rate_vs_base": 0.09775086505190311,
+      "by_agent": {
+        "GPT-4o": 4
+      }
+    },
+    "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY": {
+      "motif": "EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY+EDIT_CONFIG_PY",
+      "n_atoms": 8,
+      "occurrences": 7,
+      "n_trajectories_with": 7,
+      "mean_tokens_per_use": 111894.88741176318,
+      "success_rate_when_used": 0.42857142857142855,
+      "success_rate_vs_base": 0.27632229362333166,
+      "by_agent": {
+        "GPT-4o": 7
+      }
+    },
+    "UNKNOWN_PKILL": {
+      "motif": "UNKNOWN_PKILL",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 11889.030303030304,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4o": 1
+      }
+    },
+    "UNKNOWN_./RUNTESTS.PY": {
+      "motif": "UNKNOWN_./RUNTESTS.PY",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 11261.25,
+      "success_rate_when_used": 1.0,
+      "success_rate_vs_base": 0.8477508650519031,
+      "by_agent": {
+        "GPT-4o": 1
+      }
+    },
+    "SHELL_EXPORT+SHELL_EXPORT": {
+      "motif": "SHELL_EXPORT+SHELL_EXPORT",
+      "n_atoms": 2,
+      "occurrences": 22,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 28986.238104776592,
+      "success_rate_when_used": 0.3333333333333333,
+      "success_rate_vs_base": 0.18108419838523643,
+      "by_agent": {
+        "GPT-4o": 22
+      }
+    },
+    "OPEN_CONFIG_PY+OPEN_CONFIG_PY": {
+      "motif": "OPEN_CONFIG_PY+OPEN_CONFIG_PY",
+      "n_atoms": 2,
+      "occurrences": 3,
+      "n_trajectories_with": 3,
+      "mean_tokens_per_use": 24035.64304388422,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4o": 3
+      }
+    },
+    "RUN_PYTEST_REPRO_PY+EDIT_SRC_PY": {
+      "motif": "RUN_PYTEST_REPRO_PY+EDIT_SRC_PY",
+      "n_atoms": 2,
+      "occurrences": 24,
+      "n_trajectories_with": 2,
+      "mean_tokens_per_use": 24848.00134408602,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4o": 24
+      }
+    },
+    "UNKNOWN_./BUILD_DOCS.SH": {
+      "motif": "UNKNOWN_./BUILD_DOCS.SH",
+      "n_atoms": 1,
+      "occurrences": 1,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 12184.640625,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4o": 1
+      }
+    },
+    "SUBMIT+SUBMIT": {
+      "motif": "SUBMIT+SUBMIT",
+      "n_atoms": 2,
+      "occurrences": 22,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 24369.28125,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4o": 22
+      }
+    },
+    "UNKNOWN_ANTLR4": {
+      "motif": "UNKNOWN_ANTLR4",
+      "n_atoms": 1,
+      "occurrences": 2,
+      "n_trajectories_with": 1,
+      "mean_tokens_per_use": 12076.353846153846,
+      "success_rate_when_used": 0.0,
+      "success_rate_vs_base": -0.1522491349480969,
+      "by_agent": {
+        "GPT-4o": 2
+      }
+    },
+    "__base_rate__": {
+      "base_resolve_rate": 0.1522491349480969,
+      "n_resolved": 132,
+      "n_total": 867
+    }
+  },
+  "efficiency_frontier": {
+    "GPT-4": {
+      "n_total": 300,
+      "n_resolved": 42,
+      "resolve_rate": 0.14,
+      "total_cost_usd": 752.14661,
+      "mean_cost_per_task_usd": 2.507155366666667,
+      "mean_cost_per_resolved_usd": 17.90825261904762,
+      "median_cost_per_task_usd": 2.2920000000000003
+    },
+    "Claude-3.5": {
+      "n_total": 289,
+      "n_resolved": 46,
+      "resolve_rate": 0.15916955017301038,
+      "total_cost_usd": 469.044303,
+      "mean_cost_per_task_usd": 1.6229906678200692,
+      "mean_cost_per_resolved_usd": 10.196615282608695,
+      "median_cost_per_task_usd": 1.1276700000000002
+    },
+    "GPT-4o": {
+      "n_total": 278,
+      "n_resolved": 44,
+      "resolve_rate": 0.15827338129496402,
+      "total_cost_usd": 704.1441100000001,
+      "mean_cost_per_task_usd": 2.5328924820143888,
+      "mean_cost_per_resolved_usd": 16.003275227272727,
+      "median_cost_per_task_usd": 3.7519100000000005
+    }
+  }
+}

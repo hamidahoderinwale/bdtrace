@@ -33,7 +33,10 @@ _NORMALIZE_OPS = {
     "ADD_elif": "ADD_If", "DEL_elif": "DEL_If",
     "ADD_else": "ADD_If", "DEL_else": "DEL_If",
     "ADD_except": "ADD_ExceptHandler", "DEL_except": "DEL_ExceptHandler",
-    "ADD_assert": "ADD_Assert",
+    "ADD_assert": "ADD_Assert", "DEL_assert": "DEL_Assert",
+    "ADD_yield": "ADD_Yield", "DEL_yield": "DEL_Yield",
+    "ADD_import": "ADD_Import", "DEL_import": "DEL_Import",
+    "ADD_lambda": "ADD_Lambda", "DEL_lambda": "DEL_Lambda",
 }
 
 _HUNK_HEADER_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@")

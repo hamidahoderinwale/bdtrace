@@ -21,6 +21,8 @@ dependencies = [
     "msgpack>=1.1.2",
     "hdbscan>=0.8.42",
     "boto3>=1.28",
+    "statsmodels>=0.14.6",
+    "parso>=0.8.7",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,17 @@
+{
+  "astropy__astropy-13579": {
+    "model_name_or_path": "openai/SWE-agent-LM-32B",
+    "instance_id": "astropy__astropy-13579",
+    "model_patch": ""
+  },
+  "astropy__astropy-14096": {
+    "model_name_or_path": "openai/SWE-agent-LM-32B",
+    "instance_id": "astropy__astropy-14096",
+    "model_patch": ""
+  },
+  "astropy__astropy-14309": {
+    "model_name_or_path": "openai/SWE-agent-LM-32B",
+    "instance_id": "astropy__astropy-14309",
+    "model_patch": ""
+  }
+}

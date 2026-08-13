@@ -1,0 +1,24 @@
+{
+  "n_records": 867,
+  "full_vocab_size": 200,
+  "n_motifs": 124,
+  "per_agent_total_tokens": {
+    "GPT-4": 2449,
+    "Claude-3.5": 4624,
+    "GPT-4o": 3997
+  },
+  "jsd_full_vocab": {
+    "GPT-4__Claude-3.5": 0.2169091210513044,
+    "GPT-4__GPT-4o": 0.20088513760846485,
+    "Claude-3.5__GPT-4o": 0.2159763664413419
+  },
+  "jsd_motifs_only": {
+    "GPT-4__Claude-3.5": 0.21640341632251134,
+    "GPT-4__GPT-4o": 0.18014499763160358,
+    "Claude-3.5__GPT-4o": 0.24716103695085073
+  },
+  "interpretation": {
+    "jsd_range": "[0, 1] with log2; 0 = identical distributions, 1 = disjoint",
+    "heritability_check": "lower JSD between same-family agents (GPT-4 x GPT-4o) relative to cross-family supports heritability"
+  }
+}

@@ -56,3 +56,4 @@ research/data/*.pkl
 # OS
 Thumbs.db
 
+.vercel

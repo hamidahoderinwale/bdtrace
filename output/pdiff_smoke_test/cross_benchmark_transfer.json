@@ -1,0 +1,185 @@
+{
+  "caps": {
+    "swe_smith": 5000
+  },
+  "reference_vocab_sizes": {
+    "min_count_1": {
+      "edits": 97,
+      "modules": 69,
+      "scopes": 249
+    },
+    "min_count_2": {
+      "edits": 85,
+      "modules": 38,
+      "scopes": 20
+    }
+  },
+  "vocab_summary": {
+    "lite": {
+      "edit_ops": 97,
+      "modules": 69
+    },
+    "verified": {
+      "edit_ops": 102,
+      "modules": 85,
+      "edit_ops_intersect_lite": 92,
+      "modules_intersect_lite": 58,
+      "edit_ops_minus_lite": 10,
+      "modules_minus_lite": 27
+    },
+    "swe_smith": {
+      "edit_ops": 108,
+      "modules": 94,
+      "edit_ops_intersect_lite": 93,
+      "modules_intersect_lite": 0,
+      "edit_ops_minus_lite": 15,
+      "modules_minus_lite": 94
+    }
+  },
+  "coverage": {
+    "verified_vs_lite_mc1": {
+      "label": "verified_mc1",
+      "n_views": 500,
+      "n_with_edits": 480,
+      "n_with_modules": 500,
+      "edits": {
+        "n": 480,
+        "mean": 0.0026997509294091446,
+        "median": 0.0,
+        "frac_fully_covered": 0.95625,
+        "frac_fully_novel": 0.0,
+        "histogram": {
+          "zero": 459,
+          "0_to_25": 21,
+          "25_to_50": 0,
+          "50_to_75": 0,
+          "75_to_100": 0,
+          "one": 0
+        }
+      },
+      "modules": {
+        "n": 500,
+        "mean": 0.076,
+        "median": 0.0,
+        "frac_fully_covered": 0.924,
+        "frac_fully_novel": 0.076,
+        "histogram": {
+          "zero": 462,
+          "0_to_25": 0,
+          "25_to_50": 0,
+          "50_to_75": 0,
+          "75_to_100": 0,
+          "one": 38
+        }
+      }
+    },
+    "verified_vs_lite_mc2": {
+      "label": "verified_mc2",
+      "n_views": 500,
+      "n_with_edits": 480,
+      "n_with_modules": 500,
+      "edits": {
+        "n": 480,
+        "mean": 0.006954264589076313,
+        "median": 0.0,
+        "frac_fully_covered": 0.9270833333333334,
+        "frac_fully_novel": 0.0,
+        "histogram": {
+          "zero": 445,
+          "0_to_25": 34,
+          "25_to_50": 1,
+          "50_to_75": 0,
+          "75_to_100": 0,
+          "one": 0
+        }
+      },
+      "modules": {
+        "n": 500,
+        "mean": 0.152,
+        "median": 0.0,
+        "frac_fully_covered": 0.848,
+        "frac_fully_novel": 0.152,
+        "histogram": {
+          "zero": 424,
+          "0_to_25": 0,
+          "25_to_50": 0,
+          "50_to_75": 0,
+          "75_to_100": 0,
+          "one": 76
+        }
+      }
+    },
+    "swe_smith_vs_lite_mc1": {
+      "label": "swe_smith_mc1",
+      "n_views": 5000,
+      "n_with_edits": 1400,
+      "n_with_modules": 1458,
+      "edits": {
+        "n": 1400,
+        "mean": 0.013297555388290137,
+        "median": 0.0,
+        "frac_fully_covered": 0.9142857142857143,
+        "frac_fully_novel": 0.0,
+        "histogram": {
+          "zero": 1280,
+          "0_to_25": 95,
+          "25_to_50": 5,
+          "50_to_75": 20,
+          "75_to_100": 0,
+          "one": 0
+        }
+      },
+      "modules": {
+        "n": 1458,
+        "mean": 1.0,
+        "median": 1.0,
+        "frac_fully_covered": 0.0,
+        "frac_fully_novel": 1.0,
+        "histogram": {
+          "zero": 0,
+          "0_to_25": 0,
+          "25_to_50": 0,
+          "50_to_75": 0,
+          "75_to_100": 0,
+          "one": 1458
+        }
+      }
+    },
+    "swe_smith_vs_lite_mc2": {
+      "label": "swe_smith_mc2",
+      "n_views": 5000,
+      "n_with_edits": 1400,
+      "n_with_modules": 1458,
+      "edits": {
+        "n": 1400,
+        "mean": 0.022475782308362762,
+        "median": 0.0,
+        "frac_fully_covered": 0.875,
+        "frac_fully_novel": 0.0007142857142857143,
+        "histogram": {
+          "zero": 1225,
+          "0_to_25": 140,
+          "25_to_50": 8,
+          "50_to_75": 26,
+          "75_to_100": 0,
+          "one": 1
+        }
+      },
+      "modules": {
+        "n": 1458,
+        "mean": 1.0,
+        "median": 1.0,
+        "frac_fully_covered": 0.0,
+        "frac_fully_novel": 1.0,
+        "histogram": {
+          "zero": 0,
+          "0_to_25": 0,
+          "25_to_50": 0,
+          "50_to_75": 0,
+          "75_to_100": 0,
+          "one": 1458
+        }
+      }
+    }
+  }
+}
