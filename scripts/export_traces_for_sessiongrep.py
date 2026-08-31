@@ -7,16 +7,23 @@ history into SQLite+FTS5 and serves it to humans (CLI/TUI) and agents (MCP).
 Its Claude adapter parses any directory of JSONL files where each line is
 {"message": {"role", "content"}, "timestamp"?, "sessionId"?, "cwd"?}.
 
-This script renders each trace in output/resolved_traces_lite_full.jsonl
-(one SWE-bench instance: a prompt event + a code_change event) into that
-shape, one file per instance, under output/sessiongrep_export/. Adding that
-directory to `providers.claude.paths` in ~/.config/sessiongrep/config.toml
-makes every dev trace searchable from the same surface as session history
-("which trace touched separability_matrix?"). The export is a derived,
-regenerable artifact: delete the directory and re-run to rebuild.
+This script renders two trace sources into that shape, one file per
+instance, under output/sessiongrep_export/:
 
-Bounded fields: code_change content is truncated per event so the FTS index
-carries the searchable head of a patch, not megabytes of file bodies.
+1. output/resolved_traces_lite_full.jsonl — 300 resolved SWE-bench traces
+   (a prompt event + a code_change event each) -> bidirect-<instance_id>
+2. distillation_run/child_traj/*.traj — 499 SWE-agent-LM-32B rollout
+   trajectories (HF midah/bidirect-distillation-traces; fetch per
+   distillation_run/MOVED.md) -> bidirect-rollout-<instance_id>
+
+Adding the export directory to `providers.claude.paths` in
+~/.config/sessiongrep/config.toml makes every dev trace searchable from the
+same surface as session history ("which trace touched separability_matrix?").
+The export is a derived, regenerable artifact: delete and re-run to rebuild.
+
+Bounded fields: per-message content is truncated so the FTS index carries
+the searchable head of each step, not megabytes of tool payloads; identical
+system prompts are skipped as boilerplate.
 """
 
 import json
@@ -24,8 +31,10 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 SOURCE = REPO / "output" / "resolved_traces_lite_full.jsonl"
+ROLLOUTS = REPO / "distillation_run" / "child_traj"
 DEST = REPO / "output" / "sessiongrep_export"
 MAX_CONTENT_CHARS = 4000  # per code_change event; head of patch is the searchable part
+MAX_ROLLOUT_MSG_CHARS = 1500  # per rollout history message; bounds index size
 
 
 def render_code_change(details: dict) -> str:
@@ -41,37 +50,63 @@ def render_code_change(details: dict) -> str:
     return "\n".join(parts)
 
 
+def write_session(session_id: str, title: str, messages: list[tuple[str, str]]) -> None:
+    lines = [
+        {"type": "last-prompt", "lastPrompt": title, "sessionId": session_id, "cwd": str(REPO)}
+    ]
+    for role, text in messages:
+        if text.strip():
+            lines.append({"message": {"role": role, "content": text}, "cwd": str(REPO)})
+    out = DEST / f"{session_id}.jsonl"
+    tmp = out.with_suffix(".jsonl.tmp")
+    tmp.write_text("\n".join(json.dumps(entry) for entry in lines) + "\n")
+    tmp.replace(out)
+
+
+def export_rollouts() -> int:
+    if not ROLLOUTS.is_dir():
+        print(f"rollouts not present at {ROLLOUTS} — see distillation_run/MOVED.md; skipping")
+        return 0
+    written = 0
+    for traj_path in sorted(ROLLOUTS.glob("*.traj")):
+        instance_id = traj_path.stem
+        traj = json.loads(traj_path.read_text())
+        messages = []
+        for item in traj.get("history", []):
+            role = item.get("role")
+            if role not in ("user", "assistant"):
+                continue  # system prompts are identical boilerplate across rollouts
+            messages.append((role, str(item.get("content", ""))[:MAX_ROLLOUT_MSG_CHARS]))
+        write_session(
+            f"bidirect-rollout-{instance_id}",
+            f"bidirect rollout {instance_id} (SWE-agent-LM-32B child)",
+            messages,
+        )
+        written += 1
+    return written
+
+
 def main() -> None:
     DEST.mkdir(parents=True, exist_ok=True)
     written = 0
     for line in SOURCE.open():
         trace = json.loads(line)
         instance_id = trace["instance_id"]
-        session_id = f"bidirect-{instance_id}"
-        title = f"bidirect trace {instance_id} ({trace['repo']})"
-        lines = [
-            {
-                "type": "last-prompt",
-                "lastPrompt": title,
-                "sessionId": session_id,
-                "cwd": str(REPO),
-            }
-        ]
+        messages = []
         for event in trace["events"]:
             details = event.get("details", {})
             if event["type"] == "prompt":
-                role, text = "user", str(details.get("text", ""))
+                messages.append(("user", str(details.get("text", ""))))
             else:
-                role, text = "assistant", render_code_change(details)
-            if not text.strip():
-                continue
-            lines.append({"message": {"role": role, "content": text}, "cwd": str(REPO)})
-        out = DEST / f"{session_id}.jsonl"
-        tmp = out.with_suffix(".jsonl.tmp")
-        tmp.write_text("\n".join(json.dumps(entry) for entry in lines) + "\n")
-        tmp.replace(out)
+                messages.append(("assistant", render_code_change(details)))
+        write_session(
+            f"bidirect-{instance_id}",
+            f"bidirect trace {instance_id} ({trace['repo']})",
+            messages,
+        )
         written += 1
-    print(f"wrote {written} trace sessions to {DEST}")
+    rollouts = export_rollouts()
+    print(f"wrote {written} resolved traces + {rollouts} rollouts to {DEST}")
 
 
 if __name__ == "__main__":
