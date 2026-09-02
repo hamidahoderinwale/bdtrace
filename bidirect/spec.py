@@ -96,6 +96,7 @@ def _anon_str(s: str) -> str:
     import re
     s = re.sub(r"/Users/[^/\s'\"]+", "~", s)
     s = re.sub(r"/home/[^/\s'\"]+", "~", s)
+    s = re.sub(r"-Users-[A-Za-z0-9_.]+", "-Users-anon", s)  # Claude Code workspace slugs
     return re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+", "<email>", s)
 
 
