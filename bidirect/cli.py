@@ -68,7 +68,14 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
   lab                        JupyterLab in notebooks/
   run <stem> [args...]       any other script by stem, searched across scripts/
   scripts [filter]           list every runnable script
+
+shorthand: the tool name carries the trace noun, so `bdtrace import|export|push` work bare
+(also im|ex); tf = transform, cfg = config, nb = notebooks, ls = scripts
 """
+
+# `bdtrace import` == `bdtrace trace import`; two-letter forms for the frequent verbs
+VERB_ELISION = {"import": "import", "im": "import", "export": "export", "ex": "export", "push": "push"}
+TOP_ALIASES = {"tf": "transform", "cfg": "config", "nb": "notebooks", "ls": "scripts"}
 
 # the legacy first-gen chain the exploration notebooks read (notebooks/README.md)
 LEGACY_CHAIN = [
@@ -184,7 +191,7 @@ def _trace(rest: list[str]) -> None:
 def _transform(rest: list[str]) -> None:
     import argparse
 
-    from bdtrace import transforms
+    from bidirect import transforms
 
     if rest[:1] == ["list"]:
         print(transforms.list_table())
@@ -219,7 +226,10 @@ def main() -> None:
         print(USAGE, end="")
         return
     cmd, rest = args[0], args[1:]
-    if cmd == "trace":
+    cmd = TOP_ALIASES.get(cmd, cmd)
+    if cmd in VERB_ELISION:
+        _trace([VERB_ELISION[cmd], *rest])
+    elif cmd == "trace":
         _trace(rest)
     elif cmd == "transform":
         _transform(rest)
