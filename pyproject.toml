@@ -89,5 +89,6 @@ target-version = ['py311']
 dev = [
     "black>=26.3.0",
     "ruff>=0.15.5",
+    "pytest>=8.0",
 ]
 
