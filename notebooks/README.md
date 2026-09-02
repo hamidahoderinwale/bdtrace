@@ -21,9 +21,8 @@ uv run bidirect lab         # JupyterLab in this directory
 ```
 
 `bidirect notebooks` chains the four stage scripts with the defaults these notebooks
-expect; each stage is also its own subcommand (`bidirect extract|distances|diversity|plots`,
-`-h` shows the underlying script's options), and `bidirect run <stem>` reaches any
-other script in `scripts/`.
+expect; the stages are also reachable individually (`bidirect certs extract|distances|diversity`,
+`-h` shows each underlying script's options). `bidirect --help` lists the full command set.
 
 ## Analysis file formats
 
