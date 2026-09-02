@@ -122,6 +122,9 @@ def list_table() -> str:
     lines.append("inferred (DSPy; needs OPENROUTER_API_KEY or OPENAI_API_KEY):")
     lines += [f"  {n:<{width}}  {t.kind:<5}  {t.desc}" for n, t in TRANSFORMS.items() if t.llm]
     lines.append("record shapes: trace = a trace dict with an `events` list; patch = before/after source fields")
+    lines.append("measured basis (inter_eval diversity, Lite + SWE-Smith): edits and module graph carry the")
+    lines.append("  independent structural signal; raw-edits vs edit set-diff are rho=1.0 redundant.")
+    lines.append("  The inferred representations have no redundancy verdict yet.")
     return "\n".join(lines)
 
 
