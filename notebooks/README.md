@@ -16,13 +16,14 @@ these notebooks are kept for provenance and for two results not yet promoted to 
 
 ```bash
 uv sync --extra notebooks
-python scripts/run_extraction_pipeline.py --datasets swe_bench_lite --output-dir output
-python scripts/build_distance_matrices.py --input output/datasets/swe_bench_lite/test.parquet --reprs tokens edits_set_diff edits_tree modules_graph
-python scripts/run_diversity_analysis.py --matrices output/datasets/swe_bench_lite/distances.parquet --labels output/datasets/swe_bench_lite/labels.parquet
-python scripts/run_multi_benchmark_plots.py
+uv run bidirect notebooks   # extract -> distances -> diversity -> plots, default swe_bench_lite
+uv run bidirect lab         # JupyterLab in this directory
 ```
 
-(The `run_plots.py` this file used to reference does not exist; `run_multi_benchmark_plots.py` is the plotting entry point.)
+`bidirect notebooks` chains the four stage scripts with the defaults these notebooks
+expect; each stage is also its own subcommand (`bidirect extract|distances|diversity|plots`,
+`-h` shows the underlying script's options), and `bidirect run <stem>` reaches any
+other script in `scripts/`.
 
 ## Analysis file formats
 
