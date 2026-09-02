@@ -157,11 +157,14 @@ def _trace(rest: list[str]) -> None:
             from analysis.ingest.harnesses import parse
             records = parse(a.source, a.input, limit=a.limit)
         n = 0
-        with open(a.out, "w") as f:
-            for r in records:
-                f.write(json.dumps(r, default=str) + "\n")
-                n += 1
-        print(f"{n} traces -> {a.out}")
+        # stdout is for data (clig.dev): --out - streams JSONL for piping, status goes to stderr
+        f = sys.stdout if str(a.out) == "-" else open(a.out, "w")
+        for r in records:
+            f.write(json.dumps(r, default=str) + "\n")
+            n += 1
+        if f is not sys.stdout:
+            f.close()
+        print(f"{n} traces -> {a.out}", file=sys.stderr)
     elif verb == "export":
         p = argparse.ArgumentParser(prog="bdtrace trace export",
                                     description="Re-serialize a trace JSONL; format inferred from --out suffix")
@@ -182,10 +185,30 @@ def _trace(rest: list[str]) -> None:
         a = p.parse_args(rest)
         from bidirect.export import push_traces
         print(push_traces(a.in_path, a.repo_id, private=not a.public, dry_run=a.dry_run))
+    elif verb == "spec":
+        p = argparse.ArgumentParser(prog="bdtrace trace spec",
+                                    description="Canonical trace-record spec; with --in, audit a file against it")
+        p.add_argument("--in", dest="in_path", type=Path, default=None)
+        a = p.parse_args(rest)
+        from bidirect import spec
+        print(spec.describe(a.in_path) if a.in_path else spec.spec_text())
+    elif verb == "head":
+        p = argparse.ArgumentParser(prog="bdtrace trace head",
+                                    description="Show the first records legibly; --out writes the slice as JSONL")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("-n", type=int, default=3)
+        p.add_argument("--skip", type=int, default=0, help="records to skip first (segmented export)")
+        p.add_argument("--events", type=int, default=5, help="events shown per record in the view")
+        p.add_argument("--out", type=Path, default=None, help="write the slice untruncated instead of printing")
+        p.add_argument("--interval", default=None,
+                       help="event-time window: 2026-08-01..2026-09-01 (either side open), or 7d / 24h / 2w")
+        a = p.parse_args(rest)
+        from bidirect import spec
+        spec.head(a.in_path, a.n, a.skip, a.events, a.out, *spec.interval_bounds(a.interval))
     elif verb in COMMANDS["trace"]:
         _exec(SCRIPTS_DIR / f"{COMMANDS['trace'][verb]}.py", rest)
     else:
-        sys.exit(f"usage: bdtrace trace import|export|push|{'|'.join(COMMANDS['trace'])} [args...]")
+        sys.exit(f"usage: bdtrace trace import|export|push|spec|head|{'|'.join(COMMANDS['trace'])} [args...]")
 
 
 def _transform(rest: list[str]) -> None:
@@ -224,6 +247,10 @@ def main() -> None:
     args = sys.argv[1:]
     if not args or args[0] in ("-h", "--help"):
         print(USAGE, end="")
+        return
+    if args[0] in ("-V", "--version"):
+        from importlib.metadata import version
+        print(version("bidirect-align-dev-traces"))
         return
     cmd, rest = args[0], args[1:]
     cmd = TOP_ALIASES.get(cmd, cmd)
