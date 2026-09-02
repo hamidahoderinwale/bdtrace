@@ -20,9 +20,9 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 # noun -> verb -> script (relative to scripts/)
 COMMANDS = {
     "trace": {
-        "export": "export_traces_for_sessiongrep",  # -> sessiongrep-indexable session files
-        "fetch": "fetch_all_agent_trajectories",    # full trajectories, outcome-tagged
-        "parse": "parse_to_traces",                 # raw Cursor DB exports -> traces
+        "sessiongrep": "export_traces_for_sessiongrep",  # -> sessiongrep-indexable session files
+        "fetch": "fetch_all_agent_trajectories",         # full trajectories, outcome-tagged
+        "parse": "parse_to_traces",                      # raw Cursor DB text dumps -> traces
     },
     "certs": {
         "extract": "run_extraction_pipeline",       # edit certificates from a benchmark
@@ -47,8 +47,16 @@ usage: bidirect <object> <action> [args...]   (args go to the script's own argpa
                              apply one transformation, or all of them, to a JSONL of
                              records; `all` includes the LLM-backed ones only with --llm
   config                     model/provider config: which key is set, org-key reachability
-  trace export|fetch|parse   dev traces: export to sessiongrep session files,
-                             fetch trajectories from S3, parse Cursor DB dumps
+  trace import --source claude|cursor|swe_agent|openhands [--input P] [--out F] [--limit N]
+                             pull traces out of a local agent store (Claude Code
+                             session dir, Cursor SQLite DB, .traj dir) -> JSONL
+  trace export --in traces.jsonl --out F
+                             re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
+  trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
+                             push straight to the Hugging Face hub (parquet-backed)
+  trace sessiongrep|fetch|parse
+                             sessiongrep session-file export, S3 trajectory fetch,
+                             raw Cursor text-dump parse
   certs extract|distances|diversity   edit certificates and the measures over them
   paper [<script>]           paper figure/number scripts (bare = list, with grounding
                              status in scripts/agent_trajectories_paper/README.md)
@@ -120,6 +128,59 @@ def _notebooks(args: list[str]) -> None:
             sys.exit(f"bidirect: `{stem}` failed (exit {result.returncode}); fix and re-run from it")
 
 
+def _trace(rest: list[str]) -> None:
+    """import/export/push are module-backed (work from a bare install); the rest are scripts."""
+    import argparse
+
+    verb, rest = (rest[0], rest[1:]) if rest else ("", [])
+    if verb == "import":
+        p = argparse.ArgumentParser(prog="bidirect trace import",
+                                    description="Pull traces out of a local agent store, standardized to JSONL")
+        p.add_argument("--source", choices=["claude", "cursor", "swe_agent", "openhands"], default="claude")
+        p.add_argument("--input", type=Path, default=None, help="store path (default: the source's standard location)")
+        p.add_argument("--out", type=Path, default=Path("traces.jsonl"))
+        p.add_argument("--limit", type=int, default=None)
+        a = p.parse_args(rest)
+        import json
+
+        if a.source == "claude":
+            from analysis.ingest.claude_code import iter_traces
+            records = iter_traces(a.input, limit=a.limit)
+        else:
+            from analysis.ingest.harnesses import parse
+            records = parse(a.source, a.input, limit=a.limit)
+        n = 0
+        with open(a.out, "w") as f:
+            for r in records:
+                f.write(json.dumps(r, default=str) + "\n")
+                n += 1
+        print(f"{n} traces -> {a.out}")
+    elif verb == "export":
+        p = argparse.ArgumentParser(prog="bidirect trace export",
+                                    description="Re-serialize a trace JSONL; format inferred from --out suffix")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--out", type=Path, required=True,
+                       help=".jsonl | .jsonl.gz | .jsonl.zst | .parquet | .msgpack")
+        a = p.parse_args(rest)
+        from bidirect.export import export_traces
+        out = export_traces(a.in_path, a.out)
+        print(f"{out} ({out.stat().st_size:,} bytes)")
+    elif verb == "push":
+        p = argparse.ArgumentParser(prog="bidirect trace push",
+                                    description="Push a trace JSONL to the Hugging Face hub (parquet-backed dataset)")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--repo-id", required=True, help="e.g. midah/my-traces")
+        p.add_argument("--public", action="store_true", help="default is a private dataset")
+        p.add_argument("--dry-run", action="store_true", help="build the dataset, report rows, no upload")
+        a = p.parse_args(rest)
+        from bidirect.export import push_traces
+        print(push_traces(a.in_path, a.repo_id, private=not a.public, dry_run=a.dry_run))
+    elif verb in COMMANDS["trace"]:
+        _exec(SCRIPTS_DIR / f"{COMMANDS['trace'][verb]}.py", rest)
+    else:
+        sys.exit(f"usage: bidirect trace import|export|push|{'|'.join(COMMANDS['trace'])} [args...]")
+
+
 def _transform(rest: list[str]) -> None:
     import argparse
 
@@ -158,7 +219,9 @@ def main() -> None:
         print(USAGE, end="")
         return
     cmd, rest = args[0], args[1:]
-    if cmd == "transform":
+    if cmd == "trace":
+        _trace(rest)
+    elif cmd == "transform":
         _transform(rest)
     elif cmd == "config":
         from bidirect.transforms import config_report

@@ -48,10 +48,22 @@ none at all: a 1Password login (`op signin`) is enough, and the CLI reads the
 org's shared OpenRouter key from the vault. The reference lives in the code;
 the key never does.
 
+The other core object is the trace, and the main path is local store -> anywhere:
+
+```bash
+bidirect trace import --source claude       # pull traces from a local agent store
+                                            # (claude | cursor | swe_agent | openhands)
+bidirect trace export --in traces.jsonl --out traces.parquet   # or .jsonl.gz / .jsonl.zst / .msgpack
+bidirect trace push --in traces.jsonl --repo-id you/name       # direct to the HF hub (parquet-backed)
+bidirect trace sessiongrep                  # session files for the sessiongrep index
+```
+
+JSONL is the canonical interchange; the export formats are compressed serializations
+of the same records, and a hub push stores parquet by construction.
+
 The rest of the surface, noun-verb over the repo's objects:
 
 ```bash
-bidirect trace export|fetch|parse           # sessiongrep export, S3 trajectory fetch, Cursor parse
 bidirect certs extract|distances|diversity  # edit certificates and measures over them
 bidirect paper|fig|analysis [<script>]      # grouped script families (bare noun lists them)
 bidirect notebooks                          # regenerate the exploration notebooks' inputs
