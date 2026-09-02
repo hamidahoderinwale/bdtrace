@@ -30,6 +30,11 @@ source .venv/bin/activate
 
 Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.env` for LLM-based analyses.
 
+`uv sync` installs the `bidirect` CLI, the entry point for the runnable scripts:
+`bidirect notebooks` regenerates the notebook inputs end to end, `bidirect
+extract|distances|diversity|plots` runs one pipeline stage, and `bidirect run <stem>`
+reaches any script in `scripts/` (`bidirect scripts` lists them, `bidirect --help` for the rest).
+
 ## Representation pipeline
 
 | Level | What it captures | Coverage |
