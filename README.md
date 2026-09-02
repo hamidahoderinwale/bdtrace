@@ -28,12 +28,35 @@ uv sync
 source .venv/bin/activate
 ```
 
-Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.env` for LLM-based analyses.
+## CLI
 
-`uv sync` installs the `bidirect` CLI, the entry point for the runnable scripts:
-`bidirect notebooks` regenerates the notebook inputs end to end, `bidirect
-extract|distances|diversity|plots` runs one pipeline stage, and `bidirect run <stem>`
-reaches any script in `scripts/` (`bidirect scripts` lists them, `bidirect --help` for the rest).
+`uv sync` installs `bidirect`, the entry point for everything runnable here.
+The core object is the transformation: each of the repo's representation
+extractors, applicable to a JSONL of trace or patch records, one at a time or
+all at once.
+
+```bash
+bidirect transform list                     # enumerate the transformations
+bidirect transform edits --in records.jsonl # apply one (AST edit certificates)
+bidirect transform all --in records.jsonl --llm  # apply everything, inferred reprs included
+bidirect config                             # which model key is active
+```
+
+Model keys for the inferred (LLM-backed) transformations: set
+`OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.env`, or, for taste org members,
+none at all: a 1Password login (`op signin`) is enough, and the CLI reads the
+org's shared OpenRouter key from the vault. The reference lives in the code;
+the key never does.
+
+The rest of the surface, noun-verb over the repo's objects:
+
+```bash
+bidirect trace export|fetch|parse           # sessiongrep export, S3 trajectory fetch, Cursor parse
+bidirect certs extract|distances|diversity  # edit certificates and measures over them
+bidirect paper|fig|analysis [<script>]      # grouped script families (bare noun lists them)
+bidirect notebooks                          # regenerate the exploration notebooks' inputs
+bidirect run <stem> / bidirect scripts      # any other script / list everything
+```
 
 ## Representation pipeline
 
