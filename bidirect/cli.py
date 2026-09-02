@@ -176,9 +176,31 @@ def _trace(rest: list[str]) -> None:
         p.add_argument("--in", dest="in_path", type=Path, required=True)
         p.add_argument("--out", type=Path, required=True,
                        help=".jsonl | .jsonl.gz | .jsonl.zst | .parquet | .msgpack")
+        p.add_argument("--types", default=None,
+                       help="event types to keep: comma list from the taxonomy, or 'tools' (= all but prompt)")
+        p.add_argument("--compact", action="store_true",
+                       help="reduce each event to its action surface (text bodies dropped)")
+        p.add_argument("--anonymize", action="store_true",
+                       help="strip home dirs, usernames in paths, and emails from all strings")
+        p.add_argument("--interval", default=None,
+                       help="event-time window, as in trace head (A..B, or 7d/24h/2w)")
         a = p.parse_args(rest)
+        from bidirect import spec
         from bidirect.export import export_traces
-        out = export_traces(a.in_path, a.out)
+        records = a.in_path
+        if a.types or a.compact or a.anonymize or a.interval:
+            since, until = spec.interval_bounds(a.interval)
+            types = spec.parse_types(a.types) if a.types else None
+            def shaped():
+                for r in spec._iter_records(a.in_path):
+                    if not spec._in_window(r, since, until):
+                        continue
+                    r = spec.project(r, types, a.compact)
+                    if a.anonymize:
+                        r = spec.anonymize(r)
+                    yield r
+            records = shaped()
+        out = export_traces(records, a.out)
         print(f"{out} ({out.stat().st_size:,} bytes)")
     elif verb == "push":
         p = argparse.ArgumentParser(prog="bdtrace trace push",
