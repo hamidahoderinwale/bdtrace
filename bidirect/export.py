@@ -76,6 +76,30 @@ def _materialize(records: Iterable[dict] | Path) -> list[dict]:
     return list(records)
 
 
+def _stream(records: Iterable[dict] | Path) -> Iterable[dict]:
+    """Lazy record iterator: a .jsonl Path streams line by line (constant memory);
+    anything else falls back to _materialize. Keeps GB-scale jsonl exports flat."""
+    if isinstance(records, (str, Path)) and str(records).endswith(".jsonl"):
+        def gen():
+            with open(records, encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        yield json.loads(line)
+        return gen()
+    if isinstance(records, (str, Path)):
+        return _materialize(records)
+    return records
+
+
+def _progress(rows: Iterable[dict], what: str) -> Iterable[dict]:
+    """tqdm on stderr (the hf CLI look); silent when stderr is not a terminal."""
+    try:
+        from tqdm import tqdm
+        return tqdm(rows, desc=what, unit=" rec", disable=None)
+    except ImportError:
+        return rows
+
+
 _NESTED_FIELDS_KEY = "bidirect_nested_fields"
 
 
@@ -131,7 +155,9 @@ def export_traces(
     fmt = fmt or infer_format(out)
     if fmt not in FORMATS:
         raise ValueError(f"unknown format {fmt!r}; expected one of {FORMATS}")
-    rows = _materialize(records)
+    # line formats stream (constant memory, any size); parquet/msgpack materialize by nature
+    streaming = fmt in ("jsonl", "jsonl.gz", "jsonl.zst")
+    rows = _progress(_stream(records), f"export {fmt}") if streaming else _materialize(records)
     out.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(dir=out.parent, prefix=out.name + ".", suffix=".tmp")
     tmp = Path(tmp_name)
