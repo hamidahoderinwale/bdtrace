@@ -85,6 +85,18 @@ Model keys for the inferred transformations: set `OPENROUTER_API_KEY` or
 login (`op signin`) is enough and the CLI reads the org's shared OpenRouter key
 from the vault. The reference lives in the code; the key never does.
 
+Every export writes a `<file>.meta.json` sidecar (sha256, record count, the
+projection that shaped it, and the record JSON Schema); a hub push also
+publishes `croissant.json` (Croissant 1.1 with PROV-O, semver via
+`--dataset-version`). Consuming the exports from any dataframe library is one
+line — nothing bidirect-specific is required:
+
+```python
+pd.read_json("traces.jsonl", lines=True)          # pandas (also .jsonl.gz)
+pl.read_ndjson("traces.jsonl")                     # polars
+load_dataset("you/name")                           # datasets, after a push
+```
+
 Tests run with `uv run python -m pytest bidirect analysis/ingest` and on every
 push via GitHub Actions. From a bare `pip install git+...`, the trace and
 transform commands work anywhere; script-backed commands need this checkout.

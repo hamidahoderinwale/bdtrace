@@ -40,25 +40,73 @@ def spec_text() -> str:
     return json.dumps(SPEC, indent=2)
 
 
-def describe(in_path: Path) -> str:
+def _dist(values: list[int]) -> dict:
+    values = sorted(values)
+    n = len(values)
+    return {"min": values[0], "median": values[n // 2], "max": values[-1], "total": sum(values)} if n else {}
+
+
+def summarize(in_path: Path) -> dict:
+    """One structured summary, shared verbatim by `trace spec --in` and export
+    sidecars. Each block answers a decision: size (is it enough), events.by_type
+    (what kind of work), prompts/text_chars (embedding and LLM-pass cost),
+    time (longitudinal coverage), sources and workspaces (what corpus this is)."""
     n = 0
     field_counts: Counter = Counter()
     event_types: Counter = Counter()
+    sources: Counter = Counter()
+    workspaces: Counter = Counter()
     events_per: list[int] = []
+    prompts_per: list[int] = []
+    text_chars: list[int] = []
+    earliest, latest = None, None
     for r in _iter_records(in_path):
         n += 1
         field_counts.update(k for k, v in r.items() if v not in (None, [], {}, ""))
         evs = r.get("events", [])
         events_per.append(len(evs))
         event_types.update(e.get("type", "?") for e in evs)
+        prompts_per.append(len(r.get("prompts", [])))
+        text_chars.append(sum(len(str(v)) for e in evs for v in e.get("details", {}).values()))
+        sources[str(r.get("instance_id", "")).split("-")[0] or "?"] += 1
+        workspaces[r.get("cwd") or r.get("repo") or "?"] += 1
+        stamps = [e["timestamp"] for e in evs if e.get("timestamp")]
+        if stamps:
+            earliest = min(earliest or min(stamps), min(stamps))
+            latest = max(latest or max(stamps), max(stamps))
+    if n == 0:
+        return {"n_records": 0}
+    return {
+        "n_records": n,
+        "bytes": in_path.stat().st_size if str(in_path) != "-" else None,
+        "field_coverage": dict(field_counts.most_common()),
+        "events": {"by_type": dict(event_types.most_common()), "per_record": _dist(events_per)},
+        "prompts": {"per_record": _dist(prompts_per)},
+        "text_chars_per_record": _dist(text_chars),
+        "time": {"earliest": earliest, "latest": latest},
+        "sources": dict(sources.most_common()),
+        "top_workspaces": dict(workspaces.most_common(8)),
+    }
+
+
+def describe(in_path: Path) -> str:
+    s = summarize(in_path)
+    n = s["n_records"]
     if n == 0:
         return f"{in_path}: empty"
-    events_per.sort()
-    lines = [f"{in_path}: {n} records, {in_path.stat().st_size:,} bytes",
+    lines = [f"{in_path}: {n} records" + (f", {s['bytes']:,} bytes" if s.get("bytes") else ""),
              "field coverage (records with a non-empty value):"]
-    lines += [f"  {k:<14} {c}/{n}" for k, c in field_counts.most_common()]
-    lines.append(f"events per record: min {events_per[0]}, median {events_per[n // 2]}, max {events_per[-1]}")
-    lines.append("event types: " + ", ".join(f"{t} {c}" for t, c in event_types.most_common()))
+    lines += [f"  {k:<14} {c}/{n}" for k, c in s["field_coverage"].items()]
+    ep = s["events"]["per_record"]
+    lines.append(f"events per record: min {ep['min']}, median {ep['median']}, max {ep['max']} (total {ep['total']})")
+    lines.append("event types: " + ", ".join(f"{t} {c}" for t, c in s["events"]["by_type"].items()))
+    lines.append(f"prompts: {s['prompts']['per_record'].get('total', 0)} total, "
+                 f"median {s['prompts']['per_record'].get('median', 0)}/record")
+    tc = s["text_chars_per_record"]
+    lines.append(f"detail text per record: median {tc['median']:,} chars (embedding/LLM cost proxy)")
+    if s["time"]["earliest"]:
+        lines.append(f"time span: {s['time']['earliest'][:19]} .. {s['time']['latest'][:19]}")
+    lines.append("sources: " + ", ".join(f"{k} {v}" for k, v in s["sources"].items()))
     return "\n".join(lines)
 
 

@@ -204,7 +204,10 @@ def _trace(rest: list[str]) -> None:
                     yield r
             records = shaped()
         out = export_traces(records, a.out)
-        print(f"{out} ({out.stat().st_size:,} bytes)")
+        from bidirect.meta import write_sidecar
+        sidecar = write_sidecar(out, a.in_path, {"types": a.types, "compact": a.compact,
+                                                 "anonymize": a.anonymize, "interval": a.interval})
+        print(f"{out} ({out.stat().st_size:,} bytes) + {sidecar.name}")
     elif verb == "push":
         p = argparse.ArgumentParser(prog="bdtrace trace push",
                                     description="Push a trace JSONL to the Hugging Face hub (parquet-backed dataset)")
@@ -212,9 +215,18 @@ def _trace(rest: list[str]) -> None:
         p.add_argument("--repo-id", required=True, help="e.g. midah/my-traces")
         p.add_argument("--public", action="store_true", help="default is a private dataset")
         p.add_argument("--dry-run", action="store_true", help="build the dataset, report rows, no upload")
+        p.add_argument("--dataset-version", default="1.0.0", help="semver carried in the Croissant (data grew = patch, shape changed = minor, meaning changed = major)")
         a = p.parse_args(rest)
         from bidirect.export import push_traces
+        from bidirect.meta import build_croissant, push_croissant
         print(push_traces(a.in_path, a.repo_id, private=not a.public, dry_run=a.dry_run))
+        with open(a.in_path) as f:
+            n_rows = sum(1 for line in f if line.strip())
+        croissant = build_croissant(a.repo_id, n_rows, f"local trace JSONL {a.in_path.name}", a.dataset_version)
+        if a.dry_run:
+            print(f"dry-run: croissant.json would carry version {a.dataset_version}, {n_rows} rows", file=sys.stderr)
+        else:
+            print(push_croissant(a.repo_id, croissant), file=sys.stderr)
     elif verb == "query":
         p = argparse.ArgumentParser(prog="bdtrace trace query",
                                     description="Additive filters over trace JSONL, optionally semantic-ranked; "
