@@ -1,6 +1,6 @@
 """Registry of the repo's representation transformations, CLI-applicable.
 
-Each entry wraps one extractor from representations/ so `bidirect transform`
+Each entry wraps one extractor from representations/ so `bdtrace transform`
 can enumerate them, apply one, or apply all to a JSONL of records. Two record
 shapes exist: "trace" transforms take a whole trace dict (an `events` list),
 "patch" transforms take before/after source fields. Imports are lazy so
@@ -75,8 +75,8 @@ def configure_llm(model: str | None) -> str:
 
     resolved = resolve_api_key()
     if not resolved:
-        sys.exit("bidirect: inferred transforms need OPENROUTER_API_KEY or OPENAI_API_KEY in env/.env,\n"
-                 "or a 1Password login if you are in the taste org (`op signin`); see `bidirect config`")
+        sys.exit("bdtrace: inferred transforms need OPENROUTER_API_KEY or OPENAI_API_KEY in env/.env,\n"
+                 "or a 1Password login if you are in the taste org (`op signin`); see `bdtrace config`")
     api_key, source = resolved
     print(f"model key: {source}", file=sys.stderr)
     name = model or os.environ.get("BIDIRECT_MODEL", DEFAULT_MODEL)
