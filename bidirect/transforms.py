@@ -112,7 +112,7 @@ def apply(names: list[str], in_path: Path, out_path: Path,
                     reprs[name] = {"error": f"{type(e).__name__}: {e}"}
                     n_err += 1
             fout.write(json.dumps(record, default=str) + "\n")
-    print(f"{n_in} records -> {out_path} ({', '.join(picked)}; {n_err} per-record errors)")
+    print(f"{n_in} records -> {out_path} ({', '.join(picked)}; {n_err} per-record errors)", file=sys.stderr)
 
 
 def list_table() -> str:
