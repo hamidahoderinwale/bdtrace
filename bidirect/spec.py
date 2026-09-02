@@ -62,6 +62,55 @@ def describe(in_path: Path) -> str:
     return "\n".join(lines)
 
 
+# the event-type taxonomy (what tokens_repr sequences); "tools" = everything but prompt
+EVENT_TYPES = ("prompt", "edit", "read", "search", "run", "test", "other")
+_COMPACT_DETAIL_KEYS = ("tool", "command", "file_path", "description")
+
+
+def parse_types(spec_str: str) -> set[str]:
+    names = set(EVENT_TYPES) - {"prompt"} if spec_str == "tools" else set(spec_str.split(","))
+    bad = names - set(EVENT_TYPES) - {"code_change"}  # legacy resolved-trace type allowed
+    if bad:
+        sys.exit(f"bdtrace: unknown event types {sorted(bad)}; taxonomy: {', '.join(EVENT_TYPES)} (or 'tools')")
+    return names
+
+
+def project(record: dict, types: set[str] | None = None, compact: bool = False) -> dict:
+    """Project along the two orthogonal axes: WHICH event types survive, and how
+    much detail each keeps (compact = action surface only, text bodies dropped)."""
+    events = record.get("events", [])
+    if types is not None:
+        events = [e for e in events if e.get("type") in types]
+    if compact:
+        events = [{"type": e.get("type"), "timestamp": e.get("timestamp"),
+                   "details": {k: e.get("details", {}).get(k) for k in _COMPACT_DETAIL_KEYS
+                               if e.get("details", {}).get(k) is not None}}
+                  for e in events]
+    out = {**record, "events": events}
+    if types is not None and "prompt" not in types:
+        out["prompts"] = []
+    return out
+
+
+def _anon_str(s: str) -> str:
+    import re
+    s = re.sub(r"/Users/[^/\s'\"]+", "~", s)
+    s = re.sub(r"/home/[^/\s'\"]+", "~", s)
+    return re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+", "<email>", s)
+
+
+def anonymize(record: dict):
+    """Strip identifying strings (home directories, usernames in paths, emails)
+    from every string field, prompts included: the text survives, the identity doesn't."""
+    if isinstance(record, str):
+        return _anon_str(record)
+    if isinstance(record, dict):
+        return {k: anonymize(v) for k, v in record.items()}
+    if isinstance(record, list):
+        return [anonymize(v) for v in record]
+    return record
+
+
 def _truncate(v, cap: int = 240):
     if isinstance(v, str) and len(v) > cap:
         return v[:cap] + f"... [{len(v)} chars]"
