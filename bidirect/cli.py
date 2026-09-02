@@ -54,6 +54,9 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
                              re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
   trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
                              push straight to the Hugging Face hub (parquet-backed)
+  trace query --in F [--grep R] [--where f=v] [--interval I] [--semantic "..."] [--top-k K]
+                             additive filters, embedding-ranked when --semantic; --sort time
+                             for chronology, --out to export the matches
   trace sessiongrep|fetch|parse
                              sessiongrep session-file export, S3 trajectory fetch,
                              raw Cursor text-dump parse
@@ -212,6 +215,44 @@ def _trace(rest: list[str]) -> None:
         a = p.parse_args(rest)
         from bidirect.export import push_traces
         print(push_traces(a.in_path, a.repo_id, private=not a.public, dry_run=a.dry_run))
+    elif verb == "query":
+        p = argparse.ArgumentParser(prog="bdtrace trace query",
+                                    description="Additive filters over trace JSONL, optionally semantic-ranked; "
+                                                "matches print one line each (score, id, start time, prompt head)")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--grep", default=None, help="case-insensitive regex over the record's text")
+        p.add_argument("--where", action="append", default=[], help="field=value equality; repeatable (ANDed)")
+        p.add_argument("--interval", default=None, help="event-time window: A..B, or 7d/24h/2w")
+        p.add_argument("--semantic", default=None, help="embedding query; ranks survivors by cosine")
+        p.add_argument("--top-k", type=int, default=20, help="matches kept when --semantic ranks (default 20)")
+        p.add_argument("--min-score", type=float, default=None, help="cosine floor; replaces the top-k cut")
+        p.add_argument("--model", default="all-MiniLM-L6-v2", help="sentence-transformers model")
+        p.add_argument("--limit", type=int, default=None, help="cap on records read")
+        p.add_argument("--sort", choices=["score", "time"], default="score",
+                       help="order matches by rank (default) or chronologically by first event")
+        p.add_argument("--out", type=Path, default=None, help="also write matching records as JSONL ('-' = stdout)")
+        a = p.parse_args(rest)
+        import json as _json
+
+        from bidirect.query import query
+        matches = list(query(a.in_path, grep=a.grep, where=a.where, interval=a.interval,
+                             semantic=a.semantic, top_k=a.top_k, min_score=a.min_score,
+                             limit=a.limit, model=a.model))
+        def start_ts(r):
+            return min((e.get("timestamp") or "~" for e in r.get("events", [])), default="~")
+        if a.sort == "time":
+            matches.sort(key=lambda m: start_ts(m[0]))
+        for r, score in matches:
+            prompt = (r.get("prompts") or [{}])[0].get("text", "")[:80].replace("\n", " ")
+            line = f"{'' if score is None else f'{score:.3f}  '}{r.get('instance_id')}  {start_ts(r)[:19]}  {prompt}"
+            print(line if a.out else line, file=sys.stderr if a.out else sys.stdout)
+        if a.out:
+            f = sys.stdout if str(a.out) == "-" else open(a.out, "w")
+            for r, _ in matches:
+                f.write(_json.dumps(r, default=str) + "\n")
+            if f is not sys.stdout:
+                f.close()
+        print(f"{len(matches)} matches", file=sys.stderr)
     elif verb == "spec":
         p = argparse.ArgumentParser(prog="bdtrace trace spec",
                                     description="Canonical trace-record spec; with --in, audit a file against it")
