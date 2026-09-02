@@ -57,3 +57,6 @@ research/data/*.pkl
 Thumbs.db
 
 .vercel
+
+# Claude Code worktrees/settings
+.claude/

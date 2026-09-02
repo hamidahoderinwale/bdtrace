@@ -30,45 +30,64 @@ source .venv/bin/activate
 
 ## CLI
 
-`uv sync` installs `bdtrace`, the entry point for everything runnable here.
-The core object is the transformation: each of the repo's representation
-extractors, applicable to a JSONL of trace or patch records, one at a time or
-all at once.
+`uv sync` installs `bdtrace`. The main path is trace data: pull it out of a
+local agent store, inspect it, re-serialize it, push it to the Hugging Face hub.
+JSONL is the canonical interchange throughout.
 
-```bash
-bdtrace transform list                     # enumerate the transformations
-bdtrace transform edits --in records.jsonl # apply one (AST edit certificates)
-bdtrace transform all --in records.jsonl --llm  # apply everything, inferred reprs included
-bdtrace config                             # which model key is active
+```
+trace import --source claude|cursor|swe_agent|openhands   local store -> traces.jsonl
+trace spec [--in F]        the record spec; with --in, audit a file (counts, coverage, event types)
+trace head --in F [-n --skip --interval --out]   view samples; --out makes it a segmented export
+trace export --in F --out G       re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
+trace push --in F --repo-id you/name [--dry-run]   HF dataset push (parquet-backed, private default)
+trace sessiongrep|fetch|parse     sessiongrep session files, S3 trajectory fetch, raw Cursor dumps
+transform list | <name> | all --in F [--llm]     apply representation extractors to records
+config                     which model key is active (own .env, or the org 1Password key)
+certs extract|distances|diversity                edit certificates and the measures over them
+paper|fig|analysis|tools [<script>]              grouped script families (bare noun lists)
+notebooks | lab | run <stem> | scripts [filter]  legacy chain, JupyterLab, any script
 ```
 
-Model keys for the inferred (LLM-backed) transformations: set
-`OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.env`, or, for taste org members,
-none at all: a 1Password login (`op signin`) is enough, and the CLI reads the
-org's shared OpenRouter key from the vault. The reference lives in the code;
-the key never does.
+Shorthand: `bdtrace import|export|push` work bare (the tool name carries the
+noun; also `im`/`ex`), and `tf` = transform, `cfg` = config, `nb` = notebooks,
+`ls` = scripts. `--help` works at every level; status goes to stderr and data
+to stdout, so commands pipe (`--in -` and `--out -` for stdin/stdout).
 
-The other core object is the trace, and the main path is local store -> anywhere:
+A real session, Claude Code store to hub:
 
-```bash
-bdtrace trace import --source claude       # pull traces from a local agent store
-                                            # (claude | cursor | swe_agent | openhands)
-bdtrace trace export --in traces.jsonl --out traces.parquet   # or .jsonl.gz / .jsonl.zst / .msgpack
-bdtrace trace push --in traces.jsonl --repo-id you/name       # direct to the HF hub (parquet-backed)
-bdtrace trace sessiongrep                  # session files for the sessiongrep index
+```console
+$ bdtrace import --limit 3 --out t.jsonl
+3 traces -> t.jsonl
+$ bdtrace trace spec --in t.jsonl
+t.jsonl: 3 records, 2,431,755 bytes
+events per record: min 225, median 715, max 1673
+event types: run 1601, prompt 471, other 239, read 137, edit 123, search 38, test 4
+$ bdtrace trace head --in t.jsonl -n 1 --interval 2026-08-01..   # windowed sample view
+$ bdtrace ex --in t.jsonl --out t.jsonl.gz                       # 585,582 bytes (4.2x smaller)
+$ bdtrace trace push --in t.jsonl --repo-id midah/x --dry-run
+dry-run: 3 rows -> midah/x (private=True); features: instance_id, repo, cwd, events, prompts
 ```
 
-JSONL is the canonical interchange; the export formats are compressed serializations
-of the same records, and a hub push stores parquet by construction.
+What each transformation produces, on real records (`bdtrace tf <name> --in F`):
 
-The rest of the surface, noun-verb over the repo's objects:
-
-```bash
-bdtrace certs extract|distances|diversity  # edit certificates and measures over them
-bdtrace paper|fig|analysis [<script>]      # grouped script families (bare noun lists them)
-bdtrace notebooks                          # regenerate the exploration notebooks' inputs
-bdtrace run <stem> / bdtrace scripts      # any other script / list everything
 ```
+tokens      ["prompt", "run", "run", "search", "read", "run", ...]      event-type sequence
+functions   ["token_in_namespace", "validate", "contains_norm", ...]   touched functions
+motifs      ["M_1a2628fbdb", "M_d886ee7904", ...]                      recurring action motifs
+raw         {"code_changes": [...], "prompts": [...], "metadata": {...}}
+edits       {"operations": [{"type": "return_added", "location": "line 2",
+             "node_type": "Return"}, ...], "delta": 6}                 AST edit certificate
+behavioral / mechanistic / functional   inferred via DSPy; needs a model key (--llm)
+```
+
+Model keys for the inferred transformations: set `OPENROUTER_API_KEY` or
+`OPENAI_API_KEY` in `.env`, or, for taste org members, none at all: a 1Password
+login (`op signin`) is enough and the CLI reads the org's shared OpenRouter key
+from the vault. The reference lives in the code; the key never does.
+
+Tests run with `uv run python -m pytest bidirect analysis/ingest` and on every
+push via GitHub Actions. From a bare `pip install git+...`, the trace and
+transform commands work anywhere; script-backed commands need this checkout.
 
 ## Representation pipeline
 
