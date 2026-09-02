@@ -155,7 +155,12 @@ def _trace(rest: list[str]) -> None:
             records = iter_traces(a.input, limit=a.limit)
         else:
             from analysis.ingest.harnesses import parse
-            records = parse(a.source, a.input, limit=a.limit)
+            store = a.input
+            if store is None and a.source == "cursor":
+                store = Path.home() / "Library/Application Support/Cursor/User"
+            if store is None:
+                sys.exit(f"bdtrace: --input is required for --source {a.source} (no standard local location)")
+            records = parse(a.source, store, limit=a.limit)
         n = 0
         # stdout is for data (clig.dev): --out - streams JSONL for piping, status goes to stderr
         f = sys.stdout if str(a.out) == "-" else open(a.out, "w")
