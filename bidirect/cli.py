@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""bidirect: one entry point for the repo's runnable scripts.
+"""bdtrace: one entry point for the repo's runnable scripts.
 
 Shape: noun-verb commands over the repo's objects (traces, certificates,
 figures, paper numbers), each backed by an existing script; directory nouns
@@ -31,7 +31,7 @@ COMMANDS = {
     },
 }
 
-# noun -> script subdirectory; `bidirect <noun> <stem>` runs, bare noun lists
+# noun -> script subdirectory; `bdtrace <noun> <stem>` runs, bare noun lists
 DIR_NOUNS = {
     "paper": "agent_trajectories_paper",
     "fig": "figures",
@@ -40,7 +40,7 @@ DIR_NOUNS = {
 }
 
 USAGE = """\
-usage: bidirect <object> <action> [args...]   (args go to the script's own argparse; -h works)
+usage: bdtrace <object> <action> [args...]   (args go to the script's own argparse; -h works)
 
   transform list             enumerate the representation transformations
   transform <name>|all --in records.jsonl [--out F] [--model M] [--limit N] [--llm]
@@ -90,7 +90,7 @@ def _groups() -> dict[str, list[Path]]:
 
 def _exec(path: Path, args: list[str]) -> None:
     if not path.is_file():
-        sys.exit(f"bidirect: no script {path.relative_to(REPO_ROOT)}")
+        sys.exit(f"bdtrace: no script {path.relative_to(REPO_ROOT)}")
     sys.argv = [str(path), *args]
     runpy.run_path(str(path), run_name="__main__")
 
@@ -98,10 +98,10 @@ def _exec(path: Path, args: list[str]) -> None:
 def _run_by_stem(stem: str, args: list[str]) -> None:
     matches = [p for ps in _groups().values() for p in ps if p.stem == stem]
     if not matches:
-        sys.exit(f"bidirect: no script named `{stem}`; `bidirect scripts {stem}` to search")
+        sys.exit(f"bdtrace: no script named `{stem}`; `bdtrace scripts {stem}` to search")
     if len(matches) > 1:
         rels = ", ".join(str(p.relative_to(SCRIPTS_DIR)) for p in matches)
-        sys.exit(f"bidirect: `{stem}` is ambiguous ({rels}); use the noun form, e.g. `bidirect fig <stem>`")
+        sys.exit(f"bdtrace: `{stem}` is ambiguous ({rels}); use the noun form, e.g. `bdtrace fig <stem>`")
     _exec(matches[0], args)
 
 
@@ -109,7 +109,7 @@ def _list(filter_: str | None) -> None:
     for group, paths in _groups().items():
         stems = [p.stem for p in paths if not filter_ or filter_ in p.stem]
         if stems:
-            print(f"{group or 'top level (bidirect run <stem>)'}:")
+            print(f"{group or 'top level (bdtrace run <stem>)'}:")
             print("".join(f"  {s}\n" for s in stems), end="")
 
 
@@ -118,14 +118,14 @@ def _notebooks(args: list[str]) -> None:
     if args[:1] == ["--datasets"] and len(args) == 2:
         dataset = args[1]
     elif args:
-        sys.exit("bidirect notebooks takes only --datasets <name>")
+        sys.exit("bdtrace notebooks takes only --datasets <name>")
     for stem, template in LEGACY_CHAIN:
         stage_args = [a.format(ds=dataset) for a in template]
         print(f"== {stem} {' '.join(stage_args)}")
         # subprocess per stage so one script's globals/argv can't leak into the next
         result = subprocess.run([sys.executable, str(SCRIPTS_DIR / f"{stem}.py"), *stage_args])
         if result.returncode != 0:
-            sys.exit(f"bidirect: `{stem}` failed (exit {result.returncode}); fix and re-run from it")
+            sys.exit(f"bdtrace: `{stem}` failed (exit {result.returncode}); fix and re-run from it")
 
 
 def _trace(rest: list[str]) -> None:
@@ -134,7 +134,7 @@ def _trace(rest: list[str]) -> None:
 
     verb, rest = (rest[0], rest[1:]) if rest else ("", [])
     if verb == "import":
-        p = argparse.ArgumentParser(prog="bidirect trace import",
+        p = argparse.ArgumentParser(prog="bdtrace trace import",
                                     description="Pull traces out of a local agent store, standardized to JSONL")
         p.add_argument("--source", choices=["claude", "cursor", "swe_agent", "openhands"], default="claude")
         p.add_argument("--input", type=Path, default=None, help="store path (default: the source's standard location)")
@@ -156,7 +156,7 @@ def _trace(rest: list[str]) -> None:
                 n += 1
         print(f"{n} traces -> {a.out}")
     elif verb == "export":
-        p = argparse.ArgumentParser(prog="bidirect trace export",
+        p = argparse.ArgumentParser(prog="bdtrace trace export",
                                     description="Re-serialize a trace JSONL; format inferred from --out suffix")
         p.add_argument("--in", dest="in_path", type=Path, required=True)
         p.add_argument("--out", type=Path, required=True,
@@ -166,7 +166,7 @@ def _trace(rest: list[str]) -> None:
         out = export_traces(a.in_path, a.out)
         print(f"{out} ({out.stat().st_size:,} bytes)")
     elif verb == "push":
-        p = argparse.ArgumentParser(prog="bidirect trace push",
+        p = argparse.ArgumentParser(prog="bdtrace trace push",
                                     description="Push a trace JSONL to the Hugging Face hub (parquet-backed dataset)")
         p.add_argument("--in", dest="in_path", type=Path, required=True)
         p.add_argument("--repo-id", required=True, help="e.g. midah/my-traces")
@@ -178,20 +178,20 @@ def _trace(rest: list[str]) -> None:
     elif verb in COMMANDS["trace"]:
         _exec(SCRIPTS_DIR / f"{COMMANDS['trace'][verb]}.py", rest)
     else:
-        sys.exit(f"usage: bidirect trace import|export|push|{'|'.join(COMMANDS['trace'])} [args...]")
+        sys.exit(f"usage: bdtrace trace import|export|push|{'|'.join(COMMANDS['trace'])} [args...]")
 
 
 def _transform(rest: list[str]) -> None:
     import argparse
 
-    from bidirect import transforms
+    from bdtrace import transforms
 
     if rest[:1] == ["list"]:
         print(transforms.list_table())
         return
-    parser = argparse.ArgumentParser(prog="bidirect transform",
+    parser = argparse.ArgumentParser(prog="bdtrace transform",
                                      description="Apply representation transformations to a JSONL of records")
-    parser.add_argument("name", help="a transformation from `bidirect transform list`, or `all`")
+    parser.add_argument("name", help="a transformation from `bdtrace transform list`, or `all`")
     parser.add_argument("--in", dest="in_path", type=Path, required=True, help="input JSONL")
     parser.add_argument("--out", type=Path, default=None, help="output JSONL (default: <in>.reprs.jsonl)")
     parser.add_argument("--model", default=None, help="LM for inferred transforms (default: env BIDIRECT_MODEL)")
@@ -205,7 +205,7 @@ def _transform(rest: list[str]) -> None:
     elif a.name in transforms.TRANSFORMS:
         names = [a.name]
     else:
-        sys.exit(f"bidirect: unknown transformation `{a.name}`; `bidirect transform list` enumerates them")
+        sys.exit(f"bdtrace: unknown transformation `{a.name}`; `bdtrace transform list` enumerates them")
     if any(transforms.TRANSFORMS[n].llm for n in names):
         model = transforms.configure_llm(a.model)
         print(f"inferred transforms via {model}", file=sys.stderr)
@@ -229,7 +229,7 @@ def main() -> None:
     elif cmd in COMMANDS:
         verbs = COMMANDS[cmd]
         if not rest or rest[0] not in verbs:
-            sys.exit(f"usage: bidirect {cmd} {'|'.join(verbs)} [args...]")
+            sys.exit(f"usage: bdtrace {cmd} {'|'.join(verbs)} [args...]")
         _exec(SCRIPTS_DIR / f"{verbs[rest[0]]}.py", rest[1:])
     elif cmd in DIR_NOUNS:
         if not rest:
@@ -239,7 +239,7 @@ def main() -> None:
             _exec(SCRIPTS_DIR / DIR_NOUNS[cmd] / f"{rest[0]}.py", rest[1:])
     elif cmd == "run":
         if not rest:
-            sys.exit("usage: bidirect run <stem> [args...]")
+            sys.exit("usage: bdtrace run <stem> [args...]")
         _run_by_stem(rest[0], rest[1:])
     elif cmd == "scripts":
         _list(rest[0] if rest else None)
@@ -248,7 +248,7 @@ def main() -> None:
     elif cmd == "lab":
         sys.exit(subprocess.run(["jupyter", "lab"], cwd=REPO_ROOT / "notebooks").returncode)
     else:
-        sys.exit(f"bidirect: unknown command `{cmd}`\n\n{USAGE}")
+        sys.exit(f"bdtrace: unknown command `{cmd}`\n\n{USAGE}")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 # Notes
 
-## 2026-09-02 — bidirect CLI
+## 2026-09-02 — bdtrace CLI
 
-**Intent.** One installed entry point (`bidirect`) over the repo's runnable surface, shaped
+**Intent.** One installed entry point (`bdtrace`) over the repo's runnable surface, shaped
 noun-verb around its objects; the transformation registry is the centerpiece.
 
 **Design decisions.**

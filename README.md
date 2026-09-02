@@ -30,16 +30,16 @@ source .venv/bin/activate
 
 ## CLI
 
-`uv sync` installs `bidirect`, the entry point for everything runnable here.
+`uv sync` installs `bdtrace`, the entry point for everything runnable here.
 The core object is the transformation: each of the repo's representation
 extractors, applicable to a JSONL of trace or patch records, one at a time or
 all at once.
 
 ```bash
-bidirect transform list                     # enumerate the transformations
-bidirect transform edits --in records.jsonl # apply one (AST edit certificates)
-bidirect transform all --in records.jsonl --llm  # apply everything, inferred reprs included
-bidirect config                             # which model key is active
+bdtrace transform list                     # enumerate the transformations
+bdtrace transform edits --in records.jsonl # apply one (AST edit certificates)
+bdtrace transform all --in records.jsonl --llm  # apply everything, inferred reprs included
+bdtrace config                             # which model key is active
 ```
 
 Model keys for the inferred (LLM-backed) transformations: set
@@ -51,11 +51,11 @@ the key never does.
 The other core object is the trace, and the main path is local store -> anywhere:
 
 ```bash
-bidirect trace import --source claude       # pull traces from a local agent store
+bdtrace trace import --source claude       # pull traces from a local agent store
                                             # (claude | cursor | swe_agent | openhands)
-bidirect trace export --in traces.jsonl --out traces.parquet   # or .jsonl.gz / .jsonl.zst / .msgpack
-bidirect trace push --in traces.jsonl --repo-id you/name       # direct to the HF hub (parquet-backed)
-bidirect trace sessiongrep                  # session files for the sessiongrep index
+bdtrace trace export --in traces.jsonl --out traces.parquet   # or .jsonl.gz / .jsonl.zst / .msgpack
+bdtrace trace push --in traces.jsonl --repo-id you/name       # direct to the HF hub (parquet-backed)
+bdtrace trace sessiongrep                  # session files for the sessiongrep index
 ```
 
 JSONL is the canonical interchange; the export formats are compressed serializations
@@ -64,10 +64,10 @@ of the same records, and a hub push stores parquet by construction.
 The rest of the surface, noun-verb over the repo's objects:
 
 ```bash
-bidirect certs extract|distances|diversity  # edit certificates and measures over them
-bidirect paper|fig|analysis [<script>]      # grouped script families (bare noun lists them)
-bidirect notebooks                          # regenerate the exploration notebooks' inputs
-bidirect run <stem> / bidirect scripts      # any other script / list everything
+bdtrace certs extract|distances|diversity  # edit certificates and measures over them
+bdtrace paper|fig|analysis [<script>]      # grouped script families (bare noun lists them)
+bdtrace notebooks                          # regenerate the exploration notebooks' inputs
+bdtrace run <stem> / bdtrace scripts      # any other script / list everything
 ```
 
 ## Representation pipeline

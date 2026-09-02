@@ -16,13 +16,13 @@ these notebooks are kept for provenance and for two results not yet promoted to 
 
 ```bash
 uv sync --extra notebooks
-uv run bidirect notebooks   # extract -> distances -> diversity -> plots, default swe_bench_lite
-uv run bidirect lab         # JupyterLab in this directory
+uv run bdtrace notebooks   # extract -> distances -> diversity -> plots, default swe_bench_lite
+uv run bdtrace lab         # JupyterLab in this directory
 ```
 
-`bidirect notebooks` chains the four stage scripts with the defaults these notebooks
-expect; the stages are also reachable individually (`bidirect certs extract|distances|diversity`,
-`-h` shows each underlying script's options). `bidirect --help` lists the full command set.
+`bdtrace notebooks` chains the four stage scripts with the defaults these notebooks
+expect; the stages are also reachable individually (`bdtrace certs extract|distances|diversity`,
+`-h` shows each underlying script's options). `bdtrace --help` lists the full command set.
 
 ## Analysis file formats
 

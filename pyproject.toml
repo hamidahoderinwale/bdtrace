@@ -48,7 +48,7 @@ notebooks = [
 ]
 
 [project.scripts]
-bidirect = "bidirect.cli:main"
+bdtrace = "bidirect.cli:main"
 
 [build-system]
 requires = ["hatchling"]
