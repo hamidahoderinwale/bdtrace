@@ -10,12 +10,18 @@ from bidirect import cli
 def run_cli(argv, monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["bdtrace", *argv])
     code = 0
+    exit_msg = ""
     try:
         cli.main()
     except SystemExit as e:
-        code = e.code if isinstance(e.code, int) else 1
+        # sys.exit(str) keeps the message in e.code; the interpreter would print it
+        # to stderr at exit, which pytest never reaches — surface it as stderr here
+        if isinstance(e.code, int):
+            code = e.code
+        else:
+            code, exit_msg = 1, str(e.code or "")
     out = capsys.readouterr()
-    return code, out.out, out.err
+    return code, out.out, out.err + exit_msg
 
 
 @pytest.fixture
