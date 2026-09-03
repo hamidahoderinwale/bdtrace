@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from bidirect.query import query, record_text
+from bdtrace.query import query, record_text
 
 
 def _rec(instance_id, repo, prompt, detail, ts):

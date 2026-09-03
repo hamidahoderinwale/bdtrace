@@ -193,8 +193,8 @@ def _trace(rest: list[str]) -> None:
         p.add_argument("--interval", default=None,
                        help="event-time window, as in trace head (A..B, or 7d/24h/2w)")
         a = p.parse_args(rest)
-        from bidirect import spec
-        from bidirect.export import export_traces
+        from bdtrace import spec
+        from bdtrace.export import export_traces
         records = a.in_path
         if a.types or a.compact or a.anonymize or a.interval:
             since, until = spec.interval_bounds(a.interval)
@@ -209,7 +209,7 @@ def _trace(rest: list[str]) -> None:
                     yield r
             records = shaped()
         out = export_traces(records, a.out)
-        from bidirect.meta import write_sidecar
+        from bdtrace.meta import write_sidecar
         sidecar = write_sidecar(out, a.in_path, {"types": a.types, "compact": a.compact,
                                                  "anonymize": a.anonymize, "interval": a.interval})
         print(f"{out} ({out.stat().st_size:,} bytes) + {sidecar.name}")
@@ -222,8 +222,8 @@ def _trace(rest: list[str]) -> None:
         p.add_argument("--dry-run", action="store_true", help="build the dataset, report rows, no upload")
         p.add_argument("--dataset-version", default="1.0.0", help="semver carried in the Croissant (data grew = patch, shape changed = minor, meaning changed = major)")
         a = p.parse_args(rest)
-        from bidirect.export import push_traces
-        from bidirect.meta import build_croissant, push_croissant
+        from bdtrace.export import push_traces
+        from bdtrace.meta import build_croissant, push_croissant
         print(push_traces(a.in_path, a.repo_id, private=not a.public, dry_run=a.dry_run))
         with open(a.in_path) as f:
             n_rows = sum(1 for line in f if line.strip())
@@ -251,7 +251,7 @@ def _trace(rest: list[str]) -> None:
         a = p.parse_args(rest)
         import json as _json
 
-        from bidirect.query import query
+        from bdtrace.query import query
         matches = list(query(a.in_path, grep=a.grep, where=a.where, interval=a.interval,
                              semantic=a.semantic, top_k=a.top_k, min_score=a.min_score,
                              limit=a.limit, model=a.model))
@@ -270,12 +270,22 @@ def _trace(rest: list[str]) -> None:
             if f is not sys.stdout:
                 f.close()
         print(f"{len(matches)} matches", file=sys.stderr)
+    elif verb == "index":
+        p = argparse.ArgumentParser(prog="bdtrace trace index",
+                                    description="Build or update the embedding index beside a trace JSONL; "
+                                                "unchanged records are never re-embedded")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--model", default=None, help="sentence-transformers model (default: all-MiniLM-L6-v2)")
+        a = p.parse_args(rest)
+        from bdtrace.index import build_index
+        info = build_index(a.in_path, a.model)
+        print(f"{info['n']} vectors, {info['dims']} dims, model {info['model']}")
     elif verb == "spec":
         p = argparse.ArgumentParser(prog="bdtrace trace spec",
                                     description="Canonical trace-record spec; with --in, audit a file against it")
         p.add_argument("--in", dest="in_path", type=Path, default=None)
         a = p.parse_args(rest)
-        from bidirect import spec
+        from bdtrace import spec
         print(spec.describe(a.in_path) if a.in_path else spec.spec_text())
     elif verb == "head":
         p = argparse.ArgumentParser(prog="bdtrace trace head",
@@ -288,7 +298,7 @@ def _trace(rest: list[str]) -> None:
         p.add_argument("--interval", default=None,
                        help="event-time window: 2026-08-01..2026-09-01 (either side open), or 7d / 24h / 2w")
         a = p.parse_args(rest)
-        from bidirect import spec
+        from bdtrace import spec
         spec.head(a.in_path, a.n, a.skip, a.events, a.out, *spec.interval_bounds(a.interval))
     elif verb in COMMANDS["trace"]:
         _exec(SCRIPTS_DIR / f"{COMMANDS['trace'][verb]}.py", rest)
@@ -299,7 +309,7 @@ def _trace(rest: list[str]) -> None:
 def _transform(rest: list[str]) -> None:
     import argparse
 
-    from bidirect import transforms
+    from bdtrace import transforms
 
     if rest[:1] == ["list"]:
         print(transforms.list_table())
@@ -357,7 +367,7 @@ def _dispatch_command(cmd: str, rest: list[str]) -> None:
     elif cmd == "transform":
         _transform(rest)
     elif cmd == "config":
-        from bidirect.transforms import config_report
+        from bdtrace.transforms import config_report
         print(config_report())
     elif cmd in COMMANDS:
         verbs = COMMANDS[cmd]

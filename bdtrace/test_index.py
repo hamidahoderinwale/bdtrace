@@ -11,9 +11,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bidirect import index as idx
-from bidirect import query as q
-from bidirect.query import query, record_text
+from bdtrace import index as idx
+from bdtrace import query as q
+from bdtrace.query import query, record_text
 
 DIMS = 8
 

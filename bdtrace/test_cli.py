@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from bidirect import cli
+from bdtrace import cli
 
 
 def run_cli(argv, monkeypatch, capsys):

@@ -20,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 
-from bidirect.spec import _iter_records
+from bdtrace.spec import _iter_records
 
 VECTORS_FILE = "vectors.npy"
 META_FILE = "index_meta.json"
@@ -39,7 +39,7 @@ def _encode(texts: list[str], model_name: str) -> np.ndarray:
     this; everything above it is model-free."""
     from sentence_transformers import SentenceTransformer
 
-    from bidirect.query import EMBED_BATCH
+    from bdtrace.query import EMBED_BATCH
 
     model = SentenceTransformer(model_name)
     chunks = []
@@ -82,7 +82,7 @@ def build_index(in_path: Path | str, model: str | None = None) -> dict:
     records whose (id, text hash) is not already indexed. Returns the new
     meta dict. Status goes to stderr; the write is atomic (tmp then replace).
     """
-    from bidirect.query import DEFAULT_MODEL, record_text
+    from bdtrace.query import DEFAULT_MODEL, record_text
 
     model = model or DEFAULT_MODEL
     in_path = Path(in_path)
@@ -152,7 +152,7 @@ def lookup(in_path: Path | str, model: str, records: list[dict]) -> np.ndarray |
     or None when the index is absent, was built with another model, or does
     not cover every record at its current text hash (stale rows never rank).
     """
-    from bidirect.query import record_text
+    from bdtrace.query import record_text
 
     loaded = load_index(in_path)
     if loaded is None:

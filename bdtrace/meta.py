@@ -14,7 +14,7 @@ from pathlib import Path
 
 TRACE_JSON_SCHEMA = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "bidirect trace record",
+    "title": "bdtrace trace record",
     "type": "object",
     "required": ["instance_id", "events"],
     "properties": {
@@ -54,7 +54,7 @@ def write_sidecar(out_path: Path, source: Path, params: dict) -> Path:
     """<out>.meta.json: what these bytes are, where they came from, how they were shaped."""
     from importlib.metadata import version
 
-    from bidirect import spec
+    from bdtrace import spec
     # the summary is the same structure `trace spec --in` renders; computed on the
     # export itself when it is plain jsonl, else on the source (marked as such)
     if out_path.suffix == ".jsonl":
@@ -97,7 +97,7 @@ def build_croissant(repo_id: str, n_rows: int, source_desc: str, dataset_version
         "@type": "sc:Dataset",
         "dct:conformsTo": "http://mlcommons.org/croissant/1.1",
         "name": repo_id.split("/")[-1],
-        "description": f"Developer workflow traces in the bidirect standardized record shape; {source_desc}. "
+        "description": f"Developer workflow traces in the bdtrace standardized record shape; {source_desc}. "
                        "Nested fields are JSON-encoded string columns in the parquet distribution.",
         "version": dataset_version,
         "url": f"https://huggingface.co/datasets/{repo_id}",
@@ -119,7 +119,7 @@ def push_croissant(repo_id: str, croissant: dict) -> str:
 
     from huggingface_hub import HfApi
 
-    from bidirect.export import resolve_hf_token
+    from bdtrace.export import resolve_hf_token
     api = HfApi(token=resolve_hf_token()[0])
     api.upload_file(path_or_fileobj=io.BytesIO(json.dumps(croissant, indent=2).encode()),
                     path_in_repo="croissant.json", repo_id=repo_id, repo_type="dataset")

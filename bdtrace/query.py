@@ -15,7 +15,7 @@ import sys
 from collections.abc import Iterator
 from pathlib import Path
 
-from bidirect.spec import _in_window, _iter_records, interval_bounds
+from bdtrace.spec import _in_window, _iter_records, interval_bounds
 
 DEFAULT_MODEL = "all-MiniLM-L6-v2"
 TEXT_EVENT_CAP = 30  # events contributing detail strings to record_text
@@ -115,7 +115,7 @@ def query(
         return
     rec_embs = None
     if in_path != "-":
-        from bidirect.index import _encode, lookup
+        from bdtrace.index import _encode, lookup
 
         rec_embs = lookup(in_path, model, records)
     if rec_embs is not None:

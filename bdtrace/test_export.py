@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from bidirect.export import export_traces, infer_format, load_traces, push_traces
+from bdtrace.export import export_traces, infer_format, load_traces, push_traces
 
 
 def _have(module: str) -> bool:

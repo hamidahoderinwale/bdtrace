@@ -100,7 +100,7 @@ def _progress(rows: Iterable[dict], what: str) -> Iterable[dict]:
         return rows
 
 
-_NESTED_FIELDS_KEY = "bidirect_nested_fields"
+_NESTED_FIELDS_KEY = "bdtrace_nested_fields"
 
 
 def _flatten(records: list[dict]) -> tuple[list[dict], list[str]]:

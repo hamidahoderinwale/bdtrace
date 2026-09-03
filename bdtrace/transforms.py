@@ -40,7 +40,7 @@ DEFAULT_MODEL = "openai/gpt-4o-mini"
 # Org members' fallback: the shared OpenRouter key in the org's 1Password vault.
 # The reference is not a secret; access is gated by vault membership and the
 # member's own 1Password login. Anyone outside the org sets their own key.
-OP_REF = os.environ.get("BIDIRECT_OP_REF", "op://example-vault/example-item/credential")
+OP_REF = os.environ.get("BDTRACE_OP_REF", "op://example-vault/example-item/credential")
 
 
 def _org_key() -> str | None:
