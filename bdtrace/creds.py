@@ -14,11 +14,14 @@ import subprocess
 
 # Org-shared secrets. Overridable so a different org, or a personal vault, works
 # without a code change.
+#
+# Only shared SPEND belongs here. A Hugging Face token is an identity, not a
+# budget: a push creates a dataset under whoever owns the token, so a shared one
+# would publish everybody's traces as the org. The hub path uses the person's own
+# login instead (see export.ensure_hf_login).
 OP_REFS = {
     "openrouter": os.environ.get("BDTRACE_OP_OPENROUTER",
                                  "op://infra / preview/Shared - OpenRouter/credential"),
-    "huggingface": os.environ.get("BDTRACE_OP_HF",
-                                  "op://infra / preview/Shared - HuggingFace/credential"),
 }
 
 
