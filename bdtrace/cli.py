@@ -158,6 +158,27 @@ def _notebooks(args: list[str]) -> None:
             sys.exit(f"bdtrace: `{stem}` failed (exit {result.returncode}); fix and re-run from it")
 
 
+def _derived_name(in_path: Path, args) -> Path:
+    """Name the export for what was done to it, so a shareable file cannot be
+    mistaken for a raw one: traces.jsonl -> traces.anon.jsonl. Suffix order is
+    fixed, not argument order, so the same projection always yields one name."""
+    stem = in_path.name
+    for ext in (".jsonl.gz", ".jsonl.zst", ".jsonl", ".parquet", ".msgpack"):
+        if stem.endswith(ext):
+            stem = stem[: -len(ext)]
+            break
+    marks = []
+    if args.anonymize:
+        marks.append("anon")
+    if args.types:
+        marks.append("tools" if args.types == "tools" else args.types.replace(",", "-"))
+    if args.compact:
+        marks.append("compact")
+    if args.interval:
+        marks.append(args.interval.replace("..", "-").strip("-") or "window")
+    return in_path.with_name(".".join([stem, *marks, "jsonl"]))
+
+
 def _trace(rest: list[str]) -> None:
     """import/export/push are module-backed (work from a bare install); the rest are scripts."""
     import argparse
@@ -201,8 +222,9 @@ def _trace(rest: list[str]) -> None:
         p = argparse.ArgumentParser(prog="bdtrace trace export",
                                     description="Re-serialize a trace JSONL; format inferred from --out suffix")
         p.add_argument("--in", dest="in_path", type=Path, required=True)
-        p.add_argument("--out", type=Path, required=True,
-                       help=".jsonl | .jsonl.gz | .jsonl.zst | .parquet | .msgpack")
+        p.add_argument("--out", type=Path, default=None,
+                       help=".jsonl | .jsonl.gz | .jsonl.zst | .parquet | .msgpack; "
+                            "defaults to the input renamed for what was done to it")
         p.add_argument("--types", default=None,
                        help="event types to keep: comma list from the taxonomy, or 'tools' (= all but prompt)")
         p.add_argument("--compact", action="store_true",
@@ -218,6 +240,9 @@ def _trace(rest: list[str]) -> None:
         a = p.parse_args(rest)
         from bdtrace import spec
         from bdtrace.export import export_traces
+        if a.out is None:
+            a.out = _derived_name(a.in_path, a)
+            print(f"writing {a.out}", file=sys.stderr)
         records = a.in_path
         redact = tuple(a.redact)
         if a.types or a.compact or a.anonymize or a.interval:
