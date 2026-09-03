@@ -60,6 +60,22 @@ committed, the key never is).
 Exports load anywhere: `pd.read_json(..., lines=True)`, `pl.read_ndjson(...)`, or `load_dataset(...)`
 after a push. A hub push also publishes `croissant.json` (Croissant 1.1, PROV-O provenance).
 
+## With procgrep
+
+[procgrep](https://github.com/hamidahoderinwale/procgrep) is the analysis half: canonical action
+atoms, BPE-learned procedures, Jensen-Shannon divergence between agents. bdtrace gets the traces
+out and makes them safe to share; procgrep measures them. An export feeds it directly through the
+`bdtrace` adapter:
+
+```console
+$ bdtrace import --out traces.jsonl
+$ procgrep canonicalize --input traces.jsonl --output atoms.jsonl \
+    --adapter bdtrace --trace-id-field instance_id
+wrote 3 canonical traces to atoms.jsonl
+```
+
+Anonymized exports canonicalize the same way, since the action structure survives anonymization.
+
 ## Working in the repo
 
 ```bash
