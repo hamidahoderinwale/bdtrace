@@ -42,7 +42,9 @@ DIR_NOUNS = {
 USAGE = """\
 usage: bdtrace <object> <action> [args...]   (args go to the script's own argparse; -h works)
 
-  transform list             enumerate the representation transformations
+  transform list [--examples]
+                             enumerate the representation transformations; --examples
+                             shows real captured output for each
   transform <name>|all --in records.jsonl [--out F] [--model M] [--limit N] [--llm]
                              apply one transformation, or all of them, to a JSONL of
                              records; `all` includes the LLM-backed ones only with --llm
@@ -358,7 +360,7 @@ def _transform(rest: list[str]) -> None:
     from bdtrace import transforms
 
     if rest[:1] == ["list"]:
-        print(transforms.list_table())
+        print(transforms.list_table(examples="--examples" in rest or "-e" in rest))
         return
     parser = argparse.ArgumentParser(prog="bdtrace transform",
                                      description="Apply representation transformations to a JSONL of records")
