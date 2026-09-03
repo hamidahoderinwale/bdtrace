@@ -18,6 +18,7 @@ from __future__ import annotations
 import gzip
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Iterable
@@ -242,15 +243,45 @@ def resolve_hf_token() -> tuple[str, str] | None:
     """
     from bdtrace.creds import resolve
 
-    found = resolve(("HF_TOKEN", "HUGGINGFACE_TOKEN"), op_key="huggingface")
+    found = resolve(("HF_TOKEN", "HUGGINGFACE_TOKEN"))
     if found:
         return found
     from huggingface_hub import get_token
 
     token = get_token()
     if token:
-        return token, "huggingface_hub cached login"
+        return token, "hf login"
     return None
+
+
+def ensure_hf_login(interactive: bool = True) -> tuple[str, str]:
+    """A token, running the hub's own login first if there is none.
+
+    The token is an identity, so it is the person's own: no org fallback. When a
+    human is at the terminal the login is offered rather than described, since
+    printing a command someone must copy is a worse version of running it. In a
+    script (no tty) it stays an error with the exact command, because a login
+    prompt inside a pipeline would hang.
+    """
+    import shutil
+    import subprocess
+    import sys
+
+    found = resolve_hf_token()
+    if found:
+        return found
+    cli = shutil.which("hf")
+    hint = "hf auth login" if cli else "pip install -U huggingface_hub, then hf auth login"
+    if not (interactive and cli and sys.stdin.isatty() and sys.stderr.isatty()):
+        raise SystemExit(f"bdtrace: no Hugging Face login. Run `{hint}`, or set HF_TOKEN.")
+    print("bdtrace: no Hugging Face login found.", file=sys.stderr)
+    if input("run `hf auth login` now? [Y/n] ").strip().lower() in ("n", "no"):
+        raise SystemExit(f"bdtrace: not logged in; run `{hint}` when ready.")
+    subprocess.run([cli, "auth", "login"])
+    found = resolve_hf_token()
+    if not found:
+        raise SystemExit("bdtrace: still no token after login; nothing pushed.")
+    return found
 
 
 def push_traces(
@@ -278,13 +309,7 @@ def push_traces(
         features = ", ".join(f"{k}: {v.dtype}" for k, v in ds.features.items())
         note = f" (JSON-encoded columns: {', '.join(nested)})" if nested else ""
         return f"dry-run: {ds.num_rows} rows -> {repo_id} (private={private}); features: {features}{note}"
-    resolved = resolve_hf_token()
-    if resolved is None:
-        raise RuntimeError(
-            "no Hugging Face token: set HF_TOKEN in env or .env, "
-            "or log in once with `huggingface-cli login`"
-        )
-    token, source = resolved
-    print(f"hf token: {source}")
+    token, source = ensure_hf_login()  # offers `hf auth login` when there is none
+    print(f"hf token: {source}", file=sys.stderr)
     ds.push_to_hub(repo_id, private=private, token=token)
     return f"https://huggingface.co/datasets/{repo_id}"
