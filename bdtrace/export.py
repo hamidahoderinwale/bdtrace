@@ -236,16 +236,15 @@ def load_traces(path: Path, fmt: str | None = None) -> list[dict]:
 
 
 def resolve_hf_token() -> tuple[str, str] | None:
-    """(token, source): own env/.env first, then huggingface_hub's cached login.
-
-    Mirrors transforms.resolve_api_key. The token value is never printed or
-    logged — only its source name is safe to surface.
+    """(token, source): the shared ladder in `creds`, then huggingface_hub's own
+    cached login as a last rung, so an existing `huggingface-cli login` keeps
+    working. The token value is never printed — only its source name.
     """
-    from dotenv import load_dotenv
+    from bdtrace.creds import resolve
 
-    load_dotenv()
-    if os.environ.get("HF_TOKEN"):
-        return os.environ["HF_TOKEN"], "HF_TOKEN"
+    found = resolve(("HF_TOKEN", "HUGGINGFACE_TOKEN"), op_key="huggingface")
+    if found:
+        return found
     from huggingface_hub import get_token
 
     token = get_token()

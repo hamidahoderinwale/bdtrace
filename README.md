@@ -113,9 +113,21 @@ edits       patch  {"operations": [{"type": "return_added", "location": "line 2"
 behavioral / mechanistic / functional   inferred via DSPy, behind --llm
 ```
 
-Model keys for the inferred ones: `OPENROUTER_API_KEY` or `OPENAI_API_KEY` in `.env`. Taste org
-members need neither, since a 1Password login is enough and the CLI reads the org's shared key from
-the vault: the reference is committed, the key never is.
+## Keys
+
+Everything local needs none: import, show, audit, export, interval slicing and semantic search all
+run with no account. Two things reach outward, and both use one ladder: your environment, then
+`.env`, then the org's shared secret in 1Password, then the provider's own cached login.
+
+| for | your own | or, in the taste org |
+|---|---|---|
+| inferred transforms (`--llm`) | `OPENROUTER_API_KEY` / `OPENAI_API_KEY` | `op signin`, nothing else |
+| `trace push` to Hugging Face | `HF_TOKEN`, or `huggingface-cli login` | `op signin`, nothing else |
+
+Org members need no key of their own: vault membership is the gate and their own 1Password login is
+the auth, so access is granted and revoked centrally. The `op://` references are committed (they are
+not secrets); the values never are, and only the source name is ever printed. `bdtrace config`
+reports which rung is live. Override a reference with `BDTRACE_OP_HF` or `BDTRACE_OP_OPENROUTER`.
 
 Exports load anywhere: `pd.read_json(..., lines=True)`, `pl.read_ndjson(...)`, or `load_dataset(...)`
 after a push.

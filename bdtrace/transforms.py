@@ -46,33 +46,16 @@ DEFAULT_MODEL = "openai/gpt-4o-mini"
 # Org members' fallback: the shared OpenRouter key in the Taste 1Password vault.
 # The reference is not a secret; access is gated by vault membership and the
 # member's own 1Password login. Anyone outside the org sets their own key.
-OP_REF = os.environ.get("BDTRACE_OP_REF", "op://infra / preview/Shared - OpenRouter/credential")
-
-
-def _org_key() -> str | None:
-    """Read the org-shared key via the signed-in 1Password CLI, if available."""
-    import subprocess
-
-    try:
-        out = subprocess.run(["op", "read", OP_REF], capture_output=True, text=True, timeout=30)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return None
-    return out.stdout.strip() or None
 
 
 def resolve_api_key() -> tuple[str, str] | None:
-    """(key, source): own env/.env first, then the org vault."""
-    from dotenv import load_dotenv
+    """(key, source) from the shared ladder in `creds`: env, .env, then the org vault."""
+    from bdtrace.creds import resolve
 
-    load_dotenv()
-    for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY"):
-        if os.environ.get(var):
-            return os.environ[var], var
-    key = _org_key()
-    if key:
-        os.environ["OPENROUTER_API_KEY"] = key  # in-process only, so provider prefixing sees it
-        return key, "1Password (taste org shared key)"
-    return None
+    found = resolve(("OPENROUTER_API_KEY", "OPENAI_API_KEY"), op_key="openrouter")
+    if found and found[1].startswith("1Password"):
+        os.environ["OPENROUTER_API_KEY"] = found[0]  # in-process only, so provider prefixing sees it
+    return found
 
 
 def configure_llm(model: str | None) -> str:
@@ -152,12 +135,15 @@ def config_report() -> str:
     load_dotenv()
     def status(var: str) -> str:
         return "set" if os.environ.get(var) else "missing"
-    org = "reachable (op signed in)" if _org_key() else "not reachable (no op CLI / not signed in / not in org)"
+    from bdtrace.creds import OP_REFS, describe
+    org, org_hf = describe("openrouter"), describe("huggingface")
     return "\n".join([
         f"OPENROUTER_API_KEY  {status('OPENROUTER_API_KEY')}   (preferred provider; set in .env)",
         f"OPENAI_API_KEY      {status('OPENAI_API_KEY')}   (fallback)",
-        f"taste org key       {org}",
-        f"                    ({OP_REF}; used automatically when no key of your own is set)",
+        f"taste org model key {org}",
+        f"                    ({OP_REFS['openrouter']})",
+        f"taste org HF token  {org_hf}",
+        f"                    ({OP_REFS['huggingface']})",
         f"HF_TOKEN            {status('HF_TOKEN')}   (Hugging Face fetches, e.g. rollout trajectories)",
         f"BDTRACE_MODEL       {os.environ.get("BDTRACE_MODEL", f'unset (default {DEFAULT_MODEL})')}",
         "inferred transforms run at temperature 0.0 with the DSPy cache on",
