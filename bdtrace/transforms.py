@@ -21,18 +21,24 @@ class Transform:
     kind: str             # "trace" (record is a trace dict) | "patch" (before/after fields)
     llm: bool             # needs a configured LM (DSPy inferred representation)
     desc: str
+    example: str          # real captured output, truncated; "" when none has been run
 
 
 TRANSFORMS = {
-    "tokens": Transform("tokens_repr", "trace", False, "token sequence over the trace's events"),
-    "raw": Transform("raw_repr", "trace", False, "normalized raw trace (events + metadata)"),
-    "functions": Transform("functions_repr", "trace", False, "touched-function sequence"),
-    "motifs": Transform("motifs_repr", "trace", False, "recurring action motifs (statistical mining)"),
+    "tokens": Transform("tokens_repr", "trace", False, "token sequence over the trace's events",
+                        '["prompt", "run", "run", "search", "read", "run", ...]  (6208 items)'),
+    "raw": Transform("raw_repr", "trace", False, "normalized raw trace (events + metadata)",
+                     '{"code_changes": [...], "prompts": [66 items], "metadata": {...}}'),
+    "functions": Transform("functions_repr", "trace", False, "touched-function sequence",
+                           '["token_in_namespace", "validate", "contains_norm", "catalog_at", ...]'),
+    "motifs": Transform("motifs_repr", "trace", False, "recurring action motifs (statistical mining)",
+                        '["M_1a2628fbdb", "M_d886ee7904", "M_9d98503d3b", ...]  (377 items)'),
     # note: bare `semantic_edits_repr` is the trace-shaped variant; `_source` is the before/after one
-    "edits": Transform("semantic_edits_repr_source", "patch", False, "AST edit certificate from before/after source"),
-    "behavioral": Transform("behavioral_repr", "patch", True, "input-output behavioral claim (inferred)"),
-    "mechanistic": Transform("mechanistic_repr", "patch", True, "mechanism-of-change description (inferred)"),
-    "functional": Transform("functional_repr", "patch", True, "role/impact description (inferred)"),
+    "edits": Transform("semantic_edits_repr_source", "patch", False, "AST edit certificate from before/after source",
+                       '{"operations": [{"type": "return_added", "location": "line 2",\n"node_type": "Return"}, ...], "delta": 6}'),
+    "behavioral": Transform("behavioral_repr", "patch", True, "input-output behavioral claim (inferred)", ""),
+    "mechanistic": Transform("mechanistic_repr", "patch", True, "mechanism-of-change description (inferred)", ""),
+    "functional": Transform("functional_repr", "patch", True, "role/impact description (inferred)", ""),
 }
 
 DEFAULT_MODEL = "openai/gpt-4o-mini"
@@ -79,7 +85,7 @@ def configure_llm(model: str | None) -> str:
                  "or a 1Password login if you are in the taste org (`op signin`); see `bdtrace config`")
     api_key, source = resolved
     print(f"model key: {source}", file=sys.stderr)
-    name = model or os.environ.get("BIDIRECT_MODEL", DEFAULT_MODEL)
+    name = model or os.environ.get("BDTRACE_MODEL", DEFAULT_MODEL)
     if os.environ.get("OPENROUTER_API_KEY") and not name.startswith("openrouter/"):
         name = f"openrouter/{name}" if "/" in name else f"openrouter/openai/{name}"
     dspy.configure(lm=dspy.LM(model=name, api_key=api_key, temperature=0.0, max_tokens=1024, cache=True))
@@ -115,12 +121,24 @@ def apply(names: list[str], in_path: Path, out_path: Path,
     print(f"{n_in} records -> {out_path} ({', '.join(picked)}; {n_err} per-record errors)", file=sys.stderr)
 
 
-def list_table() -> str:
+def list_table(examples: bool = False) -> str:
     width = max(map(len, TRANSFORMS))
-    lines = ["computed (no API key needed):"]
-    lines += [f"  {n:<{width}}  {t.kind:<5}  {t.desc}" for n, t in TRANSFORMS.items() if not t.llm]
-    lines.append("inferred (DSPy; needs OPENROUTER_API_KEY or OPENAI_API_KEY):")
-    lines += [f"  {n:<{width}}  {t.kind:<5}  {t.desc}" for n, t in TRANSFORMS.items() if t.llm]
+
+    def rows(llm: bool) -> list[str]:
+        out = []
+        for n, t in TRANSFORMS.items():
+            if t.llm is not llm:
+                continue
+            out.append(f"  {n:<{width}}  {t.kind:<5}  {t.desc}")
+            if examples:
+                # honest about coverage: an inferred transform has no sample because
+                # none has been run here, and inventing one would misrepresent output
+                sample = t.example or "(no sample recorded: needs a model key to run)"
+                out += [f"  {'':<{width}}         {line}" for line in sample.splitlines()]
+        return out
+
+    lines = ["computed (no API key needed):", *rows(llm=False),
+             "inferred (DSPy; needs OPENROUTER_API_KEY or OPENAI_API_KEY):", *rows(llm=True)]
     lines.append("record shapes: trace = a trace dict with an `events` list; patch = before/after source fields")
     lines.append("measured basis (inter_eval diversity, Lite + SWE-Smith): edits and module graph carry the")
     lines.append("  independent structural signal; raw-edits vs edit set-diff are rho=1.0 redundant.")
@@ -141,6 +159,6 @@ def config_report() -> str:
         f"taste org key       {org}",
         f"                    ({OP_REF}; used automatically when no key of your own is set)",
         f"HF_TOKEN            {status('HF_TOKEN')}   (Hugging Face fetches, e.g. rollout trajectories)",
-        f"BIDIRECT_MODEL      {os.environ.get('BIDIRECT_MODEL', f'unset (default {DEFAULT_MODEL})')}",
+        f"BDTRACE_MODEL       {os.environ.get("BDTRACE_MODEL", f'unset (default {DEFAULT_MODEL})')}",
         "inferred transforms run at temperature 0.0 with the DSPy cache on",
     ])
