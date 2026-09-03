@@ -162,6 +162,9 @@ def _trace(rest: list[str]) -> None:
         p.add_argument("--input", type=Path, default=None, help="store path (default: the source's standard location)")
         p.add_argument("--out", type=Path, default=Path("traces.jsonl"))
         p.add_argument("--limit", type=int, default=None)
+        p.add_argument("--agent", default=None,
+                       help="agent label carried on every record (default: the source name); "
+                            "procgrep groups and compares by this field")
         a = p.parse_args(rest)
         import json
 
@@ -179,8 +182,9 @@ def _trace(rest: list[str]) -> None:
         n = 0
         # stdout is for data (clig.dev): --out - streams JSONL for piping, status goes to stderr
         f = sys.stdout if str(a.out) == "-" else open(a.out, "w")
+        agent = a.agent or a.source
         for r in records:
-            f.write(json.dumps(r, default=str) + "\n")
+            f.write(json.dumps({**r, "agent": r.get("agent") or agent}, default=str) + "\n")
             n += 1
         if f is not sys.stdout:
             f.close()
