@@ -141,10 +141,13 @@ The neural default earns its cost entirely on paraphrase queries, where MiniLM
 reaches 0.508 against BM25's 0.300.
 
 That contrast is also the power check for the negative result above. A paired
-bootstrap restricted to the paraphrase slice puts BM25 20.0 points below MiniLM
-with P(BM25 better) = 0.025, so the instrument can detect a real 20-point gap on
-30 queries. The neural arms failing to separate is a genuine null, not a test
-without power.
+bootstrap restricted to the paraphrase slice puts BM25 20.8 points below MiniLM
+on recall@1, 95% CI [-40.8, +0.0], P(BM25 better) = 0.024
+(`paired_delta_vs_incumbent_by_kind.paraphrase` in the results JSON). So the instrument can
+resolve a real 20-point gap on 30 queries, and the neural arms failing to
+separate is a genuine null rather than a test without power. Note the interval's
+upper bound sits on zero: this is the smallest gap the slice can call, not a
+comfortable margin.
 
 **Share of queries sitting at the bounds.** 24 of 60 queries (40%) are answered
 at rank 1 by every arm and 3 (5%) by none, so only 33 queries (55%) discriminate

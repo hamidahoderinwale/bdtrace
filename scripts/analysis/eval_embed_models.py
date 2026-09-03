@@ -18,12 +18,14 @@ Writes a JSON result object to --out (default: stdout).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import re
 import statistics
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -203,16 +205,26 @@ QUERIES: list[dict[str, str]] = [
 # query only. Using a model as documented is not tuning; where a card offers a
 # prefix, both variants are reported rather than the better of the two.
 
+# Commit shas resolved 2026-09-03. Pinning them is what makes trust_remote_code
+# below defensible: the run executes a known revision of the repo's modeling
+# code, not whatever it holds today.
+JINA_REVISION = "516f4baf13dec4ddddda8631e019b5737c8bc250"
+SFR_REVISION = "cb950dc80d677c6fdc00f56c8ddd20ca2642c59e"
+
 NEURAL: list[dict] = [
     {"name": "all-MiniLM-L6-v2 (incumbent)", "repo": "sentence-transformers/all-MiniLM-L6-v2"},
     {"name": "all-mpnet-base-v2", "repo": "sentence-transformers/all-mpnet-base-v2"},
     {"name": "bge-small-en-v1.5", "repo": "BAAI/bge-small-en-v1.5"},
     {"name": "bge-small-en-v1.5 + query prefix", "repo": "BAAI/bge-small-en-v1.5",
      "prefix": "Represent this sentence for searching relevant passages: "},
+    # These two ship custom modeling code that transformers executes, so
+    # trust_remote_code is required to load them at all. It is paired with a
+    # pinned revision: without one the run would execute whatever code the repo
+    # holds at that moment, which is neither reproducible nor safe to re-run.
     {"name": "jina-embeddings-v2-base-code", "repo": "jinaai/jina-embeddings-v2-base-code",
-     "trust_remote_code": True},
+     "trust_remote_code": True, "revision": JINA_REVISION},
     {"name": "SFR-Embedding-Code-400M_R", "repo": "Salesforce/SFR-Embedding-Code-400M_R",
-     "trust_remote_code": True},
+     "trust_remote_code": True, "revision": SFR_REVISION},
 ]
 
 INCUMBENT = "all-MiniLM-L6-v2 (incumbent)"
@@ -351,12 +363,15 @@ def realised_spread(scores_list, gold_idx: list[int], perms) -> dict:
 
 def run_neural(cfg: dict, texts: list[str], queries: list[str], device: str,
                batch: int = EMBED_BATCH) -> tuple[list, dict]:
-    from sentence_transformers import SentenceTransformer
     import numpy as np
+    from sentence_transformers import SentenceTransformer
 
     t0 = time.perf_counter()
     model = SentenceTransformer(
-        cfg["repo"], device=device, trust_remote_code=cfg.get("trust_remote_code", False)
+        cfg["repo"],
+        device=device,
+        trust_remote_code=cfg.get("trust_remote_code", False),
+        revision=cfg.get("revision"),
     )
     load_s = time.perf_counter() - t0
 
@@ -402,8 +417,8 @@ def run_neural(cfg: dict, texts: list[str], queries: list[str], device: str,
 
 
 def run_bm25(texts: list[str], queries: list[str]) -> tuple[list, dict]:
-    from rank_bm25 import BM25Okapi
     import numpy as np
+    from rank_bm25 import BM25Okapi
 
     t0 = time.perf_counter()
     bm = BM25Okapi([tokenize(t) for t in texts])
@@ -426,7 +441,6 @@ def run_bm25(texts: list[str], queries: list[str]) -> tuple[list, dict]:
 
 def run_tfidf(texts: list[str], queries: list[str]) -> tuple[list, dict]:
     from sklearn.feature_extraction.text import TfidfVectorizer
-    import numpy as np
 
     vec = TfidfVectorizer(tokenizer=tokenize, lowercase=True, token_pattern=None)
     t0 = time.perf_counter()
@@ -460,9 +474,14 @@ def run_random(n_docs: int, n_q: int, seed: int) -> tuple[list, dict]:
 
 
 def run_oracle(ids: list[str], golds: list[str]) -> tuple[list, dict]:
-    """Known-positive control. Scores the gold document 1 and everything else 0.
-    Any harness bug (id misalignment, off-by-one in ranking, tie-break leak)
-    shows up here as something other than a perfect score."""
+    """Known-positive control over the ranking path only.
+
+    Scores the gold document 1 and everything else 0, so a bug in ranking,
+    tie-breaking or metric aggregation shows up as a less-than-perfect score.
+    It cannot catch an id/text misalignment, because it builds its scores from
+    the same id->index map that defines the gold index and never reads a text;
+    the corpus digest and the duplicate-text count are what cover that.
+    """
     import numpy as np
 
     pos = {i: n for n, i in enumerate(ids)}
@@ -527,7 +546,12 @@ def main() -> int:
     assert not missing, f"gold ids absent from corpus: {missing}"
     # two sessions with identical visible text would make their gold label
     # unrecoverable by ANY retriever, so count them rather than discover it later
-    dup_text = len(texts) - len(set(texts))
+    # records sitting in a duplicate group, not duplicates in excess of one per
+    # group: a record whose visible text is shared has an unrecoverable gold label
+    # for ANY retriever, so the count that matters is how many records are affected
+    _seen = Counter(texts)
+    dup_records = sum(n for n in _seen.values() if n > 1)
+    dup_groups = sum(1 for n in _seen.values() if n > 1)
 
     qtexts = [q["text"] for q in QUERIES]
     golds = [q["gold"] for q in QUERIES]
@@ -634,6 +658,22 @@ def main() -> int:
                 continue
             deltas[name] = paired_delta(stats, stat_table[INCUMBENT], args.bootstrap, args.seed)
 
+    # The same paired test restricted to each slice. The paraphrase slice is the
+    # power check the memo rests on: it is where a real gap is known to exist, so
+    # it says whether a null elsewhere means "no difference" or "no resolution".
+    deltas_by_kind: dict[str, dict] = {}
+    if INCUMBENT in stat_table:
+        kinds = [q["kind"] for q in QUERIES]
+        for kind in sorted(set(kinds)):
+            sel = [i for i, k in enumerate(kinds) if k == kind]
+            deltas_by_kind[kind] = {
+                name: paired_delta([stats[i] for i in sel],
+                                   [stat_table[INCUMBENT][i] for i in sel],
+                                   args.bootstrap, args.seed)
+                for name, stats in stat_table.items()
+                if name != INCUMBENT and not name.startswith("control")
+            }
+
     # How much of the answer is the model, and how much is the text view it
     # reads? `record_text` shows an embedder the first 30 events capped at 2000
     # characters — a median 10% of a session — so widening it is the obvious
@@ -679,8 +719,15 @@ def main() -> int:
                 print(f"  text view {label}: {cfg['name']} done", file=sys.stderr, flush=True)
             text_view[label] = row
 
+        # the guard only means something when the incumbent actually produced
+        # metrics under every view; skipped or failed rows carry a reason string,
+        # and crashing on them would discard the whole run over a missing check
         base = text_view["shipped (30 events, 2000 chars)"].get(INCUMBENT, {})
-        for label, row in text_view.items():
+        comparable = all(METRICS[0] in row.get(INCUMBENT, {}) for row in text_view.values())
+        if not comparable or METRICS[0] not in base:
+            print("text-view invariance not checked: the incumbent did not run under every view",
+                  file=sys.stderr)
+        for label, row in (text_view.items() if comparable and METRICS[0] in base else []):
             got = row.get(INCUMBENT, {})
             assert all(abs(got[k] - base[k]) < 1e-9 for k in METRICS), (
                 f"incumbent moved under text view {label} ({got} vs {base}) — it truncates at "
@@ -691,13 +738,20 @@ def main() -> int:
     out = {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "corpus": {
+            # a local path is not an identity: the same path holds a different
+            # corpus after any re-import, so results carry a digest of the exact
+            # texts they were measured over
             "path": str(args.corpus),
+            "sha256_of_visible_texts": hashlib.sha256(
+                "\n".join(f"{i}\t{t}" for i, t in zip(ids, texts, strict=True)).encode()
+            ).hexdigest(),
             "n_records": len(ids),
             "record_text_chars": {
                 "median": statistics.median(len(t) for t in texts),
                 "at_2000_char_cap": sum(len(t) >= 2000 for t in texts),
             },
-            "records_with_duplicate_visible_text": dup_text,
+            "records_with_duplicate_visible_text": dup_records,
+        "duplicate_visible_text_groups": dup_groups,
         },
         "query_set": {"n": len(QUERIES), "n_gold_sessions": len(set(golds)), "by_kind": by_kind_diag},
         "eval": {
@@ -709,6 +763,7 @@ def main() -> int:
         },
         "results": results,
         "paired_delta_vs_incumbent": deltas,
+        "paired_delta_vs_incumbent_by_kind": deltas_by_kind,
         "text_view_sensitivity": text_view,
     }
     text = json.dumps(out, indent=2)
