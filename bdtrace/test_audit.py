@@ -72,3 +72,20 @@ def test_samples_are_masked(tmp_path):
 def test_report_states_clean_when_nothing_residual(tmp_path):
     text = report(audit(_write(tmp_path, {"events": []})))
     assert "RESIDUAL — none" in text
+
+
+def test_sidecar_is_scanned_with_the_artifact(tmp_path):
+    """A clean export whose metadata names a home directory is not anonymized."""
+    p = tmp_path / "t.jsonl"
+    p.write_text(json.dumps({"instance_id": "x", "events": []}) + "\n")
+    (tmp_path / "t.jsonl.meta.json").write_text(json.dumps({"derived_from": "/Users/jdoe/raw.jsonl"}))
+    result = audit(p)
+    assert result["sidecar_scanned"] is True
+    assert "home path" in result["residual"], "sidecar leak not reported"
+
+
+def test_absent_sidecar_is_not_an_error(tmp_path):
+    p = tmp_path / "t.jsonl"
+    p.write_text(json.dumps({"instance_id": "x", "events": []}) + "\n")
+    result = audit(p)
+    assert result["sidecar_scanned"] is False and result["residual"] == {}

@@ -61,9 +61,13 @@ def write_sidecar(out_path: Path, source: Path, params: dict) -> Path:
         summary, summary_of = spec.summarize(out_path), "artifact"
     else:
         summary, summary_of = spec.summarize(source), "source (pre-projection)"
+    # the sidecar ships beside the artifact, so it is anonymized on the same terms:
+    # a source path names a home directory, and an anonymized export whose metadata
+    # says /Users/<someone> has not been anonymized
+    derived_from = Path(source).name if params.get("anonymize") else str(source)
     meta = {
         "artifact": _describe_file(out_path),
-        "derived_from": str(source),
+        "derived_from": derived_from,
         "projection": {k: v for k, v in params.items() if v not in (None, False)},
         "summary": summary,
         "summary_of": summary_of,

@@ -69,30 +69,42 @@ def _strings(value) -> list[str]:
 
 
 def audit(in_path: Path, extra_terms: tuple[str, ...] = ()) -> dict:
-    """Scan a trace JSONL for identity that survived. Returns counts and masked samples."""
+    """Scan a trace JSONL, and its `.meta.json` sidecar, for identity that survived.
+
+    The sidecar is scanned because it ships with the artifact: an export whose
+    metadata still names a home directory has not been anonymized, and auditing
+    only the data would report clean while the leak travels alongside it.
+    """
     residual: Counter = Counter()
     samples: dict[str, set] = {}
     candidates: Counter = Counter()
     n = 0
+
+    def scan(strings: list[str]) -> None:
+        for s in strings:
+            for name, pattern in RESIDUAL_PATTERNS.items():
+                for hit in pattern.findall(s):
+                    residual[name] += 1
+                    samples.setdefault(name, set()).add(_mask(hit))
+            for pattern in CANDIDATE_PATTERNS:
+                for hit in pattern.findall(s):
+                    if hit.lower() not in _NOT_IDENTITY and not hit.startswith("<"):
+                        candidates[hit] += 1
+            for term in extra_terms:
+                if term in s:
+                    residual[f"term {term!r}"] += 1
+
     with open(in_path) as f:
         for line in f:
-            if not line.strip():
-                continue
-            n += 1
-            for s in _strings(json.loads(line)):
-                for name, pattern in RESIDUAL_PATTERNS.items():
-                    for hit in pattern.findall(s):
-                        residual[name] += 1
-                        samples.setdefault(name, set()).add(_mask(hit))
-                for pattern in CANDIDATE_PATTERNS:
-                    for hit in pattern.findall(s):
-                        if hit.lower() not in _NOT_IDENTITY and not hit.startswith("<"):
-                            candidates[hit] += 1
-                for term in extra_terms:
-                    if term in s:
-                        residual[f"term {term!r}"] += 1
+            if line.strip():
+                n += 1
+                scan(_strings(json.loads(line)))
+    sidecar = in_path.with_name(in_path.name + ".meta.json")
+    if sidecar.is_file():
+        scan(_strings(json.loads(sidecar.read_text())))
     return {
         "records": n,
+        "sidecar_scanned": sidecar.is_file(),
         "residual": dict(residual.most_common()),
         "residual_samples": {k: sorted(v)[:3] for k, v in samples.items()},
         "candidates": dict(candidates.most_common(12)),

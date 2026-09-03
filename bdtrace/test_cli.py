@@ -74,3 +74,18 @@ def test_transform_list_via_alias(monkeypatch, capsys):
 def test_trace_usage_lists_module_verbs(monkeypatch, capsys):
     code, _, err = run_cli(["trace"], monkeypatch, capsys)
     assert code != 0 and "import|export|push|spec|head" in err
+
+
+def test_derived_export_name_states_what_was_done(tmp_path):
+    from argparse import Namespace
+
+    from bdtrace.cli import _derived_name
+
+    src = tmp_path / "traces.jsonl"
+    plain = Namespace(anonymize=False, types=None, compact=False, interval=None)
+    assert _derived_name(src, plain).name == "traces.jsonl"
+    anon = Namespace(anonymize=True, types=None, compact=False, interval=None)
+    assert _derived_name(src, anon).name == "traces.anon.jsonl"
+    full = Namespace(anonymize=True, types="tools", compact=True, interval="7d")
+    assert _derived_name(src, full).name == "traces.anon.tools.compact.7d.jsonl"
+    assert _derived_name(tmp_path / "traces.jsonl.gz", anon).name == "traces.anon.jsonl"
