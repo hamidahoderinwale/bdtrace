@@ -80,6 +80,11 @@ shorthand: the tool name carries the trace noun, so `bdtrace import|export|push`
 VERB_ELISION = {"import": "import", "im": "import", "export": "export", "ex": "export", "push": "push"}
 TOP_ALIASES = {"tf": "transform", "cfg": "config", "nb": "notebooks", "ls": "scripts"}
 
+# the core install is tiny; commands needing a heavy dependency name the extra that carries it
+EXTRA_FOR_MODULE = {"sentence_transformers": "semantic", "torch": "semantic", "datasets": "hub",
+                    "huggingface_hub": "hub", "dspy": "llm", "pandas": "parquet", "pyarrow": "parquet",
+                    "numpy": "research", "networkx": "research", "msgpack": "research"}
+
 # the legacy first-gen chain the exploration notebooks read (notebooks/README.md)
 LEGACY_CHAIN = [
     ("run_extraction_pipeline", ["--datasets", "{ds}", "--output-dir", "output"]),
@@ -334,6 +339,17 @@ def main() -> None:
         return
     cmd, rest = args[0], args[1:]
     cmd = TOP_ALIASES.get(cmd, cmd)
+    try:
+        _dispatch_command(cmd, rest)
+    except ImportError as e:
+        extra = EXTRA_FOR_MODULE.get((e.name or "").split(".")[0])
+        if not extra:
+            raise
+        sys.exit(f"bdtrace: `{cmd}` needs the `{extra}` extra: uv sync --extra {extra}, or\n"
+                 f"  uv tool install 'bidirect-align-dev-traces[{extra}] @ git+https://github.com/hamidahoderinwale/bidirect-align-dev-traces'")
+
+
+def _dispatch_command(cmd: str, rest: list[str]) -> None:
     if cmd in VERB_ELISION:
         _trace([VERB_ELISION[cmd], *rest])
     elif cmd == "trace":
