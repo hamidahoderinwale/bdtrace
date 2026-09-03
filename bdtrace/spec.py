@@ -6,7 +6,11 @@ shape and fullness are readable before anything consumes it; `head()` shows
 the first records legibly and can write a slice out as a segmented export.
 """
 
+import getpass
 import json
+import re
+import socket
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -140,17 +144,143 @@ def project(record: dict, types: set[str] | None = None, compact: bool = False) 
     return out
 
 
+# One rule per identity class, applied in this order to every string. Order is
+# load-bearing twice over: a credential is masked before any path, URL or email rule
+# can chew it into a shape the credential patterns no longer recognise, and the email
+# rule runs before the IP and hostname rules so `jdoe@10.0.0.5` and
+# `jdoe@some-mac.local` are removed whole rather than leaving the user half behind.
+# Every replacement is a fixed point (its output cannot re-match), so anonymizing
+# twice equals anonymizing once — test_anonymize.py asserts that.
+_ANON_RULES = [(re.compile(pattern), repl) for pattern, repl in (
+    # credentials, by issuer prefix
+    (r"\b(?:sk-ant-[A-Za-z0-9_-]{16,}|sk-[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{20,}"
+     r"|github_pat_[A-Za-z0-9_]{20,}|xox[abprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}"
+     r"|AIza[0-9A-Za-z_-]{30,}|hf_[A-Za-z0-9]{20,}|glpat-[A-Za-z0-9_-]{16,}"
+     r"|npm_[A-Za-z0-9]{20,}|ya29\.[A-Za-z0-9_-]{20,})", "<token>"),
+    (r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}", "<token>"),  # JWT
+    (r"(?i)\b(Bearer|Basic)\s+[A-Za-z0-9_\-.=+/]{12,}", r"\1 <token>"),
+    # credentials named by their variable/field, whatever their shape; the key, the
+    # separator and any quoting are kept so a JSON or shell fragment stays parseable
+    (r"(?i)\b([A-Za-z0-9_-]*(?:api[_-]?key|token|secret|password|passwd|access[_-]?key)"
+     r"[\"']?\s*[=:]\s*[\"']?)[A-Za-z0-9_\-./+]{8,}", r"\1<redacted>"),
+    # git remotes and URLs: the account is the identity, and userinfo may carry a token
+    (r"\bgit@[\w.-]+:[A-Za-z0-9._-]+/", "git@<host>:<user>/"),
+    (r"\b([a-z][a-z0-9+.-]*://)[^/@\s]+@", r"\1"),
+    (r"\b((?:https?|ssh|git)://(?:github\.com|gitlab\.com|bitbucket\.org)/)[A-Za-z0-9._-]+",
+     r"\1<user>"),
+    (r"\b(https?://huggingface\.co/(?:datasets|spaces)/)[A-Za-z0-9._-]+", r"\1<user>"),
+    (r"\b(https?://huggingface\.co/)(?!datasets/|spaces/)[A-Za-z0-9._-]+", r"\1<user>"),
+    # forge CLIs name the owner with no URL around it: `gh api repos/<owner>/<repo>`,
+    # `gh repo view <owner>/<repo>`, `gh pr list --repo <owner>/<repo>`. Measured on a
+    # 138-trace corpus these were the only surviving occurrences of the real username.
+    (r"\b(repos/)[A-Za-z0-9._-]+(?=/)", r"\1<user>"),
+    (r"\b(gh (?:repo|pr|issue|release|run|workflow|api)\s+(?:\w+\s+)*?(?:--repo[= ])?)"
+     r"[A-Za-z0-9._-]+/(?=[A-Za-z0-9._-]+)", r"\1<user>/"),
+    (r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", "<email>"),
+    # network and hardware addresses. A four-part version string ("9.10.2.21" in a
+    # `uv add` line) is indistinguishable from a dotted quad and is masked too — the
+    # cheaper error. The hex rule wants >=4 groups, so an ISO timestamp is not one.
+    (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "<ip>"),
+    (r"\b(?:[0-9a-fA-F]{1,4}:){3,}[0-9a-fA-F]{1,4}\b", "<ip>"),
+    # home directories, in every spelling that reaches a trace
+    (r"/Users/[A-Za-z0-9._-]+", "~"),
+    (r"/home/[A-Za-z0-9._-]+", "~"),
+    (r"(?<![\w/])/root\b", "~"),
+    (r"[A-Za-z]:\\Users\\[A-Za-z0-9._-]+", "~"),
+    (r"(?i)%2fusers%2f[A-Za-z0-9._-]+", "~"),
+    # Claude Code workspace slugs: the cwd with its separators flattened to hyphens
+    (r"-Users-[A-Za-z0-9_.]+", "-Users-anon"),
+    (r"-home-[A-Za-z0-9_.]+", "-home-anon"),
+    # per-user scratch space: the macOS temp token and the uid in a session temp dir
+    (r"/var/folders/[A-Za-z0-9_+-]{2}/[A-Za-z0-9_+-]+", "/var/folders/<tmp>"),
+    (r"/claude-\d+/", "/claude-<uid>/"),
+    (r"/Volumes/[^/\s'\"]+", "/Volumes/<volume>"),
+    # machine names: a hyphenated mDNS name, which `settings.local.json` is not
+    (r"\b[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+\.local\b(?![\w.])", "<host>"),
+)]
+
+# names too common to blank out safely if this machine happens to use one
+_GENERIC_NAMES = {"localhost", "root", "user", "admin", "runner", "ubuntu"}
+
+
+def _local_identifiers() -> tuple[str, ...]:
+    """This machine's own names — login name, home-directory name, hostname. No
+    pattern recognises a bare `jdoe` in `su jdoe` or a shell prompt, so they are
+    matched literally. Longest first, so `jdoe-mbp` goes before the `jdoe` in it."""
+    names = {Path.home().name, socket.gethostname()}
+    names.add(socket.gethostname().partition(".")[0])
+    try:
+        names.add(getpass.getuser())
+    except Exception:  # no passwd entry and no LOGNAME/USER/USERNAME set
+        pass
+    names |= _forge_handles()
+    keep = (n for n in names if len(n) > 2 and n.lower() not in _GENERIC_NAMES)
+    return tuple(sorted(keep, key=len, reverse=True))
+
+
+def _forge_handles() -> set[str]:
+    """Git and GitHub handles, which appear as bare words no pattern can see:
+    `--author <handle>`, `R=<handle>`, prose. Read from local config only, so on
+    someone else's machine it learns their handle, not the author's."""
+    handles: set[str] = set()
+    try:
+        name = subprocess.run(["git", "config", "--get", "user.name"],
+                              capture_output=True, text=True, timeout=5).stdout.strip()
+        email = subprocess.run(["git", "config", "--get", "user.email"],
+                               capture_output=True, text=True, timeout=5).stdout.strip()
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return handles
+    if name:
+        handles.add(name)
+        handles.add(name.replace(" ", ""))
+        # a full name is also written in parts ("Hamidah, 2026-08-29"); over-scrubbing
+        # a common word is the cheaper error here, and _GENERIC_NAMES filters those
+        handles.update(name.split())
+    if "@" in email:
+        handles.add(email.split("@")[0])
+    for remote in _git_remote_owners():
+        handles.add(remote)
+    return handles
+
+
+def _git_remote_owners() -> set[str]:
+    """Owner segment of every configured git remote: the account that owns the work."""
+    try:
+        out = subprocess.run(["git", "remote", "-v"], capture_output=True, text=True, timeout=5).stdout
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return set()
+    return set(re.findall(r"(?:[:/])([A-Za-z0-9._-]+)/[A-Za-z0-9._-]+(?:\.git)?\s", out))
+
+
+_LOCAL_NAMES = _local_identifiers()
+
+
 def _anon_str(s: str) -> str:
-    import re
-    s = re.sub(r"/Users/[^/\s'\"]+", "~", s)
-    s = re.sub(r"/home/[^/\s'\"]+", "~", s)
-    s = re.sub(r"-Users-[A-Za-z0-9_.]+", "-Users-anon", s)  # Claude Code workspace slugs
-    return re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+", "<email>", s)
+    for pattern, repl in _ANON_RULES:
+        s = pattern.sub(repl, s)
+    for name in _LOCAL_NAMES:
+        s = re.sub(rf"\b{re.escape(name)}\b", "anon", s)
+    return s
 
 
 def anonymize(record: dict):
-    """Strip identifying strings (home directories, usernames in paths, emails)
-    from every string field, prompts included: the text survives, the identity doesn't."""
+    """Strip identity from every string field, prompts and command lines included:
+    the text survives, the identity doesn't.
+
+    Closed classes (`_ANON_RULES` plus this machine's own names): home directories in
+    POSIX, Windows, URL-encoded and workspace-slug spellings; per-user temp and volume
+    paths; the local login name, home-directory name and hostname; mDNS machine names;
+    email addresses; IPv4, IPv6 and MAC addresses; git remotes and forge URLs, whose
+    account segment names a person; credentials, both by issuer prefix (Anthropic,
+    OpenAI, GitHub, Slack, AWS, Google, Hugging Face, GitLab, npm) and by field name
+    (`*token`, `*secret`, `password`, `*api_key`, `*access_key`), plus JWTs and
+    Authorization headers.
+
+    Not closed, and not claimed to be: personal names written in prose, other people's
+    usernames where they appear bare rather than in a path or URL, and any secret that
+    is neither issuer-prefixed nor next to a field name that says what it is. Dict keys
+    are left alone — they are schema names, and rewriting them would break consumers.
+    """
     if isinstance(record, str):
         return _anon_str(record)
     if isinstance(record, dict):
