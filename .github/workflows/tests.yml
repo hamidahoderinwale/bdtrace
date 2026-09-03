@@ -14,4 +14,4 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --all-extras --dev
-      - run: uv run python -m pytest bidirect analysis/ingest -q
+      - run: uv run python -m pytest bdtrace analysis/ingest -q
