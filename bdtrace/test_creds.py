@@ -20,9 +20,9 @@ def _no_ambient_keys(monkeypatch):
 
 
 def test_own_env_wins_over_the_org_vault(monkeypatch):
-    monkeypatch.setenv("HF_TOKEN", "mine")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "mine")
     monkeypatch.setattr(creds, "op_read", lambda ref: "org")
-    assert creds.resolve(("HF_TOKEN",), op_key="huggingface") == ("mine", "HF_TOKEN")
+    assert creds.resolve(("OPENROUTER_API_KEY",), op_key="openrouter") == ("mine", "OPENROUTER_API_KEY")
 
 
 def test_env_vars_are_tried_in_order(monkeypatch):
@@ -32,12 +32,17 @@ def test_env_vars_are_tried_in_order(monkeypatch):
 
 def test_org_vault_is_the_fallback(monkeypatch):
     monkeypatch.setattr(creds, "op_read", lambda ref: "from-vault")
-    value, source = creds.resolve(("HF_TOKEN",), op_key="huggingface")
-    assert value == "from-vault" and "1Password" in source and "huggingface" in source
+    value, source = creds.resolve(("OPENROUTER_API_KEY",), op_key="openrouter")
+    assert value == "from-vault" and "1Password" in source and "openrouter" in source
+
+
+def test_hugging_face_has_no_org_rung():
+    """A hub token is an identity: a shared one would publish everyone as the org."""
+    assert "huggingface" not in creds.OP_REFS
 
 
 def test_nothing_anywhere_is_none_not_an_error():
-    assert creds.resolve(("HF_TOKEN",), op_key="huggingface") is None
+    assert creds.resolve(("OPENROUTER_API_KEY",), op_key="openrouter") is None
     assert creds.resolve(("HF_TOKEN",)) is None
 
 
@@ -52,3 +57,13 @@ def test_missing_op_cli_falls_through(monkeypatch):
 def test_refs_are_overridable_and_carry_no_secret():
     for key, ref in creds.OP_REFS.items():
         assert ref.startswith("op://"), key
+
+
+def test_config_report_runs_and_names_every_rung(monkeypatch):
+    """`bdtrace config` reaches for real credential state, so a removed vault key
+    or a renamed helper crashes it. The suite missed exactly that once."""
+    from bdtrace.transforms import config_report
+
+    text = config_report()
+    for expected in ("OPENROUTER_API_KEY", "taste org model key", "hugging face", "BDTRACE_MODEL"):
+        assert expected in text, f"{expected!r} missing from config output"

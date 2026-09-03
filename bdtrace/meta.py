@@ -123,8 +123,8 @@ def push_croissant(repo_id: str, croissant: dict) -> str:
 
     from huggingface_hub import HfApi
 
-    from bdtrace.export import resolve_hf_token
-    api = HfApi(token=resolve_hf_token()[0])
+    from bdtrace.export import ensure_hf_login
+    api = HfApi(token=ensure_hf_login()[0])
     api.upload_file(path_or_fileobj=io.BytesIO(json.dumps(croissant, indent=2).encode()),
                     path_in_repo="croissant.json", repo_id=repo_id, repo_type="dataset")
     return f"https://huggingface.co/datasets/{repo_id}/blob/main/croissant.json"

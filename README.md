@@ -116,18 +116,26 @@ behavioral / mechanistic / functional   inferred via DSPy, behind --llm
 ## Keys
 
 Everything local needs none: import, show, audit, export, interval slicing and semantic search all
-run with no account. Two things reach outward, and both use one ladder: your environment, then
-`.env`, then the org's shared secret in 1Password, then the provider's own cached login.
+run with no account. Two things reach outward, and they authenticate differently on purpose.
 
-| for | your own | or, in the taste org |
-|---|---|---|
-| inferred transforms (`--llm`) | `OPENROUTER_API_KEY` / `OPENAI_API_KEY` | `op signin`, nothing else |
-| `trace push` to Hugging Face | `HF_TOKEN`, or `huggingface-cli login` | `op signin`, nothing else |
+**Pushing to the hub is your own identity.** A push creates a dataset under whoever owns the token,
+so there is no shared one. If you have never logged in, `bdtrace push` offers to do it for you:
 
-Org members need no key of their own: vault membership is the gate and their own 1Password login is
-the auth, so access is granted and revoked centrally. The `op://` references are committed (they are
-not secrets); the values never are, and only the source name is ever printed. `bdtrace config`
-reports which rung is live. Override a reference with `BDTRACE_OP_HF` or `BDTRACE_OP_OPENROUTER`.
+```console
+$ bdtrace push --in share.jsonl --repo-id you/my-traces
+bdtrace: no Hugging Face login found.
+run `hf auth login` now? [Y/n]
+```
+
+Answer yes and it runs the hub's own login, then continues the push. `HF_TOKEN` in your environment
+or `.env` also works, and in a script (no terminal) it fails with the command rather than hanging on
+a prompt.
+
+**Model access is shared spend**, so it can come from the org. Set `OPENROUTER_API_KEY` or
+`OPENAI_API_KEY` yourself, or, as a taste org member, just `op signin`: the CLI reads the org's key
+from 1Password, where vault membership is the gate and access is revoked centrally. The `op://`
+reference is committed (it is not a secret) and overridable with `BDTRACE_OP_OPENROUTER`; the value
+never is, and only the source name is printed. `bdtrace config` reports which rung is live.
 
 Exports load anywhere: `pd.read_json(..., lines=True)`, `pl.read_ndjson(...)`, or `load_dataset(...)`
 after a push.

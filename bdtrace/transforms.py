@@ -136,15 +136,16 @@ def config_report() -> str:
     def status(var: str) -> str:
         return "set" if os.environ.get(var) else "missing"
     from bdtrace.creds import OP_REFS, describe
-    org, org_hf = describe("openrouter"), describe("huggingface")
+    org = describe("openrouter")
+    from bdtrace.export import resolve_hf_token
+    hf = resolve_hf_token()
+    hf_state = f"{hf[1]}" if hf else "not logged in (bdtrace push offers `hf auth login`)"
     return "\n".join([
         f"OPENROUTER_API_KEY  {status('OPENROUTER_API_KEY')}   (preferred provider; set in .env)",
         f"OPENAI_API_KEY      {status('OPENAI_API_KEY')}   (fallback)",
         f"taste org model key {org}",
-        f"                    ({OP_REFS['openrouter']})",
-        f"taste org HF token  {org_hf}",
-        f"                    ({OP_REFS['huggingface']})",
-        f"HF_TOKEN            {status('HF_TOKEN')}   (Hugging Face fetches, e.g. rollout trajectories)",
+        f"                    ({OP_REFS['openrouter']}; used when no key of your own is set)",
+        f"hugging face        {hf_state}   (your own identity; never shared)",
         f"BDTRACE_MODEL       {os.environ.get("BDTRACE_MODEL", f'unset (default {DEFAULT_MODEL})')}",
         "inferred transforms run at temperature 0.0 with the DSPy cache on",
     ])
