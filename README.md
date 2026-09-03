@@ -34,6 +34,7 @@ trace export --in F --out G [--types --compact --anonymize --interval]
                                     .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
 trace query --in F [--grep R] [--where f=v] [--interval I] [--semantic "..."] [--sort time]
                                     additive filters; embedding-ranked with --semantic
+trace index --in F [--model M]      embed once, incrementally; query then embeds only the query
 trace push --in F --repo-id you/name [--dry-run]           HF dataset, private by default
 trace sessiongrep|fetch|parse       sessiongrep export, S3 fetch, raw Cursor dumps
 transform list | <name> | all --in F [--llm]               representation extractors
@@ -67,18 +68,18 @@ cd bidirect-align-dev-traces
 uv sync --all-extras       # full research stack; plain `uv sync` is just the CLI
 ```
 
-Tests: `uv run python -m pytest bidirect analysis/ingest`, run in CI on every push. The tool install
+Tests: `uv run python -m pytest bdtrace analysis/ingest`, run in CI on every push. The tool install
 carries the trace and transform commands anywhere; script-backed commands (`paper`, `fig`,
 `notebooks`, `run`) need this checkout.
 
 ## Layout
 
 ```
-bidirect/            -- the bdtrace CLI: export, query, metadata modules
+bdtrace/             -- the CLI: import, export, query, index, metadata
 analysis/            -- analysis modules; ingest/ = the local-store trace parsers
 representations/     -- computed (edits/modules/motifs) and inferred (DSPy) representations
 scripts/             -- runnable analyses; agent_trajectories_paper/ maps script -> figure -> grounding
-docs/papers/         -- paper sources + figures
+docs/                -- paper sources and figures, distillation_run/, first-generation pipeline inputs
 findings.md          -- full research record (findings, grounding audit, decision traces)
 ```
 

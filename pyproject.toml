@@ -67,7 +67,7 @@ research = [
 ]
 
 [project.scripts]
-bdtrace = "bidirect.cli:main"
+bdtrace = "bdtrace.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -76,7 +76,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 # CLI + the libraries its module-backed commands import (transform, trace import/export/push);
 # scripts/ stays repo-local, so script-backed commands need a checkout
-packages = ["bidirect", "representations", "analysis"]
+packages = ["bdtrace", "representations", "analysis"]
 
 [tool.ruff]
 line-length = 120
