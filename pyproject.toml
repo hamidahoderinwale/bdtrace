@@ -1,7 +1,7 @@
 [project]
-name = "bidirect-align-dev-traces"
+name = "bdtrace"
 version = "1.2.0"
-description = "Export, share, and transform developer workflow traces; multi-level representation extractors"
+description = "Export, share, and transform developer agent traces from local stores"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Hamidah Oderinwale" }]
