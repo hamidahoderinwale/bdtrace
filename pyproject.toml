@@ -1,31 +1,30 @@
 [project]
 name = "bidirect-align-dev-traces"
-version = "1.1.0"
-description = "Multi-level representation extractors for developer workflow traces"
+version = "1.2.0"
+description = "Export, share, and transform developer workflow traces; multi-level representation extractors"
 readme = "README.md"
 requires-python = ">=3.11"
+authors = [{ name = "Hamidah Oderinwale" }]
+# The core install is deliberately tiny so `uvx --from git+...` gives someone the
+# import/anonymize/export/share path in seconds. Everything heavy is an extra;
+# the CLI names the extra to install when a command needs one.
 dependencies = [
-    "numpy>=1.24",
-    "datasets>=2.14",
-    "networkx>=3.0",
-    "pydriller>=2.0",
-    "dspy-ai>=2.5",
     "python-dotenv>=1.0",
-    "sentence-transformers>=2.2",
-    "umap-learn[notebooks]>=0.5.11",
-    "matplotlib>=3.10.8",
-    "tree-sitter>=0.25.2",
-    "tree-sitter-python>=0.25.0",
-    "evalplus>=0.3.1",
-    "mlxtend>=0.24.0",
-    "msgpack>=1.1.2",
-    "hdbscan>=0.8.42",
-    "boto3>=1.28",
-    "statsmodels>=0.14.6",
-    "parso>=0.8.7",
 ]
 
+[project.urls]
+Repository = "https://github.com/hamidahoderinwale/bidirect-align-dev-traces"
+
 [project.optional-dependencies]
+semantic = [
+    "sentence-transformers>=2.2",
+]
+hub = [
+    "datasets>=2.14",
+]
+llm = [
+    "dspy-ai>=2.5",
+]
 parquet = [
     "pandas>=2.0",
     "pyarrow>=14.0",
@@ -45,6 +44,26 @@ notebooks = [
     "altair>=5.0",
     "vl-convert-python>=1.0",
     "jupyterlab>=4.0",
+]
+# the research stack the repo's scripts/ and representations/ assume (the old core)
+research = [
+    "numpy>=1.24",
+    "datasets>=2.14",
+    "networkx>=3.0",
+    "pydriller>=2.0",
+    "dspy-ai>=2.5",
+    "sentence-transformers>=2.2",
+    "umap-learn[notebooks]>=0.5.11",
+    "matplotlib>=3.10.8",
+    "tree-sitter>=0.25.2",
+    "tree-sitter-python>=0.25.0",
+    "evalplus>=0.3.1",
+    "mlxtend>=0.24.0",
+    "msgpack>=1.1.2",
+    "hdbscan>=0.8.42",
+    "boto3>=1.28",
+    "statsmodels>=0.14.6",
+    "parso>=0.8.7",
 ]
 
 [project.scripts]
