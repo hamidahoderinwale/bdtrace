@@ -56,6 +56,9 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
                              re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
   trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
                              push straight to the Hugging Face hub (parquet-backed)
+  trace show --in F [--id X] [-n N] [--turns]
+                             read a session as prompt-anchored turns: the prompt, then the
+                             actions it caused, consecutive same-type actions collapsed
   trace audit --in F [--redact TERM] [--strict]
                              what identity survived: residual classes the anonymizer
                              should have caught, plus candidates only a human can name
@@ -315,6 +318,22 @@ def _trace(rest: list[str]) -> None:
         from bdtrace.index import build_index
         info = build_index(a.in_path, a.model)
         print(f"{info['n']} vectors, {info['dims']} dims, model {info['model']}")
+    elif verb == "show":
+        p = argparse.ArgumentParser(prog="bdtrace trace show",
+                                    description="Read a session as prompt-anchored turns: what was "
+                                                "asked, then the actions it caused, runs collapsed")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--id", dest="instance_id", default=None, help="one trace by instance_id")
+        p.add_argument("-n", type=int, default=1, help="traces to render (default 1)")
+        p.add_argument("--width", type=int, default=88)
+        p.add_argument("--turns", action="store_true",
+                       help="instead: the turn-level shape of the whole corpus, as JSON")
+        a = p.parse_args(rest)
+        from bdtrace import show as show_mod
+        if a.turns:
+            print(show_mod._cli_json(show_mod.turns_summary(a.in_path)))
+        else:
+            show_mod.show(a.in_path, a.instance_id, a.n, a.width)
     elif verb == "audit":
         p = argparse.ArgumentParser(prog="bdtrace trace audit",
                                     description="What identity is still in a file you are about to share")
