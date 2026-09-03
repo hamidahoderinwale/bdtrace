@@ -10,7 +10,7 @@ findings live in [findings.md](findings.md), and the fingerprinting library that
 With [uv](https://docs.astral.sh/uv/) installed, no clone needed:
 
 ```console
-$ uv tool install 'bidirect-align-dev-traces @ git+https://github.com/hamidahoderinwale/bidirect-align-dev-traces'
+$ uv tool install 'bdtrace @ git+https://github.com/hamidahoderinwale/bdtrace'
 $ bdtrace import --source claude --out traces.jsonl    # your local Claude Code sessions (or: cursor)
 138 traces -> traces.jsonl
 $ bdtrace trace head --in traces.jsonl -n 2            # eyeball before sharing
@@ -63,8 +63,8 @@ after a push. A hub push also publishes `croissant.json` (Croissant 1.1, PROV-O 
 ## Working in the repo
 
 ```bash
-git clone https://github.com/hamidahoderinwale/bidirect-align-dev-traces
-cd bidirect-align-dev-traces
+git clone https://github.com/hamidahoderinwale/bdtrace
+cd bdtrace
 uv sync --all-extras       # full research stack; plain `uv sync` is just the CLI
 ```
 
@@ -86,6 +86,3 @@ findings.md          -- full research record (findings, grounding audit, decisio
 Generated data lives under `output/` (gitignored); every findings.md entry names the script that
 regenerates its numbers.
 
-## License
-
-MIT

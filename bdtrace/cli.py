@@ -54,9 +54,16 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
                              re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
   trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
                              push straight to the Hugging Face hub (parquet-backed)
+  trace spec [--in F]        the record spec; with --in, audit a file (counts, coverage,
+                             event types, prompts, text volume, time span, sources)
+  trace head --in F [-n N] [--skip N] [--interval I] [--out F]
+                             view samples; --out writes the slice as a segmented export
   trace query --in F [--grep R] [--where f=v] [--interval I] [--semantic "..."] [--top-k K]
                              additive filters, embedding-ranked when --semantic; --sort time
                              for chronology, --out to export the matches
+  trace index --in F [--model M]
+                             build/update the embedding index beside the corpus; unchanged
+                             records are never re-embedded, and query then embeds only the query
   trace sessiongrep|fetch|parse
                              sessiongrep session-file export, S3 trajectory fetch,
                              raw Cursor text-dump parse
@@ -345,7 +352,7 @@ def main() -> None:
         return
     if args[0] in ("-V", "--version"):
         from importlib.metadata import version
-        print(version("bidirect-align-dev-traces"))
+        print(version("bdtrace"))
         return
     cmd, rest = args[0], args[1:]
     cmd = TOP_ALIASES.get(cmd, cmd)
@@ -356,7 +363,7 @@ def main() -> None:
         if not extra:
             raise
         sys.exit(f"bdtrace: `{cmd}` needs the `{extra}` extra: uv sync --extra {extra}, or\n"
-                 f"  uv tool install 'bidirect-align-dev-traces[{extra}] @ git+https://github.com/hamidahoderinwale/bidirect-align-dev-traces'")
+                 f"  uv tool install 'bdtrace[{extra}] @ git+https://github.com/hamidahoderinwale/bdtrace'")
 
 
 def _dispatch_command(cmd: str, rest: list[str]) -> None:

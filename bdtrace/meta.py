@@ -68,7 +68,7 @@ def write_sidecar(out_path: Path, source: Path, params: dict) -> Path:
         "summary": summary,
         "summary_of": summary_of,
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "generator": f"bdtrace {version('bidirect-align-dev-traces')}",
+        "generator": f"bdtrace {version('bdtrace')}",
         "record_schema": TRACE_JSON_SCHEMA,
     }
     sidecar = out_path.with_name(out_path.name + ".meta.json")
@@ -107,7 +107,7 @@ def build_croissant(repo_id: str, n_rows: int, source_desc: str, dataset_version
             "@type": "prov:Activity",
             "prov:used": source_desc,
             "prov:wasAssociatedWith": {"@type": "prov:SoftwareAgent",
-                                       "name": f"bdtrace {version('bidirect-align-dev-traces')}"},
+                                       "name": f"bdtrace {version('bdtrace')}"},
             "prov:endedAtTime": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         },
     }
