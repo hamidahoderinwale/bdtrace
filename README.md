@@ -75,6 +75,8 @@ wrote 3 canonical traces to atoms.jsonl
 ```
 
 Anonymized exports canonicalize the same way, since the action structure survives anonymization.
+Every record carries its source as `agent` (`--agent` overrides it at import), which is the field
+procgrep groups and compares by, so cross-agent analyses work on a mixed export without remapping.
 
 ## Working in the repo
 
