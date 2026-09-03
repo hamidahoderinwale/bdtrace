@@ -1,0 +1,21 @@
+name: publish
+
+# Publishes to PyPI on a version tag, via trusted publishing (OIDC): no API token
+# is stored anywhere. One-time setup on PyPI: add a pending publisher for project
+# bdtrace, owner hamidahoderinwale, repo bdtrace, workflow publish.yml.
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv build
+      - run: uv publish --trusted-publishing always

@@ -10,7 +10,7 @@ findings live in [findings.md](findings.md), and the fingerprinting library that
 With [uv](https://docs.astral.sh/uv/) installed, no clone needed:
 
 ```console
-$ uv tool install 'bdtrace @ git+https://github.com/hamidahoderinwale/bdtrace'
+$ uv tool install bdtrace     # or, before the first release: 'bdtrace @ git+https://github.com/hamidahoderinwale/bdtrace'
 $ bdtrace import --source claude --out traces.jsonl    # your local Claude Code sessions (or: cursor)
 138 traces -> traces.jsonl
 $ bdtrace trace head --in traces.jsonl -n 2            # eyeball before sharing
