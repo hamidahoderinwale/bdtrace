@@ -54,6 +54,9 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
                              re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
   trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
                              push straight to the Hugging Face hub (parquet-backed)
+  trace audit --in F [--redact TERM] [--strict]
+                             what identity survived: residual classes the anonymizer
+                             should have caught, plus candidates only a human can name
   trace spec [--in F]        the record spec; with --in, audit a file (counts, coverage,
                              event types, prompts, text volume, time span, sources)
   trace head --in F [-n N] [--skip N] [--interval I] [--out F]
@@ -201,12 +204,17 @@ def _trace(rest: list[str]) -> None:
                        help="reduce each event to its action surface (text bodies dropped)")
         p.add_argument("--anonymize", action="store_true",
                        help="strip home dirs, usernames in paths, and emails from all strings")
+        p.add_argument("--redact", action="append", default=[], metavar="TERM",
+                       help="also scrub this literal term; repeatable. `trace audit` names candidates")
+        p.add_argument("--strict", action="store_true",
+                       help="with --anonymize: refuse to keep the output if any identity survives")
         p.add_argument("--interval", default=None,
                        help="event-time window, as in trace head (A..B, or 7d/24h/2w)")
         a = p.parse_args(rest)
         from bdtrace import spec
         from bdtrace.export import export_traces
         records = a.in_path
+        redact = tuple(a.redact)
         if a.types or a.compact or a.anonymize or a.interval:
             since, until = spec.interval_bounds(a.interval)
             types = spec.parse_types(a.types) if a.types else None
@@ -216,14 +224,28 @@ def _trace(rest: list[str]) -> None:
                         continue
                     r = spec.project(r, types, a.compact)
                     if a.anonymize:
-                        r = spec.anonymize(r)
+                        r = spec.anonymize(r, redact)
                     yield r
             records = shaped()
         out = export_traces(records, a.out)
         from bdtrace.meta import write_sidecar
         sidecar = write_sidecar(out, a.in_path, {"types": a.types, "compact": a.compact,
-                                                 "anonymize": a.anonymize, "interval": a.interval})
+                                                 "anonymize": a.anonymize, "interval": a.interval,
+                                                 "redact": list(redact)})
         print(f"{out} ({out.stat().st_size:,} bytes) + {sidecar.name}")
+        # an anonymized artifact is audited before it is called done; --strict refuses
+        # to leave a leaking file on disk rather than reporting the leak after the fact
+        if a.anonymize and out.suffix == ".jsonl":
+            from bdtrace.audit import audit, report
+            result = audit(out, redact)
+            if result["residual"]:
+                print(report(result), file=sys.stderr)
+                if a.strict:
+                    out.unlink()
+                    sidecar.unlink()
+                    sys.exit(f"bdtrace: identity survived anonymization; {out.name} removed (--strict)")
+            elif a.strict:
+                print("audit: no residual identity", file=sys.stderr)
     elif verb == "push":
         p = argparse.ArgumentParser(prog="bdtrace trace push",
                                     description="Push a trace JSONL to the Hugging Face hub (parquet-backed dataset)")
@@ -291,6 +313,19 @@ def _trace(rest: list[str]) -> None:
         from bdtrace.index import build_index
         info = build_index(a.in_path, a.model)
         print(f"{info['n']} vectors, {info['dims']} dims, model {info['model']}")
+    elif verb == "audit":
+        p = argparse.ArgumentParser(prog="bdtrace trace audit",
+                                    description="What identity is still in a file you are about to share")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--redact", action="append", default=[], metavar="TERM",
+                       help="also count occurrences of this literal term; repeatable")
+        p.add_argument("--strict", action="store_true", help="exit non-zero when anything residual is found")
+        a = p.parse_args(rest)
+        from bdtrace.audit import audit, report
+        result = audit(a.in_path, tuple(a.redact))
+        print(report(result))
+        if a.strict and result["residual"]:
+            sys.exit(1)
     elif verb == "spec":
         p = argparse.ArgumentParser(prog="bdtrace trace spec",
                                     description="Canonical trace-record spec; with --in, audit a file against it")

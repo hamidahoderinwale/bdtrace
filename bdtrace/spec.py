@@ -173,7 +173,10 @@ _ANON_RULES = [(re.compile(pattern), repl) for pattern, repl in (
     # forge CLIs name the owner with no URL around it: `gh api repos/<owner>/<repo>`,
     # `gh repo view <owner>/<repo>`, `gh pr list --repo <owner>/<repo>`. Measured on a
     # 138-trace corpus these were the only surviving occurrences of the real username.
-    (r"\b(repos/)[A-Za-z0-9._-]+(?=/)", r"\1<user>"),
+    # `repos/<owner>` with or without a repo after it, and forge hosts written without
+    # a scheme (`github.com/acme`), which the URL rules above never see
+    (r"\b(repos/)(?!<)[A-Za-z0-9._-]+", r"\1<user>"),
+    (r"\b((?:github|gitlab)\.com/)(?!<)[A-Za-z0-9._-]+", r"\1<user>"),
     (r"\b(gh (?:repo|pr|issue|release|run|workflow|api)\s+(?:\w+\s+)*?(?:--repo[= ])?)"
      r"[A-Za-z0-9._-]+/(?=[A-Za-z0-9._-]+)", r"\1<user>/"),
     (r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", "<email>"),
@@ -255,15 +258,16 @@ def _git_remote_owners() -> set[str]:
 _LOCAL_NAMES = _local_identifiers()
 
 
-def _anon_str(s: str) -> str:
+def _anon_str(s: str, extra: tuple[str, ...] = ()) -> str:
     for pattern, repl in _ANON_RULES:
         s = pattern.sub(repl, s)
-    for name in _LOCAL_NAMES:
+    # longest first, so a term containing another is consumed before its substring
+    for name in sorted({*_LOCAL_NAMES, *extra}, key=len, reverse=True):
         s = re.sub(rf"\b{re.escape(name)}\b", "anon", s)
     return s
 
 
-def anonymize(record: dict):
+def anonymize(record: dict, extra: tuple[str, ...] = ()):
     """Strip identity from every string field, prompts and command lines included:
     the text survives, the identity doesn't.
 
@@ -278,15 +282,18 @@ def anonymize(record: dict):
 
     Not closed, and not claimed to be: personal names written in prose, other people's
     usernames where they appear bare rather than in a path or URL, and any secret that
-    is neither issuer-prefixed nor next to a field name that says what it is. Dict keys
-    are left alone — they are schema names, and rewriting them would break consumers.
+    is neither issuer-prefixed nor next to a field name that says what it is. Pass those
+    as `extra` (the CLI's `--redact`), and run `bdtrace trace audit` on the output to see
+    what is left: a denylist only removes what it was told about, so the audit, not this
+    function, is what makes sharing a decision on evidence. Dict keys are left alone —
+    they are schema names, and rewriting them would break consumers.
     """
     if isinstance(record, str):
-        return _anon_str(record)
+        return _anon_str(record, extra)
     if isinstance(record, dict):
-        return {k: anonymize(v) for k, v in record.items()}
+        return {k: anonymize(v, extra) for k, v in record.items()}
     if isinstance(record, list):
-        return [anonymize(v) for v in record]
+        return [anonymize(v, extra) for v in record]
     return record
 
 
