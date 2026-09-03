@@ -84,6 +84,11 @@ def query(
     scoring >= `min_score` when that is set instead); without it, records
     stream through in file order with score None. `limit` caps the yield count
     in both modes.
+
+    When `<in_path>.index/` exists (see `bidirect.index.build_index`), matches
+    `model`, and covers every survivor at its current text hash, ranking reads
+    the stored vectors and only the query string is embedded; otherwise the
+    on-the-fly path above runs unchanged.
     """
     pattern = re.compile(grep, re.IGNORECASE) if grep else None
     since, until = interval_bounds(interval)
@@ -108,9 +113,18 @@ def query(
     records = list(survivors())
     if not records:
         return
-    print(f"bdtrace query: embedding {len(records)} records with {model}", file=sys.stderr)
-    emb_model, rec_embs = _embed([record_text(r) for r in records], model)
-    q_emb = emb_model.encode([semantic], normalize_embeddings=True, show_progress_bar=False)[0]
+    rec_embs = None
+    if in_path != "-":
+        from bidirect.index import _encode, lookup
+
+        rec_embs = lookup(in_path, model, records)
+    if rec_embs is not None:
+        print(f"bdtrace query: index hit, embedding only the query with {model}", file=sys.stderr)
+        q_emb = _encode([semantic], model)[0]
+    else:
+        print(f"bdtrace query: embedding {len(records)} records with {model}", file=sys.stderr)
+        emb_model, rec_embs = _embed([record_text(r) for r in records], model)
+        q_emb = emb_model.encode([semantic], normalize_embeddings=True, show_progress_bar=False)[0]
     scores = rec_embs @ q_emb
     ranked = sorted(zip(records, scores, strict=True), key=lambda rs: -rs[1])
     if min_score is not None:
