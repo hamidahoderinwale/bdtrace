@@ -406,3 +406,76 @@ def test_swe_agent_real_corpus_event_mix_is_plausible():
     assert mix["other"] < sum(mix.values()) / 2, f"more than half the events are unclassified: {mix}"
     assert mix["prompt"] == len(traces), "every rollout should carry exactly one task prompt"
     assert {"edit", "run"} <= set(mix), f"no edit or run events in a repair corpus: {mix}"
+
+
+# --- swechat ------------------------------------------------------------------------------
+# DATA-DERIVED: column names and turn_type values verified 2026-09-10 against the SALT-NLP/SWE-chat
+# dataset card and a live `sessions`/`conversations` preview; the tool-name vocabularies per
+# harness (Claude Code `Bash`/`Read`/`Edit`, OpenCode `read`/`bash`/`apply_patch`) were counted
+# from the real conversations table. The fixture is synthetic; no live rows are stored here.
+
+def _swechat_fixture(tmp_path: Path) -> Path:
+    pq = pytest.importorskip("pyarrow.parquet")
+    pa = pytest.importorskip("pyarrow")
+    rows = [
+        # Claude Code session: prompt, read, edit, bash test, a tool_result (ignored), a response
+        dict(session_id="s1", repo_id="o/r1", user_id="u1", agent="Claude Code", turn_number=0, turn_type="user_prompt",
+             timestamp="2026-01-05T13:49:43Z", content="fix the flaky test", model=None, tool_name=None, file_path=None,
+             command=None, pattern=None, tool_input_json=None, prompt_intent="debug", prompt_pushback="non_pushback"),
+        dict(session_id="s1", repo_id="o/r1", user_id="u1", agent="Claude Code", turn_number=1, turn_type="tool_use",
+             timestamp="2026-01-05T13:49:50Z", content=None, model=None, tool_name="Read", file_path="src/a.py",
+             command=None, pattern=None, tool_input_json='{"file_path": "src/a.py"}', prompt_intent=None, prompt_pushback=None),
+        dict(session_id="s1", repo_id="o/r1", user_id="u1", agent="Claude Code", turn_number=2, turn_type="tool_use",
+             timestamp="2026-01-05T13:50:00Z", content=None, model=None, tool_name="Edit", file_path="src/a.py",
+             command=None, pattern=None, tool_input_json='{"file_path": "src/a.py", "old_string": "x = 1", "new_string": "x = 2"}',
+             prompt_intent=None, prompt_pushback=None),
+        dict(session_id="s1", repo_id="o/r1", user_id="u1", agent="Claude Code", turn_number=3, turn_type="tool_result",
+             timestamp="2026-01-05T13:50:01Z", content="ok", model=None, tool_name="Edit", file_path=None,
+             command=None, pattern=None, tool_input_json=None, prompt_intent=None, prompt_pushback=None),
+        dict(session_id="s1", repo_id="o/r1", user_id="u1", agent="Claude Code", turn_number=4, turn_type="tool_use",
+             timestamp="2026-01-05T13:50:10Z", content=None, model=None, tool_name="Bash", file_path=None,
+             command="pytest tests/test_a.py", pattern=None, tool_input_json='{"command": "pytest tests/test_a.py"}',
+             prompt_intent=None, prompt_pushback=None),
+        dict(session_id="s1", repo_id="o/r1", user_id="u1", agent="Claude Code", turn_number=5, turn_type="assistant_response",
+             timestamp="2026-01-05T13:50:20Z", content="done", model="claude-opus-4-6", tool_name=None, file_path=None,
+             command=None, pattern=None, tool_input_json=None, prompt_intent=None, prompt_pushback=None),
+        # OpenCode session: lowercase tool names fold to the same verbs
+        dict(session_id="s2", repo_id="o/r2", user_id=None, agent="OpenCode", turn_number=0, turn_type="user_prompt",
+             timestamp="2026-02-01T09:00:00Z", content="add logging", model=None, tool_name=None, file_path=None,
+             command=None, pattern=None, tool_input_json=None, prompt_intent="create new code", prompt_pushback=None),
+        dict(session_id="s2", repo_id="o/r2", user_id=None, agent="OpenCode", turn_number=1, turn_type="tool_use",
+             timestamp="2026-02-01T09:00:05Z", content=None, model=None, tool_name="grep", file_path=None,
+             command=None, pattern="logger", tool_input_json='{"pattern": "logger"}', prompt_intent=None, prompt_pushback=None),
+        dict(session_id="s2", repo_id="o/r2", user_id=None, agent="OpenCode", turn_number=2, turn_type="tool_use",
+             timestamp="2026-02-01T09:00:09Z", content=None, model=None, tool_name="apply_patch", file_path="lib/log.py",
+             command=None, pattern=None, tool_input_json='{"patch": "*** Update File: lib/log.py"}', prompt_intent=None, prompt_pushback=None),
+        dict(session_id="s2", repo_id="o/r2", user_id=None, agent="OpenCode", turn_number=3, turn_type="tool_use",
+             timestamp="2026-02-01T09:00:15Z", content=None, model=None, tool_name="bash", file_path=None,
+             command="git status", pattern=None, tool_input_json='{"command": "git status"}', prompt_intent=None, prompt_pushback=None),
+    ]
+    table = pa.Table.from_pylist(rows)
+    d = tmp_path / "swechat"; d.mkdir()
+    pq.write_table(table, d / "conversations.parquet")
+    return d
+
+
+def test_swechat_folds_tool_names_to_verbs_and_keeps_identity_in_labels(tmp_path):
+    from analysis.ingest.harnesses import parse, swechat_event_type
+    traces = list(parse("swechat", _swechat_fixture(tmp_path)))
+    assert [t["instance_id"] for t in traces] == ["swechat-s1", "swechat-s2"]
+    s1, s2 = traces
+    assert s1["agent"] == "Claude Code" and s2["agent"] == "OpenCode"
+    assert s1["repo"] == "o/r1" and s1["labels"] == {"user_id": "u1", "session_id": "s1", "model": "claude-opus-4-6"}
+    assert [e["type"] for e in s1["events"]] == ["prompt", "read", "edit", "test"], "tool_result and assistant rows are not events"
+    assert s1["events"][2]["details"]["before_content"] == "x = 1" and s1["events"][2]["details"]["after_content"] == "x = 2"
+    assert s1["prompts"][0]["details"]["prompt_intent"] == "debug"
+    assert [e["type"] for e in s2["events"]] == ["prompt", "search", "edit", "run"]
+    assert s2["labels"]["user_id"] is None and s2["labels"]["model"] is None
+    assert swechat_event_type("Read", None) == swechat_event_type("read", None) == swechat_event_type("read_file", None) == "read"
+    assert swechat_event_type("mcp__anything__tool", None) == "other"
+
+
+def test_swechat_limit_stops_at_whole_sessions(tmp_path):
+    from analysis.ingest.harnesses import parse
+    traces = list(parse("swechat", _swechat_fixture(tmp_path), limit=1))
+    assert len(traces) == 1 and traces[0]["instance_id"] == "swechat-s1"
