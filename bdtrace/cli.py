@@ -49,9 +49,10 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
                              apply one transformation, or all of them, to a JSONL of
                              records; `all` includes the LLM-backed ones only with --llm
   config                     model/provider config: which key is set, org-key reachability
-  trace import --source claude|cursor|swe_agent|openhands [--input P] [--out F] [--limit N]
+  trace import --source claude|cursor|swe_agent|openhands|swechat [--input P] [--out F] [--limit N]
                              pull traces out of a local agent store (Claude Code
-                             session dir, Cursor SQLite DB, .traj dir) -> JSONL
+                             session dir, Cursor SQLite DB, .traj dir, a SWE-chat
+                             parquet snapshot) -> JSONL
   trace export --in traces.jsonl --out F
                              re-serialize: .jsonl .jsonl.gz .jsonl.zst .parquet .msgpack
   trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
@@ -187,7 +188,7 @@ def _trace(rest: list[str]) -> None:
     if verb == "import":
         p = argparse.ArgumentParser(prog="bdtrace trace import",
                                     description="Pull traces out of a local agent store, standardized to JSONL")
-        p.add_argument("--source", choices=["claude", "cursor", "swe_agent", "openhands"], default="claude")
+        p.add_argument("--source", choices=["claude", "cursor", "swe_agent", "openhands", "swechat"], default="claude")
         p.add_argument("--input", type=Path, default=None, help="store path (default: the source's standard location)")
         p.add_argument("--out", type=Path, default=Path("traces.jsonl"))
         p.add_argument("--limit", type=int, default=None)

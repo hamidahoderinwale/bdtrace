@@ -531,10 +531,135 @@ def iter_traces_openhands(path: Path, limit: int | None = None) -> Iterator[dict
                 return
 
 
+
+# --- swechat: SALT-NLP/SWE-chat (Hugging Face) ---------------------------------------------
+# Schema verified 2026-09-10 against the dataset card and a live preview: conversations.parquet
+# has one row per transcript entry with turn_type in {user_prompt, tool_use, tool_result,
+# assistant_response, assistant_thinking, ...}, the harness in `agent`, and tool inputs already
+# projected to file_path / command / pattern / tool_input_json. Tool names differ by harness
+# by construction (Claude Code `Read`, OpenCode `read`, Gemini CLI `read_file`), so they are
+# folded to one verb table before anything downstream compares harnesses.
+
+SWECHAT_TOOL_VERB = {
+    # edit
+    "edit": "edit", "multiedit": "edit", "write": "edit", "notebookedit": "edit",
+    "apply_patch": "edit", "replace": "edit", "write_file": "edit",
+    # read
+    "read": "read", "read_file": "read",
+    # search
+    "grep": "search", "glob": "search", "toolsearch": "search", "websearch": "search",
+    "webfetch": "search", "codesearch": "search", "grep_search": "search",
+    "google_web_search": "search", "list_directory": "search", "github_search_code": "search",
+    # run (refined to test/search/read by classify_command)
+    "bash": "run", "run_shell_command": "run",
+}
+SWECHAT_MAX_CHARS = 2000
+
+
+def swechat_event_type(tool_name: str | None, command: str | None) -> str:
+    verb = SWECHAT_TOOL_VERB.get((tool_name or "").strip().lower(), "other")
+    if verb == "run":
+        return classify_command(command or "") if command else "run"
+    return verb
+
+
+def _swechat_tool_event(row: dict) -> dict:
+    etype = swechat_event_type(row.get("tool_name"), row.get("command"))
+    details: dict[str, Any] = {"tool": row.get("tool_name")}
+    if row.get("file_path"):
+        details["file_path"] = row["file_path"]
+    if row.get("command"):
+        details["command"] = str(row["command"])[:SWECHAT_MAX_CHARS]
+    if row.get("pattern"):
+        details["query"] = str(row["pattern"])[:SWECHAT_MAX_CHARS]
+    if etype == "edit" and row.get("tool_input_json"):
+        try:
+            inp = json.loads(row["tool_input_json"])
+        except (TypeError, ValueError):
+            inp = {}
+        before = inp.get("old_string") or ""
+        after = inp.get("new_string") or inp.get("content") or inp.get("patch") or inp.get("new_source") or ""
+        if isinstance(before, str) and before:
+            details["before_content"] = before[:SWECHAT_MAX_CHARS]
+        if isinstance(after, str) and after:
+            details["after_content"] = after[:SWECHAT_MAX_CHARS]
+    ev = _event(etype, details)
+    if row.get("timestamp") is not None:
+        ev["timestamp"] = str(row["timestamp"])
+    return ev
+
+
+def _swechat_prompt_event(row: dict) -> dict:
+    ev = _event("prompt", {"text": str(row.get("content") or "")[:SWECHAT_MAX_CHARS]})
+    if row.get("timestamp") is not None:
+        ev["timestamp"] = str(row["timestamp"])
+    for k in ("prompt_intent", "prompt_pushback"):
+        if row.get(k):
+            ev["details"][k] = row[k]
+    return ev
+
+
+def _swechat_trace(session_id: str, rows: list[dict]) -> dict:
+    events, prompts = [], []
+    models: dict[str, int] = {}
+    for r in rows:
+        if r["turn_type"] == "user_prompt":
+            ev = _swechat_prompt_event(r)
+            events.append(ev)
+            prompts.append(ev)
+        elif r["turn_type"] == "tool_use":
+            events.append(_swechat_tool_event(r))
+        if r.get("model"):
+            models[r["model"]] = models.get(r["model"], 0) + 1
+    first = rows[0]
+    trace = make_trace(f"swechat-{session_id}", first.get("repo_id"), None, events, prompts)
+    trace["agent"] = first.get("agent") or "unknown"
+    # identity travels in `labels` only, so a release step can drop one key
+    trace["labels"] = {"user_id": first.get("user_id"), "session_id": session_id,
+                       "model": max(models, key=models.get) if models else None}
+    return trace
+
+
+def iter_traces_swechat(path: Path, limit: int | None = None) -> Iterator[dict]:
+    """`path` is a directory holding conversations.parquet (a SALT-NLP/SWE-chat snapshot).
+
+    Reads only the structural columns and only prompt and tool-call rows, sorted by session
+    then turn, so the 2.7M-row table costs a few hundred MB rather than its 1.3 GB.
+    """
+    try:
+        import pyarrow.compute as pc
+        import pyarrow.parquet as pq
+    except ImportError as e:  # same extra the exporter uses
+        raise ImportError('swechat import needs the "parquet" extra; install it with `uv sync --extra parquet`') from e
+    src = path / "conversations.parquet" if path.is_dir() else path
+    cols = ["session_id", "repo_id", "user_id", "agent", "turn_number", "turn_type", "timestamp",
+            "content", "model", "tool_name", "file_path", "command", "pattern", "tool_input_json",
+            "prompt_intent", "prompt_pushback"]
+    table = pq.read_table(src, columns=cols, filters=[("turn_type", "in", ["user_prompt", "tool_use", "assistant_response"])])
+    table = table.sort_by([("session_id", "ascending"), ("turn_number", "ascending")])
+    n = 0
+    current: str | None = None
+    rows: list[dict] = []
+    for batch in table.to_batches(max_chunksize=65536):
+        for r in batch.to_pylist():
+            if r["session_id"] != current:
+                if rows:
+                    yield _swechat_trace(current, rows)
+                    n += 1
+                    if limit is not None and n >= limit:
+                        return
+                current, rows = r["session_id"], []
+            rows.append(r)
+    if rows and (limit is None or n < limit):
+        yield _swechat_trace(current, rows)
+
+
+
 SOURCES = {
     "cursor": iter_traces_cursor,
     "swe_agent": iter_traces_swe_agent,
     "openhands": iter_traces_openhands,
+    "swechat": iter_traces_swechat,
 }
 
 
