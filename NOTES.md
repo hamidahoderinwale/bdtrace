@@ -18,7 +18,15 @@ hash, bucket, coarsen, drop) that generate the candidate lattice, `trace funnel 
 2. **Leakage and utility are the same instrument, a classifier over the representation, read
    against a chance floor.** Benefit: one code path, comparable numbers. Price: a weak
    classifier understates leakage; report it as a lower bound and say so in the output.
-3. **`anonymize` stays as it is.** Benefit: the identity denylist and `audit` remain the last
+3. **Identity on imported records lives under one `labels` key** (`user_id`, `session_id`,
+   `model`), never scattered through details. Benefit: a release step drops one key and the
+   record is identity-free at the field level; the funnel reads the same key as its sensitive
+   variable. Price: `labels` is outside the record spec's field list until `spec` learns it.
+4. **The swechat adapter reads parquet with pyarrow, not polars.** Benefit: it rides the repo's
+   existing `parquet` extra; column projection plus a pushed-down turn_type filter keeps the
+   2.7M-row table to its ~415K structural rows. Price: polars would be faster still; it stays in
+   the paper repo's analysis where it already is.
+5. **`anonymize` stays as it is.** Benefit: the identity denylist and `audit` remain the last
    line before sharing. Price: two mechanisms to explain; `release` calls `audit`, so a user
    sees one.
 
