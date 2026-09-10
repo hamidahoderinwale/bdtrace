@@ -1,5 +1,27 @@
 # Notes
 
+## 2026-09-10 — intent-release branch (paper repo: trace-funnel-paper)
+
+**Intent.** Make the privacy mechanism a selection criterion instead of a fixed anonymizer. A
+declared research intent (utility columns) and declared sensitive columns pick the operating
+point on a measured utility-versus-leakage frontier over candidate representations. Lands as
+`trace import --source swechat|specstory`, type-driven field operators in `transform` (keep,
+hash, bucket, coarsen, drop) that generate the candidate lattice, `trace funnel --utility ...
+--sensitive ...` that scores every lattice point against chance and prints the frontier, and
+`trace release --at <point> --min-users k` that writes the artifact and runs `audit` on it.
+
+**Design decisions.**
+
+1. **Operators are per field type, never per rung.** Benefit: the candidate set is generated
+   from the record spec and grows with it; no hand-ordered ladder to defend. Price: the lattice
+   is large and needs a greedy search (single-field ablations, then compose).
+2. **Leakage and utility are the same instrument, a classifier over the representation, read
+   against a chance floor.** Benefit: one code path, comparable numbers. Price: a weak
+   classifier understates leakage; report it as a lower bound and say so in the output.
+3. **`anonymize` stays as it is.** Benefit: the identity denylist and `audit` remain the last
+   line before sharing. Price: two mechanisms to explain; `release` calls `audit`, so a user
+   sees one.
+
 ## 2026-09-02 — trace metadata and summary stats
 
 1. **One `summarize()` feeds both surfaces** (`trace spec --in` renders it; export sidecars embed
