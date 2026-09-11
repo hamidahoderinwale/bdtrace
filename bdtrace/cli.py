@@ -43,11 +43,15 @@ USAGE = """\
 usage: bdtrace <object> <action> [args...]   (args go to the script's own argparse; -h works)
 
   transform list [--examples]
-                             enumerate the representation transformations; --examples
-                             shows real captured output for each
+                             enumerate the representation transformations and the privacy
+                             operators; --examples shows real captured output for each
   transform <name>|all --in records.jsonl [--out F] [--model M] [--limit N] [--llm]
                              apply one transformation, or all of them, to a JSONL of
                              records; `all` includes the LLM-backed ones only with --llm
+  transform <operator> --in records.jsonl [--out F] [--param k=v ...]
+                             apply one privacy operator (hash_paths, paths_to_dir, ...)
+                             record by record -> <in>.<operator>.jsonl; chain calls to
+                             compose; a salt comes from --param salt= or BDTRACE_SALT
   config                     model/provider config: which key is set, org-key reachability
   trace import --source claude|cursor|swe_agent|openhands|swechat [--input P] [--out F] [--limit N]
                              pull traces out of a local agent store (Claude Code
@@ -417,18 +421,32 @@ def _transform(rest: list[str]) -> None:
     parser.add_argument("--llm", action="store_true", help="with `all`: include the LLM-backed transforms")
     parser.add_argument("--before-field", default="before", help="patch transforms: before-source field")
     parser.add_argument("--after-field", default="after", help="patch transforms: after-source field")
+    parser.add_argument("--param", "-p", action="append", default=[], metavar="K=V",
+                        help="privacy operators: one parameter, repeatable (-p scope=user); "
+                             "a salt left out is read from BDTRACE_SALT")
     a = parser.parse_args(rest)
     if a.name == "all":
-        names = [n for n, t in transforms.TRANSFORMS.items() if a.llm or not t.llm]
+        # the privacy operators are never part of `all`: each destroys information, and some need a salt
+        names = [n for n, t in transforms.TRANSFORMS.items() if not t.family and (a.llm or not t.llm)]
     elif a.name in transforms.TRANSFORMS:
         names = [a.name]
     else:
         sys.exit(f"bdtrace: unknown transformation `{a.name}`; `bdtrace transform list` enumerates them")
+    if any("=" not in kv for kv in a.param):
+        sys.exit("bdtrace: --param takes K=V")
+    given = dict(kv.partition("=")[::2] for kv in a.param)
+    if transforms.TRANSFORMS[names[0]].family:
+        params = transforms.resolve_params(a.name, given)
+        out = a.out or a.in_path.with_suffix(f".{a.name}.jsonl")
+    else:
+        if given:
+            sys.exit("bdtrace: --param is for the privacy operators; representation transforms take none")
+        params = None
+        out = a.out or a.in_path.with_suffix(".reprs.jsonl")
     if any(transforms.TRANSFORMS[n].llm for n in names):
         model = transforms.configure_llm(a.model)
         print(f"inferred transforms via {model}", file=sys.stderr)
-    out = a.out or a.in_path.with_suffix(".reprs.jsonl")
-    transforms.apply(names, a.in_path, out, a.before_field, a.after_field, a.limit)
+    transforms.apply(names, a.in_path, out, a.before_field, a.after_field, a.limit, params)
 
 
 def main() -> None:
