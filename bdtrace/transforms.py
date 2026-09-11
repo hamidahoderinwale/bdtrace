@@ -5,9 +5,17 @@ can enumerate them, apply one, or apply all to a JSONL of records. Two record
 shapes exist: "trace" transforms take a whole trace dict (an `events` list),
 "patch" transforms take before/after source fields. Imports are lazy so
 listing costs nothing and LLM deps load only when an inferred transform runs.
+
+The privacy operators in bdtrace/privacy.py live in the same registry with a
+third shape, "rewrite": the record goes in and the same record comes out with
+one field type changed, nothing is added under `reprs`. They carry a `family`
+(the privacy family they belong to), take their parameters explicitly
+(`--param k=v`, typed from the operator's own signature), and are excluded from
+`all` because each one destroys information and several need a salt.
 """
 
 import importlib
+import inspect
 import json
 import os
 import sys
@@ -17,11 +25,13 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class Transform:
-    fn_name: str          # attribute in the representations package
-    kind: str             # "trace" (record is a trace dict) | "patch" (before/after fields)
+    fn_name: str          # attribute in `module`
+    kind: str             # "trace" (record is a trace dict) | "patch" (before/after fields) | "rewrite" (record -> record)
     llm: bool             # needs a configured LM (DSPy inferred representation)
     desc: str
     example: str          # real captured output, truncated; "" when none has been run
+    module: str = "representations"   # where fn_name is resolved
+    family: str = ""      # privacy family for rewrite operators; "" for representations
 
 
 TRANSFORMS = {
@@ -40,6 +50,31 @@ TRANSFORMS = {
     "mechanistic": Transform("mechanistic_repr", "patch", True, "mechanism-of-change description (inferred)", ""),
     "functional": Transform("functional_repr", "patch", True, "role/impact description (inferred)", ""),
 }
+
+PRIVACY_FAMILIES = ("pseudonymization", "generalization", "suppression", "perturbation", "order")
+
+
+def _op(fn_name: str, family: str, desc: str, kind: str = "rewrite") -> Transform:
+    return Transform(fn_name, kind, False, desc, "", module="bdtrace.privacy", family=family)
+
+
+# one operator per field type; the help string says what leaves the record
+TRANSFORMS.update({
+    "hash_paths": _op("hash_paths", "pseudonymization",
+                      "file_path -> salted sha256 hex; the path text leaves, its identity as a token stays"),
+    "hash_commands": _op("hash_commands", "pseudonymization",
+                         "command -> salted sha256 hex; the command text leaves, its identity as a token stays"),
+    "paths_to_dir": _op("paths_to_dir", "generalization", "file_path -> its directory; the basename leaves"),
+    "paths_to_ext": _op("paths_to_ext", "generalization",
+                        "file_path -> lowercase extension or <noext>; directory and name leave"),
+    "paths_to_basename": _op("paths_to_basename", "generalization", "file_path -> its basename; the directory leaves"),
+    "commands_to_head": _op("commands_to_head", "generalization",
+                            "command -> first token, lowercased; every argument leaves"),
+    "commands_to_class": _op("commands_to_class", "generalization",
+                             "command -> test|search|read|run|other (the ingest classifier); the command text leaves"),
+    "text_to_length_bucket": _op("text_to_length_bucket", "generalization",
+                                 "prompt text -> short|medium|long; the prompt text leaves"),
+})
 
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 
@@ -76,13 +111,59 @@ def configure_llm(model: str | None) -> str:
 
 
 def _fn(t: Transform):
-    return getattr(importlib.import_module("representations"), t.fn_name)
+    return getattr(importlib.import_module(t.module), t.fn_name)
+
+
+def operator_params(t: Transform) -> list[inspect.Parameter]:
+    """A privacy operator's explicit parameters: everything after the record, read from
+    its signature so the CLI and the listing cannot drift from the function."""
+    return list(inspect.signature(_fn(t)).parameters.values())[1:]
+
+
+def signature_text(t: Transform) -> str:
+    return ", ".join(p.name if p.default is inspect.Parameter.empty else f"{p.name}={p.default}"
+                     for p in operator_params(t))
+
+
+def resolve_params(name: str, given: dict[str, str]) -> dict:
+    """Typed parameters for one privacy operator from `--param k=v` strings: coerced by the
+    signature's annotation, unknown names refused, missing ones named. A salt not given is
+    read from BDTRACE_SALT (env, then .env) so it need not sit in shell history; only the
+    source is printed, never the value, and no operator writes it into a record."""
+    t = TRANSFORMS[name]
+    params = {p.name: p for p in operator_params(t)}
+    unknown = sorted(set(given) - set(params))
+    if unknown:
+        sys.exit(f"bdtrace: `{name}` has no parameter {', '.join(unknown)}; it takes: {signature_text(t) or 'none'}")
+    out: dict = {}
+    for k, v in given.items():
+        ann = params[k].annotation
+        try:
+            out[k] = ann(v) if ann in (int, float) else v
+        except ValueError:
+            sys.exit(f"bdtrace: `{name}` parameter {k} must be {ann.__name__}, got {v!r}")
+    if "salt" in params and "salt" not in out:
+        from bdtrace.creds import resolve
+
+        found = resolve(("BDTRACE_SALT",))
+        if not found:
+            sys.exit(f"bdtrace: `{name}` needs a salt: --param salt=... or BDTRACE_SALT in env/.env\n"
+                     "(the salt is a key, not part of the record; the env var keeps it out of shell history)")
+        out["salt"] = found[0]
+        print(f"salt: {found[1]}", file=sys.stderr)
+    missing = [p for p in params if p not in out and params[p].default is inspect.Parameter.empty]
+    if missing:
+        sys.exit(f"bdtrace: `{name}` needs --param {' '.join(f'{m}=...' for m in missing)}")
+    return out
 
 
 def apply(names: list[str], in_path: Path, out_path: Path,
-          before_field: str, after_field: str, limit: int | None) -> None:
+          before_field: str, after_field: str, limit: int | None, params: dict | None = None) -> None:
+    """Representation transforms add `reprs[name]` to each record; rewrite operators
+    replace the record, in the order given, with `params` passed to each of them."""
     picked = {n: TRANSFORMS[n] for n in names}
     fns = {n: _fn(t) for n, t in picked.items()}
+    params = params or {}
     n_in = n_err = 0
     with open(in_path) as fin, open(out_path, "w") as fout:
         for line in fin:
@@ -90,8 +171,15 @@ def apply(names: list[str], in_path: Path, out_path: Path,
                 break
             record = json.loads(line)
             n_in += 1
-            reprs = record.setdefault("reprs", {})
             for name, t in picked.items():
+                if t.kind == "rewrite":
+                    # not caught: a privacy rewrite that fails must not emit the record unprotected
+                    try:
+                        record = fns[name](record, **params)
+                    except ValueError as e:  # a bad parameter, e.g. an unknown scope
+                        sys.exit(f"bdtrace: {name}: {e}")
+                    continue
+                reprs = record.setdefault("reprs", {})
                 try:
                     if t.kind == "trace":
                         reprs[name] = fns[name](record)
@@ -110,7 +198,7 @@ def list_table(examples: bool = False) -> str:
     def rows(llm: bool) -> list[str]:
         out = []
         for n, t in TRANSFORMS.items():
-            if t.llm is not llm:
+            if t.llm is not llm or t.family:
                 continue
             out.append(f"  {n:<{width}}  {t.kind:<5}  {t.desc}")
             if examples:
@@ -122,7 +210,19 @@ def list_table(examples: bool = False) -> str:
 
     lines = ["computed (no API key needed):", *rows(llm=False),
              "inferred (DSPy; needs OPENROUTER_API_KEY or OPENAI_API_KEY):", *rows(llm=True)]
-    lines.append("record shapes: trace = a trace dict with an `events` list; patch = before/after source fields")
+    ops = {n: t for n, t in TRANSFORMS.items() if t.family}
+    if ops:
+        lines.append("privacy operators (record -> record, one field type each; chain calls to compose; not in `all`;")
+        lines.append("  parameters via --param k=v, the salt also via BDTRACE_SALT):")
+        heads = {n: f"{n}({signature_text(t)})" for n, t in ops.items()}
+        w = max(map(len, heads.values()))
+        for family in PRIVACY_FAMILIES:
+            members = [n for n, t in ops.items() if t.family == family]
+            if members:
+                lines.append(f"  {family}:")
+                lines += [f"    {heads[n]:<{w}}  {ops[n].kind:<7}  {ops[n].desc}" for n in members]
+    lines.append("record shapes: trace = a trace dict with an `events` list; patch = before/after source fields;")
+    lines.append("  rewrite = a trace dict in, the same record out with one field type changed")
     lines.append("measured basis (inter_eval diversity, Lite + SWE-Smith): edits and module graph carry the")
     lines.append("  independent structural signal; raw-edits vs edit set-diff are rho=1.0 redundant.")
     lines.append("  The inferred representations have no redundancy verdict yet.")
