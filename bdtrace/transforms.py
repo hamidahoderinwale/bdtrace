@@ -6,9 +6,11 @@ shapes exist: "trace" transforms take a whole trace dict (an `events` list),
 "patch" transforms take before/after source fields. Imports are lazy so
 listing costs nothing and LLM deps load only when an inferred transform runs.
 
-The privacy operators in bdtrace/privacy.py live in the same registry with a
-third shape, "rewrite": the record goes in and the same record comes out with
-one field type changed, nothing is added under `reprs`. They carry a `family`
+The privacy operators in bdtrace/privacy.py live in the same registry with two
+more shapes. "rewrite": the record goes in and the same record comes out with
+one field type changed, nothing is added under `reprs`. "corpus": the same,
+after one pass over the whole input builds the operator (min_users needs the
+per-value developer counts before it can rewrite anything). They carry a `family`
 (the privacy family they belong to), take their parameters explicitly
 (`--param k=v`, typed from the operator's own signature), and are excluded from
 `all` because each one destroys information and several need a salt.
@@ -26,7 +28,8 @@ from pathlib import Path
 @dataclass(frozen=True)
 class Transform:
     fn_name: str          # attribute in `module`
-    kind: str             # "trace" (record is a trace dict) | "patch" (before/after fields) | "rewrite" (record -> record)
+    kind: str             # "trace" (a trace dict) | "patch" (before/after fields) | "rewrite" (record -> record)
+                          # | "corpus" (built from a pass over every record, then record -> record)
     llm: bool             # needs a configured LM (DSPy inferred representation)
     desc: str
     example: str          # real captured output, truncated; "" when none has been run
@@ -74,6 +77,19 @@ TRANSFORMS.update({
                              "command -> test|search|read|run|other (the ingest classifier); the command text leaves"),
     "text_to_length_bucket": _op("text_to_length_bucket", "generalization",
                                  "prompt text -> short|medium|long; the prompt text leaves"),
+    "drop_field": _op("drop_field", "suppression",
+                      "one named details key leaves every event (and the prompts copies)"),
+    "min_users": _op("min_users", "suppression",
+                     "file_path and command values seen under < k developers leave (two passes over the file)",
+                     kind="corpus"),
+    "truncate_events": _op("truncate_events", "suppression",
+                           "events after the first n leave; prompts are cut to match"),
+    "jitter_timestamps": _op("jitter_timestamps", "perturbation",
+                             "timestamps shift by one seeded offset per record; absolute time leaves, intervals stay"),
+    "shuffle_events": _op("shuffle_events", "order",
+                          "event order leaves (seeded permutation); the multiset of events stays"),
+    "verbs_only": _op("verbs_only", "order",
+                      "every details block leaves (prompts too); type and timestamp stay"),
 })
 
 DEFAULT_MODEL = "openai/gpt-4o-mini"
@@ -157,13 +173,31 @@ def resolve_params(name: str, given: dict[str, str]) -> dict:
     return out
 
 
+def _records(in_path: Path, limit: int | None):
+    """The records `apply` will see, line for line with the same limit, for a corpus operator's first pass."""
+    with open(in_path) as f:
+        for i, line in enumerate(f):
+            if limit is not None and i >= limit:
+                break
+            yield json.loads(line)
+
+
 def apply(names: list[str], in_path: Path, out_path: Path,
           before_field: str, after_field: str, limit: int | None, params: dict | None = None) -> None:
     """Representation transforms add `reprs[name]` to each record; rewrite operators
-    replace the record, in the order given, with `params` passed to each of them."""
+    replace the record, in the order given, with `params` passed to each of them; a
+    corpus operator is first built from a pass over the input, then applied like a rewrite."""
     picked = {n: TRANSFORMS[n] for n in names}
-    fns = {n: _fn(t) for n, t in picked.items()}
     params = params or {}
+    fns = {}
+    for n, t in picked.items():
+        fn = _fn(t)
+        if t.kind == "corpus":
+            try:
+                fn = fn(_records(in_path, limit), **params)
+            except ValueError as e:
+                sys.exit(f"bdtrace: {n}: {e}")
+        fns[n] = fn
     n_in = n_err = 0
     with open(in_path) as fin, open(out_path, "w") as fout:
         for line in fin:
@@ -172,11 +206,11 @@ def apply(names: list[str], in_path: Path, out_path: Path,
             record = json.loads(line)
             n_in += 1
             for name, t in picked.items():
-                if t.kind == "rewrite":
+                if t.family:
                     # not caught: a privacy rewrite that fails must not emit the record unprotected
                     try:
-                        record = fns[name](record, **params)
-                    except ValueError as e:  # a bad parameter, e.g. an unknown scope
+                        record = fns[name](record, **params) if t.kind == "rewrite" else fns[name](record)
+                    except ValueError as e:  # a bad parameter, e.g. an unknown scope or a negative n
                         sys.exit(f"bdtrace: {name}: {e}")
                     continue
                 reprs = record.setdefault("reprs", {})
@@ -222,7 +256,8 @@ def list_table(examples: bool = False) -> str:
                 lines.append(f"  {family}:")
                 lines += [f"    {heads[n]:<{w}}  {ops[n].kind:<7}  {ops[n].desc}" for n in members]
     lines.append("record shapes: trace = a trace dict with an `events` list; patch = before/after source fields;")
-    lines.append("  rewrite = a trace dict in, the same record out with one field type changed")
+    lines.append("  rewrite = a trace dict in, the same record out with one field type changed;")
+    lines.append("  corpus = the same, after one pass over the whole input builds the operator")
     lines.append("measured basis (inter_eval diversity, Lite + SWE-Smith): edits and module graph carry the")
     lines.append("  independent structural signal; raw-edits vs edit set-diff are rho=1.0 redundant.")
     lines.append("  The inferred representations have no redundancy verdict yet.")

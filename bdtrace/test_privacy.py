@@ -5,14 +5,18 @@ another (u2, s3), sharing one path and one command across developers and holding
 path and one command that a single developer touches. Every operator is checked four
 ways: it changes the field it names (applied), a record without that field comes back
 equal (not applicable), two runs agree (determinism), and the input is never mutated.
-The registry checks are the other half: each operator is listed under its family with
-its parameters, runs through `bdtrace transform`, and stays out of `all`.
+For `min_users` the applied check is the one that matters: a value seen under one
+developer leaves even when it recurs across that developer's sessions, and a value
+seen under two stays. The registry checks are the other half: each operator is listed
+under its family with its parameters, runs through `bdtrace transform`, and stays out
+of `all`.
 
 No path or name here is real; the salts are test strings.
 """
 
 import copy
 import json
+from datetime import datetime
 
 import pytest
 
@@ -77,11 +81,24 @@ OPERATORS = {
     "commands_to_head": {},
     "commands_to_class": {},
     "text_to_length_bucket": {},
+    "drop_field": {"field": "file_path"},
+    "min_users": {"k": 2},
+    "truncate_events": {"n": 2},
+    "jitter_timestamps": {"hours": 2, "seed": 7},
+    "shuffle_events": {"seed": 7},
+    "verbs_only": {},
 }
 
 
 def run(name: str, record: dict, **overrides):
-    return getattr(privacy, name)(record, **{**OPERATORS[name], **overrides})
+    params = {**OPERATORS[name], **overrides}
+    if name == "min_users":  # corpus-level: built from the three-record fixture, then applied to one
+        return privacy.min_users(RECORDS, **params)(record)
+    return getattr(privacy, name)(record, **params)
+
+
+def stamps(record: dict) -> list[datetime]:
+    return [datetime.fromisoformat(e["timestamp"]) for e in record["events"] if "timestamp" in e]
 
 
 def paths(record: dict) -> list:
@@ -119,7 +136,8 @@ def test_deterministic_and_non_mutating(name: str):
 @pytest.mark.parametrize("name", OPERATORS)
 def test_listed_under_its_family_with_parameters(name: str):
     t = transforms.TRANSFORMS[name]
-    assert t.kind == "rewrite" and t.module == "bdtrace.privacy" and t.family in transforms.PRIVACY_FAMILIES
+    assert t.kind == ("corpus" if name == "min_users" else "rewrite")
+    assert t.module == "bdtrace.privacy" and t.family in transforms.PRIVACY_FAMILIES
     table = transforms.list_table()
     assert f"{name}({transforms.signature_text(t)})" in table and f"  {t.family}:" in table
     assert "leave" in t.desc  # the help says what leaves the record
@@ -221,6 +239,96 @@ def test_text_to_length_bucket_boundaries_are_explicit():
     assert [at(5, short=3, long=6), at(6, short=3, long=6)] == ["medium", "long"]
 
 
+# ---- suppression --------------------------------------------------------------------
+
+def test_drop_field_removes_the_key_and_keeps_the_event():
+    out = run("drop_field", R3)
+    assert len(out["events"]) == len(R3["events"]) and paths(out) == []
+    assert [e["details"].get("tool") for e in out["events"]] == [e["details"].get("tool") for e in R3["events"]]
+    assert run("drop_field", R3, field="nope") == R3
+    text_gone = run("drop_field", R1, field="text")
+    assert "text" not in text_gone["events"][0]["details"] and text_gone["prompts"] == [{"timestamp": "2026-03-01T10:00:00Z"}]
+    assert text_gone["events"][0]["details"]["content"] == SHORT_TEXT  # one key per call, by name
+
+
+def test_min_users_keeps_values_two_developers_share_and_drops_the_rest():
+    out = [run("min_users", r) for r in RECORDS]
+    assert paths(out[0]) == [SHARED] and paths(out[2]) == [SHARED]     # seen under u1 and u2: kept
+    assert paths(out[1]) == []                                          # PRIVATE: u1 only, in two sessions: gone
+    assert commands(out[0]) == [SHARED_CMD] and commands(out[2]) == [SHARED_CMD]
+    assert commands(out[1]) == []                                       # "git status": u1 only
+    assert PRIVATE not in json.dumps(out) and PRIVATE_CMD not in json.dumps(out) and WINDOWS not in json.dumps(out)
+    assert [len(o["events"]) for o in out] == [len(r["events"]) for r in RECORDS]  # events stay, keys leave
+    assert all("tool" in e["details"] for o in out for e in o["events"][1:])
+
+
+def test_min_users_threshold_edges():
+    assert [run("min_users", r, k=1) for r in RECORDS] == RECORDS       # every value has >= 1 developer
+    assert all(paths(o) == [] and commands(o) == [] for o in (run("min_users", r, k=3) for r in RECORDS))
+    # no user_id anywhere: everyone is one anonymous developer, so k=2 removes everything
+    anon = [{"instance_id": f"a{i}", "events": [_ev("read", {"file_path": SHARED}, "t")]} for i in range(3)]
+    assert paths(privacy.min_users(anon, k=2)(anon[0])) == []
+    assert paths(privacy.min_users(anon, k=1)(anon[0])) == [SHARED]
+
+
+def test_truncate_events_cuts_prompts_to_match():
+    out = run("truncate_events", R1)
+    assert out["events"] == R1["events"][:2] and out["prompts"] == R1["prompts"]
+    none_left = run("truncate_events", R3, n=0)
+    assert none_left["events"] == [] and none_left["prompts"] == []
+    assert run("truncate_events", R1, n=4) == R1 and run("truncate_events", R1, n=99) == R1
+    with pytest.raises(ValueError):
+        run("truncate_events", R1, n=-1)
+
+
+# ---- perturbation -------------------------------------------------------------------
+
+def test_jitter_timestamps_moves_the_clock_and_keeps_the_intervals():
+    out = run("jitter_timestamps", R1)
+    before, after = stamps(R1), stamps(out)
+    offsets = {(a - b) for a, b in zip(after, before, strict=True)}
+    assert len(offsets) == 1                                          # one offset per record
+    (offset,) = offsets
+    assert offset.total_seconds() != 0 and abs(offset.total_seconds()) <= 2 * 3600
+    assert offset.total_seconds() == int(offset.total_seconds())      # whole seconds
+    assert datetime.fromisoformat(out["prompts"][0]["timestamp"]) - datetime.fromisoformat(R1["prompts"][0]["timestamp"]) == offset
+    assert [e["details"] for e in out["events"]] == [e["details"] for e in R1["events"]]
+
+
+def test_jitter_timestamps_keeps_the_timestamp_shape_and_is_seeded():
+    out = run("jitter_timestamps", R1)
+    plain, fractional = out["events"][0]["timestamp"], out["events"][3]["timestamp"]
+    assert plain.endswith("Z") and "." not in plain and len(plain) == len("2026-03-01T10:00:00Z")
+    assert fractional.endswith("Z") and len(fractional.split(".")[1]) == len("250Z")
+    assert run("jitter_timestamps", R1, seed=8) != out                 # a different seed, a different offset
+    assert run("jitter_timestamps", R1, hours=0) == R1                 # +-0 hours: nothing moves
+    odd = {"instance_id": "x", "events": [_ev("run", {}, "yesterday"), _ev("run", {}, "2026-03-01")]}
+    assert run("jitter_timestamps", odd) == odd                        # unparseable or date-only: left alone
+    with pytest.raises(ValueError):
+        run("jitter_timestamps", R1, hours=-1)
+
+
+# ---- order --------------------------------------------------------------------------
+
+def test_shuffle_events_permutes_without_loss():
+    outs = [run("shuffle_events", r) for r in RECORDS]
+    for out, rec in zip(outs, RECORDS, strict=True):
+        assert sorted(map(json.dumps, out["events"])) == sorted(map(json.dumps, rec["events"]))
+        assert sorted(map(json.dumps, out["prompts"])) == sorted(map(json.dumps, rec["prompts"]))
+    assert any(o["events"] != r["events"] for o, r in zip(outs, RECORDS, strict=True))
+    assert [run("shuffle_events", r, seed=3) for r in RECORDS] != outs
+    assert run("shuffle_events", {"instance_id": "one", "events": [R1["events"][0]]}) == \
+        {"instance_id": "one", "events": [R1["events"][0]]}
+
+
+def test_verbs_only_keeps_type_and_timestamp_only():
+    out = run("verbs_only", R1)
+    assert out["events"] == [{"type": e["type"], "timestamp": e["timestamp"]} for e in R1["events"]]
+    assert out["prompts"] == [] and out["labels"] == R1["labels"] and out["instance_id"] == R1["instance_id"]
+    for leak in (SHORT_TEXT, SHARED, SHARED_CMD, "Read", "Bash"):
+        assert leak not in json.dumps(out)
+
+
 # ---- through the registry and the CLI ------------------------------------------------
 
 @pytest.fixture
@@ -273,3 +381,29 @@ def test_cli_list_shows_families(monkeypatch, capsys):
     assert code == 0 and "privacy operators" in out
     assert "hash_paths(salt, scope=release)" in out and "text_to_length_bucket(short=80, long=400)" in out
     assert out.index("pseudonymization:") < out.index("generalization:")
+
+
+def test_cli_min_users_runs_two_passes_over_the_same_records(records_file, monkeypatch, capsys):
+    code, _, err = run_cli(["tf", "min_users", "--in", str(records_file), "-p", "k=2"], monkeypatch, capsys)
+    out_path = records_file.with_suffix(".min_users.jsonl")
+    assert code == 0 and "3 records" in err
+    rows = [json.loads(l) for l in out_path.read_text().splitlines()]
+    assert rows == [privacy.min_users(RECORDS, k=2)(r) for r in RECORDS]
+    # with --limit 2 the scan sees only u1's two sessions, so the path shared with u2 is now rare too
+    code, _, _ = run_cli(["tf", "min_users", "--in", str(records_file), "--limit", "2", "--out",
+                          str(records_file.with_suffix(".lim.jsonl"))], monkeypatch, capsys)
+    limited = [json.loads(l) for l in records_file.with_suffix(".lim.jsonl").read_text().splitlines()]
+    assert code == 0 and len(limited) == 2 and all(paths(r) == [] and commands(r) == [] for r in limited)
+
+
+def test_cli_reports_a_bad_operator_parameter_and_writes_nothing_unprotected(records_file, monkeypatch, capsys):
+    code, _, err = run_cli(["tf", "truncate_events", "--in", str(records_file), "-p", "n=-1"], monkeypatch, capsys)
+    assert code != 0 and "truncate_events: n must be >= 0" in err
+    assert records_file.with_suffix(".truncate_events.jsonl").read_text() == ""
+
+
+def test_cli_list_shows_every_family_in_order(monkeypatch, capsys):
+    code, out, _ = run_cli(["tf", "list"], monkeypatch, capsys)
+    heads = [out.index(f"  {f}:") for f in transforms.PRIVACY_FAMILIES]
+    assert code == 0 and heads == sorted(heads)
+    assert "min_users(k=2)" in out and "corpus" in out and "jitter_timestamps(hours, seed=0)" in out
