@@ -874,7 +874,8 @@ def test_specstory_three_layouts(tmp_path):
     cc = by[("Claude Code", "claude-opus-4-8")]
     assert cc["instance_id"] == "specstory-5c7d5c23-0691-4467-b98e-0fb865b4a639"
     assert cc["labels"] == {"session_id": "5c7d5c23-0691-4467-b98e-0fb865b4a639", "model": "claude-opus-4-8",
-                            "specstory_version": "2.1.0", "repo": "acme/widgets"}
+                            "specstory_version": "2.1.0", "repo": "acme/widgets", "format": "v2",
+                            "tool_markers": ["Bash", "Edit", "Read", "ToolSearch", "Write"]}
     assert [e["type"] for e in cc["events"]] == ["prompt", "test", "read", "search", "edit", "edit", "other", "prompt"]
     ev = cc["events"]
     assert ev[0]["details"]["text"] == "fix the flaky test in app.py" and ev[0]["timestamp"] == "2026-07-13 13:40:49Z"
@@ -890,7 +891,8 @@ def test_specstory_three_layouts(tmp_path):
 
     cur = by[("Cursor", "claude-4.5-opus-high-thinking")]
     assert cur["instance_id"] == "specstory-227b9a24-168c-4d87-810b-9ed83e62101e"
-    assert cur["labels"]["specstory_version"] == "2.1.0"
+    assert cur["labels"]["specstory_version"] == "2.1.0" and cur["labels"]["format"] == "v2"
+    assert cur["labels"]["tool_markers"] == ["grep", "read_file", "run_terminal_cmd", "search_replace", "todo_write"]
     assert [e["type"] for e in cur["events"]] == ["prompt", "read", "search", "other", "edit", "test", "prompt"], \
         "think blocks (even ones quoting a `Tool use:` line) and agent prose are not events"
     ev = cur["events"]
@@ -904,6 +906,7 @@ def test_specstory_three_layouts(tmp_path):
 
     old = by[("Cursor", "claude-4.5-sonnet-thinking")]
     assert old["labels"]["specstory_version"] is None and old["labels"]["session_id"] == "198f391d-8ae2-4788-975c-8c8e23345506"
+    assert old["labels"]["format"] == "v2", "a header comment marks the file v2 even without <tool-use> tags"
     assert [e["type"] for e in old["events"]] == ["prompt", "read", "search", "search", "edit", "edit", "read"], \
         "bare `Tool use:` lines map by tool name; an empty user turn is not a prompt"
     ev = old["events"]
@@ -915,7 +918,8 @@ def test_specstory_three_layouts(tmp_path):
     assert ev[6]["details"]["tool"] == "read_lints"
 
     earliest = by[("unknown", None)]
-    assert earliest["labels"] == {"session_id": None, "model": None, "specstory_version": None, "repo": "acme/widgets"}
+    assert earliest["labels"] == {"session_id": None, "model": None, "specstory_version": None, "repo": "acme/widgets",
+                                  "format": "v2", "tool_markers": []}
     expected = hashlib.sha1(b"acme/widgets/2025-04-24_13-10-01-untitled.md").hexdigest()
     assert earliest["instance_id"] == f"specstory-{expected}"
     assert [e["type"] for e in earliest["events"]] == ["prompt"] and "timestamp" not in earliest["events"][0]
@@ -924,7 +928,7 @@ def test_specstory_three_layouts(tmp_path):
 def test_specstory_malformed_files_are_skipped_with_a_warning(tmp_path):
     raw = _specstory_fixture(tmp_path)
     (raw / "acme__widgets" / "broken.md").write_bytes(b"\xff\xfe\x00 not utf-8")
-    (raw / "acme__widgets" / "notes.md").write_text("# just a markdown file\n\n_**User**_\n\nhello\n")
+    (raw / "acme__widgets" / "notes.md").write_text("# just a markdown file\n\nno header comment, no `## SpecStory` heading, no turn\n")
     with pytest.warns(UserWarning, match="specstory: skipped malformed file") as record:
         traces = list(iter_traces_specstory(raw))
     assert len(traces) == 4
@@ -948,7 +952,7 @@ def test_specstory_single_file_limit_and_parse_dispatch(tmp_path):
         assert_trace_schema(base)
         assert all(set(e) <= {"type", "details", "timestamp"} for e in t["events"])
         assert set(t) == {"instance_id", "repo", "base_commit", "events", "prompts", "agent", "labels"}
-        assert set(t["labels"]) == {"session_id", "model", "specstory_version", "repo"}
+        assert set(t["labels"]) == {"session_id", "model", "specstory_version", "repo", "format", "tool_markers"}
         assert all(p["type"] == "prompt" for p in t["prompts"])
     # a lone file outside the <owner__repo> layout has no repo and a path-derived id
     lone = tmp_path / "2026-07-13_13-40-49Z-fix-the-flaky.md"
@@ -983,3 +987,297 @@ def test_specstory_real_samples():
             edits = [e for e in t["events"] if e["type"] == "edit"]
             assert edits and all(e["details"].get("file_path") for e in edits)
             assert any(e["details"].get("diff") for e in edits)
+
+
+# The early 2025 layout: no <tool-use> tags; each tool action is its own section between `---`
+# (and, in the oldest files, `_****_`) separators. Shapes and their corpus counts were read from
+# 1,644 harvested files on 2026-09-11; paths here are fake.
+
+SPECSTORY_V1_OLDEST = """## SpecStory
+
+## Setting Up The Parking Page (3/11/2025, 8:11:06 PM)
+
+_**User**_
+
+make the svg full screen
+
+---
+
+_**Assistant**_
+
+I'll read the CSS file first.
+
+---
+
+_****_
+
+Read file: src/App.css
+
+---
+
+_****_
+
+Read file: undefined
+
+---
+
+_****_
+
+<details>
+            <summary>Listed current directory • **2** results</summary>
+
+| Name |
+|-------|
+| 📁 `src` |
+| 📄 `package.json` |
+
+</details>
+
+---
+
+_****_
+
+<details>
+            <summary>Searched codebase "How is the svg sized?" • **3** results</summary>
+
+| File | Lines |
+|------|-------|
+| `src/App.tsx` | L1-20 |
+
+</details>
+
+---
+
+_****_
+
+<details>
+<summary>Grep search for "parking-container" • **2** files</summary>
+
+| File | Line | Match |
+|------|------|-------|
+| `src/App.css` | L12 | `.parking-container {` |
+
+</details>
+
+---
+
+_****_
+
+<details><summary>Tool use: **edit_file** • Edit file: src/App.css</summary>
+
+**Chunk 1**
+Lines added: 2, lines removed: 1
+
+```diff
+@@ -1,3 +1,4 @@
+  :root {
+-   --primary-color: #2dd4bf;
++   --text-color: #2055a4;
++   --bg: white;
+  }
+```
+
+</details>
+
+---
+
+_****_
+
+```diff
+  body {
+-   margin: 1px;
++   margin: 0;
+  }
+```
+
+Lines added: 1, lines removed: 1
+
+---
+
+_****_
+
+Now install the dependency:
+
+---
+
+_****_
+
+Cancelled
+
+---
+
+_****_
+
+```bash
+npm install express dotenv
+```
+
+```
+added 2 packages
+```
+
+---
+
+_****_
+
+Tool call timed out after 5000ms
+
+---
+
+_****_
+
+To run it yourself:
+
+```bash
+npm run dev
+```
+
+---
+
+_**User**_
+
+
+
+---
+
+_**User**_
+
+now the layout
+
+---
+
+_**Assistant**_
+
+```diff
+  a
+- b
++ c
+```
+
+---
+"""
+
+SPECSTORY_V1_WITH_HEADER = """<!-- Generated by SpecStory -->
+
+# 查找插件系统日历功能 (2025-04-30 13:02:42)
+
+_**User**_
+
+查找下我的插件系统里面的日历功能
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+我明白您的意思了。让我来实现这个解决方案。
+
+---
+
+<details>
+            <summary>Listed directory src/renderer/src/plugins • **4** results</summary>
+
+| Name |
+|-------|
+| 📄 `index.ts` |
+
+</details>
+
+---
+
+Read file: src/renderer/src/plugins/index.ts
+
+---
+
+```diff
+  import SimpleTextTools from './SimpleTextTools'
++ import Calendar from './Calendar'
+```
+
+---
+
+Error calling tool.
+
+---
+
+<details><summary>Tool use: **read_file** • Read file: src/renderer/src/plugins/Calendar.ts</summary>
+
+</details>
+
+---
+
+_**Agent (mode Agent)**_
+
+完成了。
+
+---
+"""
+
+
+def test_specstory_early_layout_sections(tmp_path):
+    raw = tmp_path / "raw"
+    d = raw / "acme__parking"
+    d.mkdir(parents=True)
+    (d / "2025-03-11_20-11-setting-up.md").write_text(SPECSTORY_V1_OLDEST)
+    (d / "2025-04-30_05-02-plugins.md").write_text(SPECSTORY_V1_WITH_HEADER)
+    oldest, with_header = list(iter_traces_specstory(raw))
+
+    assert oldest["agent"] == "unknown" and oldest["repo"] == "acme/parking"
+    assert oldest["labels"] == {"session_id": None, "model": None, "specstory_version": None, "repo": "acme/parking",
+                                "format": "v1", "tool_markers": ["codebase_search", "edit_file", "grep_search",
+                                                                 "list_dir", "read_file", "run_terminal_cmd"]}
+    assert [e["type"] for e in oldest["events"]] == \
+        ["prompt", "read", "read", "search", "search", "search", "edit", "edit", "run", "prompt", "edit"], \
+        "prose sections, fences inside prose sections and an empty user turn are not events"
+    ev = oldest["events"]
+    assert len(oldest["prompts"]) == 2, "one prompt per user turn with text"
+    assert ev[1]["details"] == {"tool": "read_file", "file_path": "src/App.css"}
+    assert ev[2]["details"] == {"tool": "read_file"}, "`Read file: undefined` is a read with no path"
+    assert ev[3]["details"] == {"tool": "list_dir"}
+    assert ev[4]["details"] == {"tool": "codebase_search", "query": "How is the svg sized?"}
+    assert ev[5]["details"] == {"tool": "grep_search", "query": "parking-container"}
+    assert ev[6]["details"]["tool"] == "edit_file" and ev[6]["details"]["file_path"] == "src/App.css"
+    assert "+   --text-color: #2055a4;" in ev[6]["details"]["diff"]
+    assert ev[7]["details"]["file_path"] == "src/App.css", "a bare diff takes the path of the turn's last Edit file"
+    assert "+   margin: 0;" in ev[7]["details"]["diff"] and ev[7]["details"]["outcome"] == "Cancelled"
+    assert ev[8]["details"] == {"tool": "run_terminal_cmd", "command": "npm install express dotenv",
+                                "outcome": "Tool call timed out after 5000ms"}
+    assert ev[10]["details"] == {"tool": "edit_file", "diff": "  a\n- b\n+ c\n"}, "no Edit file in this turn: no path"
+    assert all("timestamp" not in e for e in ev)
+
+    assert with_header["labels"]["format"] == "v2" and with_header["labels"]["specstory_version"] is None
+    assert with_header["labels"]["model"] is None, "`(mode Agent)` is not a model"
+    assert with_header["labels"]["tool_markers"] == ["edit_file", "list_dir", "read_file"]
+    assert [e["type"] for e in with_header["events"]] == ["prompt", "search", "read", "edit", "read"]
+    ev = with_header["events"]
+    assert ev[1]["details"] == {"tool": "list_dir", "file_path": "src/renderer/src/plugins"}
+    assert ev[2]["details"] == {"tool": "read_file", "file_path": "src/renderer/src/plugins/index.ts"}
+    assert ev[3]["details"]["outcome"] == "Error calling tool." and "file_path" not in ev[3]["details"]
+    assert ev[4]["details"] == {"tool": "read_file", "file_path": "src/renderer/src/plugins/Calendar.ts"}
+
+
+SPECSTORY_RAW = Path.home() / ".cache" / "trace-funnel-paper" / "specstory" / "raw"
+
+
+@pytest.mark.skipif(not SPECSTORY_RAW.is_dir() or not any(SPECSTORY_RAW.rglob("*.md")),
+                    reason=f"SpecStory harvest absent at {SPECSTORY_RAW}")
+def test_specstory_real_harvest_first_300_files():
+    """The harvested corpus, first 300 files by path: under 2% skipped, and more than half of the
+    records carry at least one tool event (a section walk that misses a layout shows up here)."""
+    files = sorted(SPECSTORY_RAW.rglob("*.md"))[:300]
+    records, skipped = [], 0
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        for f in files:
+            records.extend(iter_traces_specstory(f))
+    skipped = sum(1 for w in caught if "skipped malformed file" in str(w.message))
+    assert skipped / len(files) < 0.02, f"{skipped} of {len(files)} files skipped"
+    assert records
+    with_tools = sum(1 for t in records if any(e["type"] != "prompt" for e in t["events"]))
+    assert with_tools / len(records) > 0.5, f"only {with_tools} of {len(records)} records have a tool event"
+    for t in records:
+        assert t["repo"] and "/" in t["repo"], "repo is read back from the <owner__repo> directory"
+        assert set(t["labels"]) == {"session_id", "model", "specstory_version", "repo", "format", "tool_markers"}
