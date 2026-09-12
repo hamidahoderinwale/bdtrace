@@ -670,6 +670,8 @@ def iter_traces_swechat(path: Path, limit: int | None = None) -> Iterator[dict]:
 #     (Write/Edit carry the path only in that result text); Cursor blocks carry a ```diff.
 #   Early Cursor (no version tag): a bare `Tool use: **name**` line followed by `Read file: P`,
 #     a ```bash fence, or <details><summary>Edit file: P</summary> with a ```diff.
+#   Early 2025 (no <tool-use> tags, with or without the header comment): see the section rules
+#     above _specstory_v1_section_event.
 #   Turn headers: _**User**_, _**User (ts)**_, _**Agent (model ts)**_, _**Agent (model m, mode
 #     Agent)**_, _**Assistant (model)**_, _**Agent (model) (sidechain)**_; a session comment
 #     `<!-- <harness> Session <uuid> (<ts>) -->` names the harness in newer files only.
@@ -690,6 +692,7 @@ _SS_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}[ T_]\d{2}[:-]\d{2}(?:[:-]\d{2})?Z
 _SS_TOOL_OPEN = re.compile(r"<tool-use\s+([^>]*)>")
 _SS_ATTR = re.compile(r'data-(tool-type|tool-name)="([^"]*)"')
 _SS_OLD_TOOL = re.compile(r"^Tool use:\s*\*\*([^*]+)\*\*\s*$")
+_SS_SUMMARY_TOOL = re.compile(r"^Tool use:\s*\*\*([^*]+)\*\*")
 _SS_SUMMARY = re.compile(r"<summary>(.*?)</summary>", re.S)
 _SS_FENCE = re.compile(r"^[ \t]*```([\w+-]*)[^\n]*\n(.*?)^[ \t]*```[ \t]*$", re.S | re.M)
 _SS_INLINE_CODE = re.compile(r"^\s*`([^`\n]+)`\s*$", re.M)
@@ -714,10 +717,10 @@ def _ss_summary_fields(summary: str, details: dict) -> None:
     for piece in html.unescape(summary).split(" • "):
         piece = piece.strip()
         for prefix, key in (("Read file:", "file_path"), ("Edit file:", "file_path"),
-                            ("Run command:", "command")):
-            if piece.startswith(prefix):
+                            ("Run command:", "command"), ("Listed directory", "file_path")):
+            if piece.startswith(prefix) and piece[len(prefix):].strip():
                 details.setdefault(key, piece[len(prefix):].strip())
-        if piece.startswith(("Grep for", "Searched codebase", "Searched web", "Listed directory")):
+        if piece.startswith(("Grep for", "Grep search for", "Searched codebase", "Searched web")):
             quoted = [a or b for a, b in _SS_QUOTED.findall(piece)]
             if quoted:
                 details.setdefault("query", quoted[0][:SPECSTORY_MAX_CHARS])
@@ -804,21 +807,84 @@ def _specstory_turn(header: str) -> tuple[str, str | None, str | None]:
             first = group.split(",")[0].strip()
             if first.startswith("model "):
                 first = first[len("model "):].strip()
-            if first and first != "sidechain":
+            if first and first != "sidechain" and not first.startswith("mode "):
                 model = first
     return role, model, timestamp
 
 
-def _specstory_events(text: str) -> tuple[list[dict], dict[str, int]]:
-    """Walk the export line by line: prompt events from user turns, tool events from tool
-    blocks, in document order; agent prose, <think> blocks and fenced text are skipped."""
+# Early (2025) exports have no <tool-use> tags (the oldest also lack the header comment and open
+# with a `## SpecStory` heading): turns are bare _**User**_ / _**Assistant**_ / _**Agent**_, and
+# each tool action inside an assistant turn is its own section between `---` / `_****_`
+# separators: a bare `Read file: P` line (`Read file: undefined` when the path was lost), a
+# <details><summary>Listed directory P | Searched codebase "q" | Grep search for "q" |
+# Searched web "q" | Edit file: P | Tool use: **name** ...</summary> block, a bare ```diff fence
+# (its path is only known when an Edit file: summary preceded it in the turn), or a ```bash fence
+# followed by a bare output fence. `Cancelled` / `Tool call timed out ...` sections report on the
+# last call of the turn. Measured 2026-09-11 over 1,644 harvested files.
+SPECSTORY_V1_SUMMARY_TOOLS = (("Listed", "list_dir", "search"), ("Searched codebase", "codebase_search", "search"),
+                              ("Grep search", "grep_search", "search"), ("Searched web", "web_search", "search"),
+                              ("Edit file:", "edit_file", "edit"))
+SPECSTORY_OUTCOME_PREFIXES = ("Cancelled", "Tool call timed out", "Model provided invalid arguments",
+                              "Error calling tool", "Command contains newline")
+_SS_SHELL_LANGS = ("bash", "sh", "shell", "zsh", "powershell")
+
+
+def _specstory_v1_section_event(first: str, text: str, last_edit_path: str | None) -> dict | None:
+    """One early-format section -> an event, or None for prose and thought blocks."""
+    details: dict[str, Any] = {}
+    if first.startswith("Read file:"):
+        path = first[len("Read file:"):].strip()
+        details["tool"] = "read_file"
+        if path and path != "undefined":
+            details["file_path"] = path
+        return _event("read", details)
+    if first.startswith("Edit file:"):
+        details["tool"] = "edit_file"
+        details["file_path"] = first[len("Edit file:"):].strip()
+        _ss_body_fields(text, "edit", details)
+        return _event("edit", details)
+    if first.startswith("<details"):
+        m = _SS_SUMMARY.search(text)
+        summary = " ".join(m.group(1).split()) if m else ""
+        named = _SS_SUMMARY_TOOL.match(summary)
+        if named:
+            return _specstory_old_tool_event(named.group(1).strip(), text, None)
+        for prefix, tool, verb in SPECSTORY_V1_SUMMARY_TOOLS:
+            if summary.startswith(prefix):
+                details["tool"] = tool
+                _ss_summary_fields(summary, details)
+                _ss_body_fields(_SS_SUMMARY.sub("", text), verb, details)
+                return _event(verb, details)
+        return None
+    if first.startswith("```"):
+        lang = first[3:].strip().split()[0].lower() if first[3:].strip() else ""
+        if lang == "diff":
+            details["tool"] = "edit_file"
+            if last_edit_path:
+                details["file_path"] = last_edit_path
+            _ss_body_fields(text, "edit", details)
+            return _event("edit", details)
+        if lang in _SS_SHELL_LANGS:
+            details["tool"] = "run_terminal_cmd"
+            _ss_body_fields(text, "shell", details)
+            return _event(classify_command(details.get("command", "")) if details.get("command") else "run", details)
+    return None
+
+
+def _specstory_events(text: str, early_body: bool) -> tuple[list[dict], dict[str, int]]:
+    """Walk the export line by line: prompt events from user turns, tool events from tool blocks
+    and tool sections, in document order; agent prose, <think> blocks and fenced text are skipped.
+    `early_body` enables the section rules (a bare fence opening a section is a tool action only
+    in files without <tool-use> tags; elsewhere it is agent prose)."""
     lines = text.split("\n")
     events: list[dict] = []
     models: dict[str, int] = {}
     role: str | None = None
     turn_ts: str | None = None
     user_buf: list[str] = []
-    pending: tuple[str, list[str]] | None = None
+    section: list[str] = []
+    prev_section_event: dict | None = None
+    last_edit_path: str | None = None
     in_fence = False
 
     def flush_user() -> None:
@@ -830,11 +896,33 @@ def _specstory_events(text: str) -> tuple[list[dict], dict[str, int]]:
                 ev["timestamp"] = turn_ts
             events.append(ev)
 
-    def flush_tool() -> None:
-        nonlocal pending
-        if pending is not None:
-            events.append(_specstory_old_tool_event(pending[0], "\n".join(pending[1]), turn_ts))
-            pending = None
+    def add_tool_event(ev: dict) -> None:
+        nonlocal prev_section_event, last_edit_path
+        if turn_ts:
+            ev["timestamp"] = turn_ts
+        events.append(ev)
+        prev_section_event = ev
+        if ev["type"] == "edit" and ev["details"].get("file_path"):
+            last_edit_path = ev["details"]["file_path"]
+
+    def flush_section() -> None:
+        nonlocal prev_section_event
+        body = "\n".join(section)
+        section.clear()
+        first = next((ln.strip() for ln in body.split("\n") if ln.strip()), "")
+        if not first:
+            return
+        m = _SS_OLD_TOOL.match(first)
+        if m:
+            add_tool_event(_specstory_old_tool_event(m.group(1).strip(), body, None))
+            return
+        if first.startswith(SPECSTORY_OUTCOME_PREFIXES):
+            if prev_section_event is not None:  # the turn's last tool call
+                prev_section_event["details"]["outcome"] = first
+            return
+        ev = _specstory_v1_section_event(first, body, last_edit_path) if early_body else None
+        if ev is not None:
+            add_tool_event(ev)
 
     i = 0
     while i < len(lines):
@@ -842,63 +930,61 @@ def _specstory_events(text: str) -> tuple[list[dict], dict[str, int]]:
         stripped = line.strip()
         if not in_fence:
             if _SS_TURN.match(stripped):
-                flush_tool()
+                flush_section()
                 flush_user()
                 role, model, turn_ts = _specstory_turn(stripped)
+                prev_section_event = last_edit_path = None
                 if model:
                     models[model] = models.get(model, 0) + 1
                 i += 1
                 continue
             if _SS_TOOL_OPEN.match(stripped):
-                flush_tool()
+                flush_section()
                 j = i
                 while j < len(lines) and "</tool-use>" not in lines[j]:
                     j += 1
-                events.append(_specstory_tool_event("\n".join(lines[i:j + 1]), turn_ts))
+                add_tool_event(_specstory_tool_event("\n".join(lines[i:j + 1]), None))
                 i = j + 1
                 continue
             if stripped.startswith("<think>"):
-                flush_tool()
+                flush_section()
                 while i < len(lines) and "</think>" not in lines[i]:
                     i += 1
                 i += 1
                 continue
-            m = _SS_OLD_TOOL.match(stripped)
-            if m:
-                flush_tool()
-                pending = (m.group(1).strip(), [])
+            if stripped in ("---", "_****_"):
+                flush_section()
                 i += 1
                 continue
-            if stripped == "---":
-                flush_tool()
-                i += 1
-                continue
+            if role == "agent" and section and _SS_OLD_TOOL.match(stripped):
+                flush_section()  # a second `Tool use:` line without a separator opens a new action
         if stripped.startswith("```"):
             in_fence = not in_fence
-        if pending is not None:
-            pending[1].append(line)
+        if role == "agent":
+            if section or stripped:
+                section.append(line)
         elif role == "user":
             user_buf.append(line)
         i += 1
-    flush_tool()
+    flush_section()
     flush_user()
     return events, models
 
 
 def _specstory_trace(path: Path, repo: str | None) -> dict | None:
     text = path.read_text(encoding="utf-8")
-    header = _SS_HEADER.search(text)
-    if header is None:
-        raise ValueError("no `Generated by SpecStory` header")
-    version = None
-    if header.group(1):
-        version = header.group(1).split()[-1].lstrip("v")
-    # the session comment sits above the first turn; a quoted export inside a tool result must not win
     first_turn = re.search(r"^_\*\*(?:User|Agent|Assistant)", text, re.M)
+    header = _SS_HEADER.search(text, 0, first_turn.start() if first_turn else len(text))
+    heading = re.search(r"^## SpecStory\s*$", text[:200], re.M)
+    if header is None and heading is None and first_turn is None:
+        raise ValueError("not a SpecStory export: no header comment, `## SpecStory` heading or turn")
+    version = header.group(1).split()[-1].lstrip("v") if header and header.group(1) else None
+    # the session comment sits above the first turn; a quoted export inside a tool result must not win
     session = _SS_SESSION.search(text, 0, first_turn.start() if first_turn else len(text))
     session_id = session.group(2) if session else None
     harness = session.group(1).strip().lower() if session else ""
-    events, models = _specstory_events(text)
+    early_body = "<tool-use " not in text  # tool actions are sections, not tagged blocks
+    events, models = _specstory_events(text, early_body)
     if not events:
         return None
     key = session_id or hashlib.sha1(f"{repo}/{path.name}".encode()).hexdigest()
@@ -907,7 +993,10 @@ def _specstory_trace(path: Path, repo: str | None) -> dict | None:
     trace["agent"] = SPECSTORY_HARNESS.get(harness, "unknown")
     trace["labels"] = {"session_id": session_id,
                        "model": max(models, key=models.get) if models else None,
-                       "specstory_version": version, "repo": repo}
+                       "specstory_version": version, "repo": repo,
+                       "format": "v1" if header is None and early_body else "v2",
+                       "tool_markers": sorted({e["details"]["tool"] for e in events
+                                               if e["type"] != "prompt" and e["details"].get("tool")})}
     return trace
 
 
