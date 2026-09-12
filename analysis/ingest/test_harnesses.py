@@ -873,8 +873,8 @@ def test_specstory_three_layouts(tmp_path):
 
     cc = by[("Claude Code", "claude-opus-4-8")]
     assert cc["instance_id"] == "specstory-5c7d5c23-0691-4467-b98e-0fb865b4a639"
-    assert cc["labels"] == {"session_id": "5c7d5c23-0691-4467-b98e-0fb865b4a639", "model": "claude-opus-4-8",
-                            "specstory_version": "2.1.0", "repo": "acme/widgets", "format": "v2",
+    assert cc["labels"] == {"session_id": "5c7d5c23-0691-4467-b98e-0fb865b4a639", "provider": "claude code",
+                            "model": "claude-opus-4-8", "specstory_version": "2.1.0", "repo": "acme/widgets", "format": "v2",
                             "tool_markers": ["Bash", "Edit", "Read", "ToolSearch", "Write"]}
     assert [e["type"] for e in cc["events"]] == ["prompt", "test", "read", "search", "edit", "edit", "other", "prompt"]
     ev = cc["events"]
@@ -907,6 +907,7 @@ def test_specstory_three_layouts(tmp_path):
     old = by[("Cursor", "claude-4.5-sonnet-thinking")]
     assert old["labels"]["specstory_version"] is None and old["labels"]["session_id"] == "198f391d-8ae2-4788-975c-8c8e23345506"
     assert old["labels"]["format"] == "v2", "a header comment marks the file v2 even without <tool-use> tags"
+    assert old["labels"]["provider"] == "cursor" and cur["labels"]["provider"] == "cursor"
     assert [e["type"] for e in old["events"]] == ["prompt", "read", "search", "search", "edit", "edit", "read"], \
         "bare `Tool use:` lines map by tool name; an empty user turn is not a prompt"
     ev = old["events"]
@@ -918,8 +919,8 @@ def test_specstory_three_layouts(tmp_path):
     assert ev[6]["details"]["tool"] == "read_lints"
 
     earliest = by[("unknown", None)]
-    assert earliest["labels"] == {"session_id": None, "model": None, "specstory_version": None, "repo": "acme/widgets",
-                                  "format": "v2", "tool_markers": []}
+    assert earliest["labels"] == {"session_id": None, "provider": None, "model": None, "specstory_version": None,
+                                  "repo": "acme/widgets", "format": "v2", "tool_markers": []}
     expected = hashlib.sha1(b"acme/widgets/2025-04-24_13-10-01-untitled.md").hexdigest()
     assert earliest["instance_id"] == f"specstory-{expected}"
     assert [e["type"] for e in earliest["events"]] == ["prompt"] and "timestamp" not in earliest["events"][0]
@@ -952,7 +953,7 @@ def test_specstory_single_file_limit_and_parse_dispatch(tmp_path):
         assert_trace_schema(base)
         assert all(set(e) <= {"type", "details", "timestamp"} for e in t["events"])
         assert set(t) == {"instance_id", "repo", "base_commit", "events", "prompts", "agent", "labels"}
-        assert set(t["labels"]) == {"session_id", "model", "specstory_version", "repo", "format", "tool_markers"}
+        assert set(t["labels"]) == {"session_id", "provider", "model", "specstory_version", "repo", "format", "tool_markers"}
         assert all(p["type"] == "prompt" for p in t["prompts"])
     # a lone file outside the <owner__repo> layout has no repo and a path-derived id
     lone = tmp_path / "2026-07-13_13-40-49Z-fix-the-flaky.md"
@@ -1226,7 +1227,7 @@ def test_specstory_early_layout_sections(tmp_path):
     oldest, with_header = list(iter_traces_specstory(raw))
 
     assert oldest["agent"] == "unknown" and oldest["repo"] == "acme/parking"
-    assert oldest["labels"] == {"session_id": None, "model": None, "specstory_version": None, "repo": "acme/parking",
+    assert oldest["labels"] == {"session_id": None, "provider": None, "model": None, "specstory_version": None, "repo": "acme/parking",
                                 "format": "v1", "tool_markers": ["codebase_search", "edit_file", "grep_search",
                                                                  "list_dir", "read_file", "run_terminal_cmd"]}
     assert [e["type"] for e in oldest["events"]] == \
@@ -1280,4 +1281,40 @@ def test_specstory_real_harvest_first_300_files():
     assert with_tools / len(records) > 0.5, f"only {with_tools} of {len(records)} records have a tool event"
     for t in records:
         assert t["repo"] and "/" in t["repo"], "repo is read back from the <owner__repo> directory"
-        assert set(t["labels"]) == {"session_id", "model", "specstory_version", "repo", "format", "tool_markers"}
+        assert set(t["labels"]) == {"session_id", "provider", "model", "specstory_version", "repo", "format", "tool_markers"}
+
+
+# Provider ids in the session comment, as harvested (cursor, vscode, Cursor IDE, copilotide) and as the
+# SpecStory CLI changelog names them for later releases; one file per mapped family plus one unmapped id.
+
+def test_specstory_provider_maps_to_agent_and_is_kept_in_labels(tmp_path):
+    from analysis.ingest.harnesses import specstory_agent
+    cases = {  # raw provider in the comment -> (agent, labels.provider)
+        "Cursor IDE": ("Cursor", "cursor ide"),
+        "cursor-agent": ("Cursor CLI", "cursor-agent"),
+        "vscode": ("Copilot", "vscode"),
+        "copilotide-insiders": ("Copilot", "copilotide-insiders"),
+        "Claude Code": ("Claude Code", "claude code"),
+        "codex": ("Codex CLI", "codex"),
+        "gemini": ("Gemini CLI", "gemini"),
+        "droid": ("Droid", "droid"),
+        "deepseek-tui": ("Deepseek-Tui", "deepseek-tui"),
+    }
+    d = tmp_path / "raw" / "acme__widgets"
+    d.mkdir(parents=True)
+    for i, provider in enumerate(cases):
+        (d / f"2026-01-0{i}_00-00Z-{i}.md").write_text(
+            "<!-- Generated by SpecStory, Markdown v2.1.0 -->\n\n"
+            f"<!-- {provider} Session 00000000-0000-0000-0000-{i:012d} (2026-01-01 00:00Z) -->\n\n"
+            "# t\n\n_**User (2026-01-01 00:00Z)**_\n\nhi\n\n---\n")
+    (d / "2026-01-09_00-00Z-none.md").write_text(
+        "<!-- Generated by SpecStory, Markdown v2.1.0 -->\n\n# t\n\n_**User (2026-01-01 00:00Z)**_\n\nhi\n\n---\n")
+    traces = list(iter_traces_specstory(tmp_path / "raw"))
+    assert len(traces) == len(cases) + 1
+    by_provider = {t["labels"]["provider"]: t["agent"] for t in traces}
+    assert by_provider == {**{prov: agent for agent, prov in cases.values()}, None: "unknown"}
+    assert specstory_agent("cursor") == specstory_agent("cursoride") == "Cursor"
+    assert specstory_agent("cursor cli") == "Cursor CLI"
+    assert specstory_agent("copilotide") == specstory_agent("copilotide-vscodium") == "Copilot"
+    assert specstory_agent("antigravity") == "Antigravity" and specstory_agent("muse") == "Muse"
+    assert specstory_agent(None) == specstory_agent("") == "unknown"
