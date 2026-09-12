@@ -875,10 +875,11 @@ def test_specstory_three_layouts(tmp_path):
     assert cc["instance_id"] == "specstory-5c7d5c23-0691-4467-b98e-0fb865b4a639"
     assert cc["labels"] == {"session_id": "5c7d5c23-0691-4467-b98e-0fb865b4a639", "provider": "claude code",
                             "model": "claude-opus-4-8", "specstory_version": "2.1.0", "repo": "acme/widgets", "format": "v2",
-                            "tool_markers": ["Bash", "Edit", "Read", "ToolSearch", "Write"]}
+                            "tool_markers": ["Bash", "Edit", "Read", "ToolSearch", "Write"],
+                            "started_at": "2026-07-13T13:40:49Z", "started_at_source": "header"}
     assert [e["type"] for e in cc["events"]] == ["prompt", "test", "read", "search", "edit", "edit", "other", "prompt"]
     ev = cc["events"]
-    assert ev[0]["details"]["text"] == "fix the flaky test in app.py" and ev[0]["timestamp"] == "2026-07-13 13:40:49Z"
+    assert ev[0]["details"]["text"] == "fix the flaky test in app.py" and ev[0]["timestamp"] == "2026-07-13T13:40:49Z"
     assert ev[1]["details"] == {"tool": "Bash", "command": "pytest tests/ -q"}
     assert ev[2]["details"] == {"tool": "Read", "file_path": "./src/app.py"}
     assert ev[3]["details"]["command"] == 'cd /home/dev/widgets\ngrep -rn "flaky" src/'
@@ -902,7 +903,7 @@ def test_specstory_three_layouts(tmp_path):
     assert ev[4]["details"]["tool"] == "search_replace" and ev[4]["details"]["file_path"] == "/home/dev/widgets/src/types.ts"
     assert "-   smitheryApiKey?: string;" in ev[4]["details"]["diff"]
     assert ev[5]["details"]["command"] == "cd /home/dev/widgets && pytest -q", "summary text is HTML-unescaped"
-    assert ev[6]["timestamp"] == "2025-12-03 05:21Z"
+    assert ev[6]["timestamp"] == "2025-12-03T05:21:00Z"
 
     old = by[("Cursor", "claude-4.5-sonnet-thinking")]
     assert old["labels"]["specstory_version"] is None and old["labels"]["session_id"] == "198f391d-8ae2-4788-975c-8c8e23345506"
@@ -920,10 +921,11 @@ def test_specstory_three_layouts(tmp_path):
 
     earliest = by[("unknown", None)]
     assert earliest["labels"] == {"session_id": None, "provider": None, "model": None, "specstory_version": None,
-                                  "repo": "acme/widgets", "format": "v2", "tool_markers": []}
+                                  "repo": "acme/widgets", "format": "v2", "tool_markers": [],
+                                  "started_at": "2025-04-24T13:10:01", "started_at_source": "filename"}
     expected = hashlib.sha1(b"acme/widgets/2025-04-24_13-10-01-untitled.md").hexdigest()
     assert earliest["instance_id"] == f"specstory-{expected}"
-    assert [e["type"] for e in earliest["events"]] == ["prompt"] and "timestamp" not in earliest["events"][0]
+    assert [e["type"] for e in earliest["events"]] == ["prompt"] and earliest["events"][0]["timestamp"] is None
 
 
 def test_specstory_malformed_files_are_skipped_with_a_warning(tmp_path):
@@ -951,9 +953,10 @@ def test_specstory_single_file_limit_and_parse_dispatch(tmp_path):
         base = {k: v for k, v in t.items() if k not in ("agent", "labels")}
         base["events"] = [{"type": e["type"], "details": e["details"]} for e in t["events"]]
         assert_trace_schema(base)
-        assert all(set(e) <= {"type", "details", "timestamp"} for e in t["events"])
+        assert all(set(e) == {"type", "details", "timestamp"} for e in t["events"]), "the key is always present"
         assert set(t) == {"instance_id", "repo", "base_commit", "events", "prompts", "agent", "labels"}
-        assert set(t["labels"]) == {"session_id", "provider", "model", "specstory_version", "repo", "format", "tool_markers"}
+        assert set(t["labels"]) == {"session_id", "provider", "model", "specstory_version", "repo", "format", "tool_markers",
+                                    "started_at", "started_at_source"}
         assert all(p["type"] == "prompt" for p in t["prompts"])
     # a lone file outside the <owner__repo> layout has no repo and a path-derived id
     lone = tmp_path / "2026-07-13_13-40-49Z-fix-the-flaky.md"
@@ -1229,7 +1232,8 @@ def test_specstory_early_layout_sections(tmp_path):
     assert oldest["agent"] == "unknown" and oldest["repo"] == "acme/parking"
     assert oldest["labels"] == {"session_id": None, "provider": None, "model": None, "specstory_version": None, "repo": "acme/parking",
                                 "format": "v1", "tool_markers": ["codebase_search", "edit_file", "grep_search",
-                                                                 "list_dir", "read_file", "run_terminal_cmd"]}
+                                                                 "list_dir", "read_file", "run_terminal_cmd"],
+                                "started_at": "2025-03-11T20:11:00", "started_at_source": "filename"}
     assert [e["type"] for e in oldest["events"]] == \
         ["prompt", "read", "read", "search", "search", "search", "edit", "edit", "run", "prompt", "edit"], \
         "prose sections, fences inside prose sections and an empty user turn are not events"
@@ -1247,7 +1251,7 @@ def test_specstory_early_layout_sections(tmp_path):
     assert ev[8]["details"] == {"tool": "run_terminal_cmd", "command": "npm install express dotenv",
                                 "outcome": "Tool call timed out after 5000ms"}
     assert ev[10]["details"] == {"tool": "edit_file", "diff": "  a\n- b\n+ c\n"}, "no Edit file in this turn: no path"
-    assert all("timestamp" not in e for e in ev)
+    assert all(e["timestamp"] is None for e in ev), "no turn header carries a stamp in the early layout"
 
     assert with_header["labels"]["format"] == "v2" and with_header["labels"]["specstory_version"] is None
     assert with_header["labels"]["model"] is None, "`(mode Agent)` is not a model"
@@ -1281,7 +1285,8 @@ def test_specstory_real_harvest_first_300_files():
     assert with_tools / len(records) > 0.5, f"only {with_tools} of {len(records)} records have a tool event"
     for t in records:
         assert t["repo"] and "/" in t["repo"], "repo is read back from the <owner__repo> directory"
-        assert set(t["labels"]) == {"session_id", "provider", "model", "specstory_version", "repo", "format", "tool_markers"}
+        assert set(t["labels"]) == {"session_id", "provider", "model", "specstory_version", "repo", "format", "tool_markers",
+                                    "started_at", "started_at_source"}
 
 
 # Provider ids in the session comment, as harvested (cursor, vscode, Cursor IDE, copilotide) and as the
@@ -1318,3 +1323,53 @@ def test_specstory_provider_maps_to_agent_and_is_kept_in_labels(tmp_path):
     assert specstory_agent("copilotide") == specstory_agent("copilotide-vscodium") == "Copilot"
     assert specstory_agent("antigravity") == "Antigravity" and specstory_agent("muse") == "Muse"
     assert specstory_agent(None) == specstory_agent("") == "unknown"
+
+
+# started_at: the session comment's stamp when there is one, else the file name's leading stamp
+# (`YYYY-MM-DD_HH-MM[-SS][Z]-<slug>.md`; the oldest files carry no time); event timestamps come from the
+# turn headers. Forms counted over 2,707 harvested files on 2026-09-11.
+
+def test_specstory_started_at_and_event_timestamps(tmp_path):
+    d = tmp_path / "stamps" / "acme__widgets"
+    d.mkdir(parents=True)
+    plain = "# t\n\n_**User**_\n\nhi\n\n---\n"
+    (d / "2026-01-05_13-49-53Z-a.md").write_text(  # header wins over a different file-name stamp
+        "<!-- Generated by SpecStory, Markdown v2.1.0 -->\n\n"
+        "<!-- cursor Session 00000000-0000-0000-0000-000000000001 (2026-01-05 13:49:43Z) -->\n\n" + plain)
+    (d / "2025-12-09_09-48-14Z-b.md").write_text(  # the underscore form some comments use
+        "<!-- Generated by SpecStory -->\n\n"
+        "<!-- Claude Code Session 00000000-0000-0000-0000-000000000002 (2025-12-09_09-48-20Z) -->\n\n" + plain)
+    (d / "2025-12-02_12-49Z-c.md").write_text("<!-- Generated by SpecStory -->\n\n" + plain)
+    (d / "2026-07-13_13-33-53Z-d.md").write_text("<!-- Generated by SpecStory -->\n\n" + plain)
+    (d / "2025-03-11_20-11-e.md").write_text("## SpecStory\n\n" + plain)
+    (d / "2025-01-27_removal-f.md").write_text("<!-- Generated by SpecStory -->\n\n" + plain)
+    (d / "notes-2025-03-11_20-11-g.md").write_text("<!-- Generated by SpecStory -->\n\n" + plain)
+    traces = list(iter_traces_specstory(tmp_path / "stamps"))
+    assert len(traces) == 7
+    got = sorted((t["labels"]["started_at"] or "", t["labels"]["started_at_source"] or "") for t in traces)
+    assert got == [("", ""), ("", ""),  # no leading stamp, or a stamp not at the start: None, never a guess
+                   ("2025-03-11T20:11:00", "filename"),  # no Z in the file name: the stamp stays naive
+                   ("2025-12-02T12:49:00Z", "filename"),
+                   ("2025-12-09T09:48:20Z", "header"),
+                   ("2026-01-05T13:49:43Z", "header"),  # the comment wins over the file name's 13:49:53Z
+                   ("2026-07-13T13:33:53Z", "filename")]
+    for t in traces:
+        assert not any(k in t["labels"] for k in ("slug", "basename", "filename"))
+        assert all(e["timestamp"] is None for e in t["events"]), "bare _**User**_ turns carry no stamp"
+
+    # v2 turn headers stamp the prompt and every tool call inside the turn; v1 turns give None
+    raw = _specstory_fixture(tmp_path)
+    by = _by_agent_model(list(iter_traces_specstory(raw)))
+    cc = by[("Claude Code", "claude-opus-4-8")]["events"]
+    assert [e["timestamp"] for e in cc] == ["2026-07-13T13:40:49Z", "2026-07-13T13:41:01Z", "2026-07-13T13:41:05Z",
+                                            "2026-07-13T13:41:20Z", "2026-07-13T13:41:40Z", "2026-07-13T13:42:00Z",
+                                            "2026-07-13T13:42:10Z", "2026-07-13T13:46:28Z"]
+    cur = by[("Cursor", "claude-4.5-opus-high-thinking")]["events"]
+    assert [e["timestamp"] for e in cur] == ["2025-12-02T12:49:00Z", None, None, None, None, None, "2025-12-03T05:21:00Z"], \
+        "Cursor agent headers carry a model and mode but no stamp"
+    d2 = tmp_path / "v1" / "acme__parking"
+    d2.mkdir(parents=True)
+    (d2 / "2025-03-11_20-11-setting-up.md").write_text(SPECSTORY_V1_OLDEST)
+    (v1,) = iter_traces_specstory(tmp_path / "v1")
+    assert len(v1["events"]) == 11 and all(e["timestamp"] is None for e in v1["events"])
+    assert v1["labels"]["started_at"] == "2025-03-11T20:11:00" and v1["labels"]["started_at_source"] == "filename"

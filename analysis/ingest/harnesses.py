@@ -707,6 +707,9 @@ _SS_SESSION = re.compile(r"<!--\s*(.+?)\s+Session\s+([0-9a-fA-F-]{36})\s*(?:\(([
 _SS_TURN = re.compile(r"^_\*\*(User|Agent|Assistant)((?:\s*\([^)]*\))*)\*\*_\s*$")
 _SS_PAREN = re.compile(r"\(([^)]*)\)")
 _SS_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}[ T_]\d{2}[:-]\d{2}(?:[:-]\d{2})?Z?")
+_SS_TS_PARTS = re.compile(r"(\d{4})-(\d{2})-(\d{2})[ T_](\d{2})[:-](\d{2})(?:[:-](\d{2}))?(Z?)")
+# file names: YYYY-MM-DD_HH-MM[-SS][Z]-<slug>.md; the oldest exports carry no time at all
+_SS_FILE_TS = re.compile(r"^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})(?:-(\d{2}))?(Z?)(?=-|\.md$|$)")
 _SS_TOOL_OPEN = re.compile(r"<tool-use\s+([^>]*)>")
 _SS_ATTR = re.compile(r'data-(tool-type|tool-name)="([^"]*)"')
 _SS_OLD_TOOL = re.compile(r"^Tool use:\s*\*\*([^*]+)\*\*\s*$")
@@ -721,6 +724,16 @@ _SS_RESULT_PATH = re.compile(
 
 def _ss_clip(s: str) -> str:
     return html.unescape(s)[:SPECSTORY_MAX_CHARS]
+
+
+def _ss_iso(stamp: str | None, pattern: re.Pattern = _SS_TS_PARTS) -> str | None:
+    """`2026-07-13 13:40:49Z`, `2025-12-02 12:49Z`, `2025-12-09_09-48-14Z` -> ISO-8601 to the second.
+    A stamp without Z stays naive; nothing is assumed about its zone."""
+    m = pattern.search(stamp or "")
+    if not m:
+        return None
+    y, mo, d, h, mi, sec, z = m.groups()
+    return f"{y}-{mo}-{d}T{h}:{mi}:{sec or '00'}{z}"
 
 
 def specstory_event_type(tool_type: str | None, command: str | None) -> str:
@@ -780,7 +793,7 @@ def _ss_body_fields(body: str, tool_type: str, details: dict) -> None:
                     break
 
 
-def _specstory_tool_event(block: str, timestamp: str | None) -> dict:
+def _specstory_tool_event(block: str) -> dict:
     """One <tool-use ...>...</tool-use> block from a Markdown v2.1.0 export."""
     m = _SS_TOOL_OPEN.search(block)
     attrs = dict(_SS_ATTR.findall(m.group(1))) if m else {}
@@ -790,13 +803,10 @@ def _specstory_tool_event(block: str, timestamp: str | None) -> dict:
     for summary in _SS_SUMMARY.findall(body):
         _ss_summary_fields(" ".join(summary.split()), details)
     _ss_body_fields(_SS_SUMMARY.sub("", body), tool_type, details)
-    ev = _event(specstory_event_type(tool_type, details.get("command")), details)
-    if timestamp:
-        ev["timestamp"] = timestamp
-    return ev
+    return _event(specstory_event_type(tool_type, details.get("command")), details)
 
 
-def _specstory_old_tool_event(name: str, body: str, timestamp: str | None) -> dict:
+def _specstory_old_tool_event(name: str, body: str) -> dict:
     """A bare `Tool use: **name**` line plus what follows it, in the early Cursor layout."""
     details: dict[str, Any] = {"tool": name}
     for summary in _SS_SUMMARY.findall(body):
@@ -805,10 +815,7 @@ def _specstory_old_tool_event(name: str, body: str, timestamp: str | None) -> di
         _ss_summary_fields(line, details)
     _ss_body_fields(body, "", details)
     etype = classify_cursor_tool(name, {"command": details["command"]} if details.get("command") else None)
-    ev = _event(etype, details)
-    if timestamp:
-        ev["timestamp"] = timestamp
-    return ev
+    return _event(etype, details)
 
 
 def _specstory_turn(header: str) -> tuple[str, str | None, str | None]:
@@ -819,7 +826,7 @@ def _specstory_turn(header: str) -> tuple[str, str | None, str | None]:
     for group in _SS_PAREN.findall(m.group(2)):
         ts = _SS_TIMESTAMP.search(group)
         if ts:
-            timestamp = ts.group(0)
+            timestamp = _ss_iso(ts.group(0))
             group = group[:ts.start()] + group[ts.end():]
         if role == "agent" and model is None:
             first = group.split(",")[0].strip()
@@ -866,7 +873,7 @@ def _specstory_v1_section_event(first: str, text: str, last_edit_path: str | Non
         summary = " ".join(m.group(1).split()) if m else ""
         named = _SS_SUMMARY_TOOL.match(summary)
         if named:
-            return _specstory_old_tool_event(named.group(1).strip(), text, None)
+            return _specstory_old_tool_event(named.group(1).strip(), text)
         for prefix, tool, verb in SPECSTORY_V1_SUMMARY_TOOLS:
             if summary.startswith(prefix):
                 details["tool"] = tool
@@ -892,6 +899,7 @@ def _specstory_v1_section_event(first: str, text: str, last_edit_path: str | Non
 def _specstory_events(text: str, early_body: bool) -> tuple[list[dict], dict[str, int]]:
     """Walk the export line by line: prompt events from user turns, tool events from tool blocks
     and tool sections, in document order; agent prose, <think> blocks and fenced text are skipped.
+    Every event carries `timestamp`: the enclosing turn header's stamp as ISO-8601, else None.
     `early_body` enables the section rules (a bare fence opening a section is a tool action only
     in files without <tool-use> tags; elsewhere it is agent prose)."""
     lines = text.split("\n")
@@ -910,14 +918,12 @@ def _specstory_events(text: str, early_body: bool) -> tuple[list[dict], dict[str
         user_buf.clear()
         if prompt:
             ev = _event("prompt", {"text": prompt[:SPECSTORY_MAX_CHARS]})
-            if turn_ts:
-                ev["timestamp"] = turn_ts
+            ev["timestamp"] = turn_ts  # the turn header's stamp, or None
             events.append(ev)
 
     def add_tool_event(ev: dict) -> None:
         nonlocal prev_section_event, last_edit_path
-        if turn_ts:
-            ev["timestamp"] = turn_ts
+        ev["timestamp"] = turn_ts  # every tool call in a turn shares the turn header's stamp
         events.append(ev)
         prev_section_event = ev
         if ev["type"] == "edit" and ev["details"].get("file_path"):
@@ -932,7 +938,7 @@ def _specstory_events(text: str, early_body: bool) -> tuple[list[dict], dict[str
             return
         m = _SS_OLD_TOOL.match(first)
         if m:
-            add_tool_event(_specstory_old_tool_event(m.group(1).strip(), body, None))
+            add_tool_event(_specstory_old_tool_event(m.group(1).strip(), body))
             return
         if first.startswith(SPECSTORY_OUTCOME_PREFIXES):
             if prev_section_event is not None:  # the turn's last tool call
@@ -961,7 +967,7 @@ def _specstory_events(text: str, early_body: bool) -> tuple[list[dict], dict[str
                 j = i
                 while j < len(lines) and "</tool-use>" not in lines[j]:
                     j += 1
-                add_tool_event(_specstory_tool_event("\n".join(lines[i:j + 1]), None))
+                add_tool_event(_specstory_tool_event("\n".join(lines[i:j + 1])))
                 i = j + 1
                 continue
             if stripped.startswith("<think>"):
@@ -1001,6 +1007,12 @@ def _specstory_trace(path: Path, repo: str | None) -> dict | None:
     session = _SS_SESSION.search(text, 0, first_turn.start() if first_turn else len(text))
     session_id = session.group(2) if session else None
     provider = " ".join(session.group(1).split()).lower() if session else None
+    # when the session started: the session comment's stamp, else the file name's leading stamp
+    started_at, started_at_source = _ss_iso(session.group(3)) if session else None, "header"
+    if started_at is None:
+        started_at, started_at_source = _ss_iso(path.name, _SS_FILE_TS), "filename"
+    if started_at is None:
+        started_at_source = None
     early_body = "<tool-use " not in text  # tool actions are sections, not tagged blocks
     events, models = _specstory_events(text, early_body)
     if not events:
@@ -1010,6 +1022,7 @@ def _specstory_trace(path: Path, repo: str | None) -> dict | None:
     trace = make_trace(f"specstory-{key}", repo, None, events, prompts)
     trace["agent"] = specstory_agent(provider)
     trace["labels"] = {"session_id": session_id, "provider": provider,
+                       "started_at": started_at, "started_at_source": started_at_source,
                        "model": max(models, key=models.get) if models else None,
                        "specstory_version": version, "repo": repo,
                        "format": "v1" if header is None and early_body else "v2",
