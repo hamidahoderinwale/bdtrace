@@ -11,6 +11,8 @@ Sources:
   heuristic is ported here), as local .json/.jsonl files.
 - specstory: SpecStory session exports (.specstory/history/*.md written inside a repo
   by the Cursor / Claude Code extension), one record per file.
+- aider: Aider chat-history transcripts (.aider.chat.history.md committed to a repo),
+  one record per file, repo recovered from the sample/raw directory layout.
 
 Output records match output/resolved_traces_lite_full.jsonl rows:
 {"instance_id", "repo", "base_commit", "events": [{"type", "details"}], "prompts"}
@@ -1090,12 +1092,256 @@ def iter_traces_specstory(path: Path, limit: int | None = None) -> Iterator[dict
               f"{empty} with no prompt or tool call", file=sys.stderr)
 
 
+# --- aider: .aider.chat.history.md transcripts ----------------------------------------------
+# Shape read from six real histories on 2026-09-13 (105 B to 33 KB), not from the docs. A file
+# holds one or more sessions, each opening with a `# aider chat started at YYYY-MM-DD HH:MM:SS`
+# line. User turns are `#### ` lines (aider prefixes every line of a user message, so consecutive
+# `#### ` lines are one message; `<blank>` and empty lines are aider's placeholder for an empty
+# turn and yield no prompt); assistant prose is unprefixed; aider's own reports are `> ` lines
+# (model banner, `Added X to the chat`, `Applied edit to X`, `Commit <sha> <msg>`, `Running <cmd>`,
+# token/cost). File edits are fenced blocks: a SEARCH/REPLACE block (`<<<<<<< SEARCH` / `=======`
+# / `>>>>>>> REPLACE`) or a ```diff block, with the file path on the line just above the fence.
+# Assistant prose, suggested-but-not-run code fences, and token/cost lines are not events; only
+# commands aider actually ran (`> Running <cmd>`) become run events. `Applied edit to X` and
+# `Commit` enrich the matching edit rather than adding a duplicate. One record per file; the
+# repo comes from the `<owner__repo>` directory (raw layout) or the `sample_N_<owner__repo>.md`
+# file name (samples layout). started_at is the first session header; events carry no per-turn
+# stamp, so `timestamp` is always None (the key is kept so the shape matches swechat/specstory).
+
+AIDER_MAX_CHARS = 2000
+_AIDER_HEADER = re.compile(r"^# aider chat started at\s+(.*)$")
+_AIDER_STARTED = re.compile(r"(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})")
+_AIDER_MODEL = re.compile(r"^(?:Main model|Model):\s+(\S+)")
+_AIDER_ADDED = re.compile(r"^Added (.+?) to the chat\b")
+_AIDER_APPLIED = re.compile(r"^Applied edit to (.+?)\s*$")
+_AIDER_COMMIT = re.compile(r"^Commit\s+([0-9a-f]{6,40})\b\s*(.*)$")
+_AIDER_RUNNING = re.compile(r"^Running (.+?)\s*$")
+_AIDER_SR_MARK = "<<<<<<< SEARCH"
+_AIDER_PATH_EXT = re.compile(r"\.[A-Za-z0-9]{1,8}$")
+
+
+def _aider_iso(stamp: str) -> str | None:
+    """`aider chat started at 2026-07-17 09:00:00` -> `2026-07-17T09:00:00`, else None."""
+    m = _AIDER_STARTED.search(stamp or "")
+    return f"{m.group(1)}T{m.group(2)}" if m else None
+
+
+def _aider_looks_like_path(line: str) -> bool:
+    s = line.strip().strip("`").strip()
+    if not s or any(c.isspace() for c in s) or s[0] in "#>-*|":
+        return False
+    return bool(_AIDER_PATH_EXT.search(s)) or "/" in s or "\\" in s
+
+
+def _aider_path_above(lines: list[str], idx: int) -> str | None:
+    """The nearest non-blank line above a fence, when it reads as a file path (aider names the
+    edited file on the line just before the SEARCH/REPLACE or diff fence)."""
+    k = idx - 1
+    while k >= 0 and not lines[k].strip():
+        k -= 1
+    if k >= 0 and _aider_looks_like_path(lines[k]):
+        return lines[k].strip().strip("`").strip()
+    return None
+
+
+def _aider_replace_side(block: str) -> str:
+    """The replace side of a SEARCH/REPLACE block (text between ======= and >>>>>>>)."""
+    if "=======" in block and ">>>>>>>" in block:
+        return block.split("=======", 1)[1].rsplit(">>>>>>>", 1)[0].strip("\n")
+    return block
+
+
+def _aider_events(text: str) -> tuple[list[dict], dict[str, int], str | None]:
+    """Walk one history file in document order: prompt events from `#### ` turns, edit events from
+    fenced SEARCH/REPLACE and diff blocks, run events from `> Running`, read events from
+    `> Added X to the chat`; prose and token/cost lines yield nothing. Returns (events, model
+    counts, first session's started_at)."""
+    lines = text.split("\n")
+    events: list[dict] = []
+    models: dict[str, int] = {}
+    started_at: str | None = None
+    captured: set[str] = set()  # edit paths already recorded, so `Applied edit` never duplicates
+    last_edit: dict | None = None
+    user_buf: list[str] = []
+
+    def add_event(etype: str, details: dict) -> dict:
+        ev = _event(etype, details)
+        ev["timestamp"] = None  # aider turns carry no per-turn stamp
+        events.append(ev)
+        return ev
+
+    def flush_user() -> None:
+        nonlocal user_buf
+        msg = "\n".join(user_buf).strip()
+        user_buf = []
+        if msg and msg != "<blank>":
+            add_event("prompt", {"text": msg[:AIDER_MAX_CHARS]})
+
+    i, n = 0, len(lines)
+    while i < n:
+        stripped = lines[i].strip()
+        if stripped.startswith("####"):
+            user_buf.append(stripped[4:].strip())
+            i += 1
+            continue
+        flush_user()
+        hm = _AIDER_HEADER.match(stripped)
+        if hm:
+            if started_at is None:
+                started_at = _aider_iso(hm.group(1))
+            i += 1
+            continue
+        if stripped.startswith(">"):
+            report = stripped[1:].strip()
+            mm = _AIDER_MODEL.match(report)
+            if mm:
+                models[mm.group(1)] = models.get(mm.group(1), 0) + 1
+                i += 1
+                continue
+            am = _AIDER_ADDED.match(report)
+            if am:
+                add_event("read", {"file_path": am.group(1).strip()})
+                i += 1
+                continue
+            rm = _AIDER_RUNNING.match(report)
+            if rm:
+                cmd = rm.group(1).strip()
+                add_event(classify_command(cmd), {"command": cmd})
+                i += 1
+                continue
+            aem = _AIDER_APPLIED.match(report)
+            if aem:
+                fp = aem.group(1).strip()
+                if last_edit is not None and last_edit["type"] == "edit" and not last_edit["details"].get("file_path"):
+                    last_edit["details"]["file_path"] = fp
+                    captured.add(fp)
+                elif fp not in captured:
+                    last_edit = add_event("edit", {"file_path": fp})
+                    captured.add(fp)
+                i += 1
+                continue
+            cm = _AIDER_COMMIT.match(report)
+            if cm:
+                sha, msg = cm.group(1), cm.group(2).strip()
+                if last_edit is not None and last_edit["type"] == "edit":
+                    last_edit["details"]["commit"] = sha
+                    if msg:
+                        last_edit["details"]["commit_message"] = msg[:AIDER_MAX_CHARS]
+                else:
+                    d = {"commit": sha}
+                    if msg:
+                        d["commit_message"] = msg[:AIDER_MAX_CHARS]
+                    last_edit = add_event("edit", d)
+                i += 1
+                continue
+            i += 1
+            continue
+        if stripped.startswith("```"):
+            rest = stripped[3:].strip()
+            lang = rest.split()[0].lower() if rest else ""
+            j = i + 1
+            body: list[str] = []
+            while j < n and lines[j].strip() != "```":
+                body.append(lines[j])
+                j += 1
+            block = "\n".join(body)
+            fp = _aider_path_above(lines, i)
+            if _AIDER_SR_MARK in block:
+                details: dict[str, Any] = {}
+                if fp:
+                    details["file_path"] = fp
+                after = _aider_replace_side(block)
+                if after.strip():
+                    details["after_content"] = after[:AIDER_MAX_CHARS]
+                last_edit = add_event("edit", details)
+                if fp:
+                    captured.add(fp)
+            elif lang == "diff":
+                details = {"diff": block[:AIDER_MAX_CHARS]}
+                if fp:
+                    details["file_path"] = fp
+                last_edit = add_event("edit", details)
+                if fp:
+                    captured.add(fp)
+            # any other fence (a suggested code sample) is prose, not an event
+            i = j + 1
+            continue
+        i += 1
+    flush_user()
+    return events, models, started_at
+
+
+def _aider_repo(path: Path) -> str | None:
+    """`owner/repo` from the raw `<owner__repo>/` directory, else from a `sample_N_<owner__repo>.md`
+    file name; None when neither encodes it."""
+    parent = path.parent.name
+    if "__" in parent:
+        return parent.replace("__", "/", 1)
+    m = re.match(r"sample_\d+_(.+)$", path.stem)
+    if m and "__" in m.group(1):
+        return m.group(1).replace("__", "/", 1)
+    return None
+
+
+def _aider_trace(path: Path) -> dict | None:
+    text = path.read_text(encoding="utf-8")  # a non-UTF-8 file raises and is skipped upstream
+    events, models, started_at = _aider_events(text)
+    if not events:
+        return None
+    repo = _aider_repo(path)
+    key = hashlib.sha1(f"{repo}/{path.name}".encode()).hexdigest()
+    prompts = [e for e in events if e["type"] == "prompt"]
+    trace = make_trace(f"aider-{key}", repo, None, events, prompts)
+    trace["agent"] = "Aider"
+    trace["labels"] = {"repo": repo,
+                       "model": max(models, key=models.get) if models else None,
+                       "started_at": started_at,
+                       "started_at_source": "header" if started_at else None}
+    return trace
+
+
+def iter_traces_aider(path: Path, limit: int | None = None) -> Iterator[dict]:
+    """`path` is one `.aider.chat.history.md` file or a directory of them (laid out as
+    <cache>/aider/raw/<owner__repo>/<file>.md, or a flat samples dir).
+
+    A file that cannot be read (e.g. not UTF-8) is skipped with a counted warning; a file with no
+    prompt or event yields nothing.
+    """
+    path = Path(path).expanduser()
+    if path.is_file():
+        files = [path]
+    elif path.is_dir():
+        files = sorted(p for p in path.rglob("*.md") if p.is_file())
+    else:
+        raise FileNotFoundError(f"no Aider chat history at {path}")
+    n = skipped = empty = 0
+    for p in files:
+        try:
+            trace = _aider_trace(p)
+        except Exception as e:  # noqa: BLE001 - one bad file must not stop the corpus
+            skipped += 1
+            warnings.warn(f"aider: skipped malformed file {p.name} ({type(e).__name__}: {e}); "
+                          f"{skipped} skipped so far", stacklevel=2)
+            continue
+        if trace is None:
+            empty += 1
+            continue
+        yield trace
+        n += 1
+        if limit is not None and n >= limit:
+            return
+    if skipped or empty:
+        print(f"aider: {n} traces; {skipped} malformed files skipped, "
+              f"{empty} with no prompt or event", file=sys.stderr)
+
+
 SOURCES = {
     "cursor": iter_traces_cursor,
     "swe_agent": iter_traces_swe_agent,
     "openhands": iter_traces_openhands,
     "swechat": iter_traces_swechat,
     "specstory": iter_traces_specstory,
+    "aider": iter_traces_aider,
 }
 
 

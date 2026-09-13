@@ -48,6 +48,7 @@ from harnesses import (  # noqa: E402
     classify_command,
     classify_openhands_tool_call,
     classify_str_replace_editor,
+    iter_traces_aider,
     iter_traces_cursor,
     iter_traces_openhands,
     iter_traces_specstory,
@@ -365,7 +366,7 @@ def test_parse_dispatch_and_main(openhands_jsonl: Path, tmp_path: Path):
     traces = list(parse("openhands", openhands_jsonl))
     assert len(traces) == 1
     with pytest.raises(ValueError):
-        list(parse("aider", openhands_jsonl))
+        list(parse("does_not_exist", openhands_jsonl))
     out = tmp_path / "out.jsonl"
     rc = harnesses.main(
         ["--source", "openhands", "--input", str(openhands_jsonl), "--output", str(out)]
@@ -1389,3 +1390,202 @@ def test_specstory_tool_name_fallback_and_full_harvest_providers():
     assert specstory_agent("codex cli") == "Codex CLI"
     assert specstory_agent("gemini cli") == "Gemini CLI"
     assert specstory_agent("antigravity cli") == "Antigravity CLI"
+
+
+# --- aider --------------------------------------------------------------------------------
+# DATA-DERIVED: the fixtures reproduce the layouts of six real .aider.chat.history.md files read
+# on 2026-09-13 (105 B to 33 KB) -- a SEARCH/REPLACE edit with an applied/commit confirmation and
+# a run, a ```diff edit, and a plain multi-turn chat with `<blank>` turns and token lines.
+# test_aider_real_samples parses the six directly when the local cache holds them.
+
+AIDER_SAMPLES = Path.home() / ".cache" / "trace-funnel-paper" / "aider" / "samples"
+
+AIDER_SR = """
+# aider chat started at 2026-05-01 14:22:33
+
+> /usr/bin/aider --model gpt-4o
+> Aider v0.75.1
+> Main model: gpt-4o with diff edit format
+> Weak model: gpt-4o-mini
+> Git repo: .git with 3 files
+
+#### /add app.py
+> Added app.py to the chat
+
+#### fix the off-by-one in app.py
+
+I'll fix that now.
+
+app.py
+```python
+<<<<<<< SEARCH
+for i in range(n-1):
+=======
+for i in range(n):
+>>>>>>> REPLACE
+```
+
+This fixes the loop bound.
+
+> Tokens: 1.2k sent, 40 received. Cost: $0.01 message, $0.01 session.
+> Applied edit to app.py
+> Committing app.py before applying edits.
+> Commit a1b2c3d fix: correct off-by-one in loop
+> python -m pytest tests/
+> Run shell command? (Y)es/(N)o [Yes]: y
+> Running python -m pytest tests/
+> Add command output to the chat? (Y)es/(N)o [Yes]: y
+
+#### thanks
+"""
+
+AIDER_DIFF = """
+# aider chat started at 2026-06-02 08:00:00
+
+> Model: claude-3-7-sonnet with diff-fenced edit format
+
+#### tweak the config timeout
+
+config.yaml
+```diff
+@@ -1,2 +1,2 @@
+-timeout: 5
++timeout: 30
+```
+
+> Applied edit to config.yaml
+"""
+
+AIDER_PLAIN = """
+# aider chat started at 2026-03-03 03:03:03
+
+> Aider v0.86.0
+> Model: ollama/qwen2.5-coder:7b with whole edit format
+
+#### hello
+
+Hello! How can I help you today?
+
+> Tokens: 500 sent, 10 received.
+
+#### <blank>
+
+#### what does this repo do
+
+It appears to be a small utility library.
+
+> Tokens: 600 sent, 20 received.
+"""
+
+
+def _aider_fixture(tmp_path: Path) -> Path:
+    raw = tmp_path / "raw"
+    d = raw / "acme__widgets"
+    d.mkdir(parents=True)
+    (d / "2026-05-01_14-22-33-off-by-one.md").write_text(AIDER_SR)
+    (d / "2026-06-02_08-00-00-config.md").write_text(AIDER_DIFF)
+    (d / "2026-03-03_03-03-03-chat.md").write_text(AIDER_PLAIN)
+    return raw
+
+
+def _aider_base_schema(trace: dict) -> None:
+    base = {k: v for k, v in trace.items() if k not in ("agent", "labels")}
+    base["events"] = [{"type": e["type"], "details": e["details"]} for e in trace["events"]]
+    assert_trace_schema(base)
+    assert all(set(e) == {"type", "details", "timestamp"} for e in trace["events"])
+    assert set(trace) == {"instance_id", "repo", "base_commit", "events", "prompts", "agent", "labels"}
+    assert set(trace["labels"]) == {"repo", "model", "started_at", "started_at_source"}
+    assert all(p["type"] == "prompt" for p in trace["prompts"])
+
+
+def test_aider_search_replace_edit_run_and_labels(tmp_path):
+    raw = _aider_fixture(tmp_path)
+    trace = next(t for t in iter_traces_aider(raw) if t["labels"]["started_at"].startswith("2026-05-01"))
+    _aider_base_schema(trace)
+    assert trace["agent"] == "Aider"
+    assert trace["repo"] == "acme/widgets" and trace["base_commit"] is None
+    assert trace["labels"] == {"repo": "acme/widgets", "model": "gpt-4o",
+                               "started_at": "2026-05-01T14:22:33", "started_at_source": "header"}
+    assert trace["instance_id"] == "aider-" + hashlib.sha1(
+        b"acme/widgets/2026-05-01_14-22-33-off-by-one.md").hexdigest()
+    types = [e["type"] for e in trace["events"]]
+    assert types == ["prompt", "read", "prompt", "edit", "test", "prompt"], \
+        "prose and token/cost lines are not events; a declined command is not a run"
+    ev = trace["events"]
+    assert ev[0]["details"]["text"] == "/add app.py" and ev[0]["timestamp"] is None
+    assert ev[1]["details"] == {"file_path": "app.py"}
+    edit = ev[3]["details"]
+    assert edit["file_path"] == "app.py" and edit["after_content"] == "for i in range(n):"
+    assert edit["commit"] == "a1b2c3d" and edit["commit_message"] == "fix: correct off-by-one in loop"
+    assert ev[4]["details"]["command"] == "python -m pytest tests/"  # classify_command -> test
+    assert [p["details"]["text"] for p in trace["prompts"]] == \
+        ["/add app.py", "fix the off-by-one in app.py", "thanks"]
+    assert not any("Tokens" in str(e["details"].get("text", "")) for e in trace["events"])
+
+
+def test_aider_diff_edit(tmp_path):
+    raw = _aider_fixture(tmp_path)
+    trace = next(t for t in iter_traces_aider(raw) if t["labels"]["started_at"].startswith("2026-06-02"))
+    _aider_base_schema(trace)
+    assert trace["labels"]["model"] == "claude-3-7-sonnet"
+    assert [e["type"] for e in trace["events"]] == ["prompt", "edit"], \
+        "the applied-edit confirmation enriches the diff edit, it does not add a second event"
+    edit = trace["events"][1]["details"]
+    assert edit["file_path"] == "config.yaml" and "+timeout: 30" in edit["diff"]
+
+
+def test_aider_plain_multi_turn_no_edits(tmp_path):
+    raw = _aider_fixture(tmp_path)
+    trace = next(t for t in iter_traces_aider(raw) if t["labels"]["started_at"].startswith("2026-03-03"))
+    _aider_base_schema(trace)
+    assert [e["type"] for e in trace["events"]] == ["prompt", "prompt"], \
+        "`<blank>`, assistant prose and token lines yield no events"
+    assert [p["details"]["text"] for p in trace["prompts"]] == ["hello", "what does this repo do"]
+    assert trace["labels"]["model"] == "ollama/qwen2.5-coder:7b"
+
+
+def test_aider_repo_from_sample_filename_and_dispatch(tmp_path):
+    p = tmp_path / "sample_7_owner__my-repo.md"
+    p.write_text(AIDER_PLAIN)
+    (t,) = iter_traces_aider(p)
+    assert t["repo"] == "owner/my-repo" and t["labels"]["repo"] == "owner/my-repo"
+    assert t["instance_id"] == "aider-" + hashlib.sha1(
+        b"owner/my-repo/sample_7_owner__my-repo.md").hexdigest()
+    # a lone file outside either layout has no repo
+    q = tmp_path / "plain-history.md"
+    q.write_text(AIDER_PLAIN)
+    (t2,) = iter_traces_aider(q)
+    assert t2["repo"] is None
+    # parse dispatch and limit
+    raw = _aider_fixture(tmp_path)
+    assert len(list(parse("aider", raw))) == 3
+    assert len(list(iter_traces_aider(raw, limit=2))) == 2
+    with pytest.raises(FileNotFoundError):
+        list(iter_traces_aider(tmp_path / "nope"))
+
+
+def test_aider_malformed_file_skipped_with_warning(tmp_path):
+    raw = _aider_fixture(tmp_path)
+    (raw / "acme__widgets" / "broken.md").write_bytes(b"\xff\xfe\x00 not utf-8")
+    with pytest.warns(UserWarning, match="aider: skipped malformed file"):
+        traces = list(iter_traces_aider(raw))
+    assert len(traces) == 3 and all(t["agent"] == "Aider" for t in traces)
+
+
+@pytest.mark.skipif(not AIDER_SAMPLES.is_dir() or not any(AIDER_SAMPLES.glob("*.md")),
+                    reason=f"Aider samples absent at {AIDER_SAMPLES}")
+def test_aider_real_samples():
+    """The six real histories: every record carries events, ids are unique, repo is recovered from
+    every file name, and at least one of the two larger samples carries an edit event."""
+    per_file = {p.name: list(iter_traces_aider(p)) for p in sorted(AIDER_SAMPLES.glob("*.md"))}
+    records = [t for ts in per_file.values() for t in ts]
+    assert records and all(t["events"] for t in records)
+    assert len({t["instance_id"] for t in records}) == len(records)
+    for t in records:
+        assert t["agent"] == "Aider" and t["repo"] and "/" in t["repo"]
+        _aider_base_schema(t)
+        assert all(e["type"] in EVENT_TYPES for e in t["events"])
+    larger = [t for name, ts in per_file.items()
+              if name in ("sample_4_insightbuilder__codeai_fusion.md", "sample_5_tooshel__poppoll.md")
+              for t in ts]
+    assert larger and any(any(e["type"] == "edit" for e in t["events"]) for t in larger)
