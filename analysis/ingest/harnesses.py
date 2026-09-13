@@ -683,6 +683,21 @@ def iter_traces_swechat(path: Path, limit: int | None = None) -> Iterator[dict]:
 SPECSTORY_MAX_CHARS = 2000
 SPECSTORY_TYPE_VERB = {"read": "read", "write": "edit", "edit": "edit", "search": "search",
                        "shell": "run", "command": "run"}
+# Exports also type tool calls as "generic", "unknown", "task", "mcp" or "bash" (31k of 183k tool
+# calls on the full harvest); for those the tool name decides. Names are the harnesses' own
+# (Cursor, Claude Code, Codex CLI, VS Code Copilot); planning and diagnostics tools stay "other".
+SPECSTORY_TOOL_NAME_VERB = {
+    **{n.lower(): "search" for n in ("ripgrep_raw_search", "grep", "grep_search", "glob_file_search", "list_dir",
+                                      "codebase_search", "file_search", "copilot_findFiles", "copilot_searchCodebase",
+                                      "semantic_search", "Glob", "Grep", "list_directory", "find_files",
+                                      "web_search", "web_fetch", "fetch_webpage", "WebSearch", "WebFetch")},
+    **{n.lower(): "run" for n in ("exec", "exec_command", "run_in_terminal", "Bash", "run_terminal_cmd",
+                                   "run_terminal_command_v2", "write_stdin", "shell", "execute_command", "terminal")},
+    **{n.lower(): "edit" for n in ("copilot_replaceString", "replace_string_in_file", "Edit", "MultiEdit", "Write",
+                                    "apply_patch", "copilot_createFile", "create_file", "delete_file", "edit_file",
+                                    "edit_file_v2", "search_replace", "write_file", "NotebookEdit", "insert_edit_into_file")},
+    **{n.lower(): "read" for n in ("Read", "read_file", "read_file_v2", "copilot_readFile", "view_file", "cat")},
+}
 # Provider ids seen in the session comment (`<!-- <provider> Session <uuid> (<ts>) -->`), folded to
 # the harness display names the other adapters use. Counted over 2,275 harvested files on
 # 2026-09-11: cursor 52, vscode 20, cursor ide 15, copilotide 7; the rest are the ids the SpecStory
@@ -692,8 +707,14 @@ SPECSTORY_AGENT_BY_PROVIDER = {
     "cursor cli": "Cursor CLI", "cursor-agent": "Cursor CLI",
     "vscode": "Copilot", "copilot": "Copilot", "github copilot": "Copilot", "copilotide": "Copilot",
     "copilotide-insiders": "Copilot", "copilotide-vscodium": "Copilot",
-    "claude code": "Claude Code", "codex": "Codex CLI", "gemini": "Gemini CLI", "droid": "Droid",
+    "vs code copilot ide": "Copilot", "copilot ide": "Copilot",
+    "claude code": "Claude Code", "codex": "Codex CLI", "codex cli": "Codex CLI",
+    "gemini": "Gemini CLI", "gemini cli": "Gemini CLI", "droid": "Droid", "droid cli": "Droid",
+    "antigravity cli": "Antigravity CLI",
 }
+# Counted again over the full harvest (13,560 files, 2026-09-12): cursor 2,088, claude code 1,068,
+# vscode 818, cursoride 617, vs code copilot ide 593, cursor ide 466, codex cli 261, copilotide 247,
+# gemini cli 18, cursor cli 14, antigravity cli 2.
 
 
 def specstory_agent(provider: str | None) -> str:
@@ -736,8 +757,10 @@ def _ss_iso(stamp: str | None, pattern: re.Pattern = _SS_TS_PARTS) -> str | None
     return f"{y}-{mo}-{d}T{h}:{mi}:{sec or '00'}{z}"
 
 
-def specstory_event_type(tool_type: str | None, command: str | None) -> str:
+def specstory_event_type(tool_type: str | None, command: str | None, tool: str | None = None) -> str:
     verb = SPECSTORY_TYPE_VERB.get((tool_type or "").strip().lower(), "other")
+    if verb == "other" and tool:
+        verb = SPECSTORY_TOOL_NAME_VERB.get(tool.strip().lower(), "other")
     if verb == "run":
         return classify_command(command) if command else "run"
     return verb
@@ -803,7 +826,7 @@ def _specstory_tool_event(block: str) -> dict:
     for summary in _SS_SUMMARY.findall(body):
         _ss_summary_fields(" ".join(summary.split()), details)
     _ss_body_fields(_SS_SUMMARY.sub("", body), tool_type, details)
-    return _event(specstory_event_type(tool_type, details.get("command")), details)
+    return _event(specstory_event_type(tool_type, details.get("command"), details.get("tool")), details)
 
 
 def _specstory_old_tool_event(name: str, body: str) -> dict:
