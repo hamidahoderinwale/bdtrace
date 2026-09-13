@@ -53,7 +53,7 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
                              record by record -> <in>.<operator>.jsonl; chain calls to
                              compose; a salt comes from --param salt= or BDTRACE_SALT
   config                     model/provider config: which key is set, org-key reachability
-  trace import --source claude|cursor|swe_agent|openhands|swechat|specstory [--input P] [--out F] [--limit N]
+  trace import --source claude|cursor|swe_agent|openhands|swechat|specstory|aider [--input P] [--out F] [--limit N]
                              pull traces out of a local agent store (Claude Code
                              session dir, Cursor SQLite DB, .traj dir, a SWE-chat
                              parquet snapshot, SpecStory history .md files) -> JSONL
@@ -192,7 +192,7 @@ def _trace(rest: list[str]) -> None:
     if verb == "import":
         p = argparse.ArgumentParser(prog="bdtrace trace import",
                                     description="Pull traces out of a local agent store, standardized to JSONL")
-        p.add_argument("--source", choices=["claude", "cursor", "swe_agent", "openhands", "swechat", "specstory"], default="claude")
+        p.add_argument("--source", choices=["claude", "cursor", "swe_agent", "openhands", "swechat", "specstory", "aider"], default="claude")
         p.add_argument("--input", type=Path, default=None, help="store path (default: the source's standard location)")
         p.add_argument("--out", type=Path, default=Path("traces.jsonl"))
         p.add_argument("--limit", type=int, default=None)
