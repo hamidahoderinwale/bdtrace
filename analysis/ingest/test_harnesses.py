@@ -1373,3 +1373,19 @@ def test_specstory_started_at_and_event_timestamps(tmp_path):
     (v1,) = iter_traces_specstory(tmp_path / "v1")
     assert len(v1["events"]) == 11 and all(e["timestamp"] is None for e in v1["events"])
     assert v1["labels"]["started_at"] == "2025-03-11T20:11:00" and v1["labels"]["started_at_source"] == "filename"
+
+
+def test_specstory_tool_name_fallback_and_full_harvest_providers():
+    from analysis.ingest.harnesses import specstory_agent, specstory_event_type
+    # data-tool-type the export could not classify: the harness's own tool name decides
+    assert specstory_event_type("generic", None, "ripgrep_raw_search") == "search"
+    assert specstory_event_type("unknown", "pytest -q", "Bash") == "test"
+    assert specstory_event_type("task", None, "apply_patch") == "edit"
+    assert specstory_event_type("mcp", None, "copilot_readFile") == "read"
+    assert specstory_event_type("generic", None, "todo_write") == "other"
+    assert specstory_event_type("read", None, "todo_write") == "read"  # a typed call keeps its type
+    # provider ids first seen on the full harvest
+    assert specstory_agent("vs code copilot ide") == "Copilot"
+    assert specstory_agent("codex cli") == "Codex CLI"
+    assert specstory_agent("gemini cli") == "Gemini CLI"
+    assert specstory_agent("antigravity cli") == "Antigravity CLI"
