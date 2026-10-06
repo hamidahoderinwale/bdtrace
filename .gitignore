@@ -61,3 +61,17 @@ Thumbs.db
 # Claude Code worktrees/settings
 .claude/
 dist/
+
+# Captured traces and research artifacts stay local.
+*.traj
+*.jsonl
+*.parquet
+docs/
+figures/
+notebooks/
+data/distillation_child/
+distillation_run/
+hf_space/
+companion/
+findings.md
+NOTES.md

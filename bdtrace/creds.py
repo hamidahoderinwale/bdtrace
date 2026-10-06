@@ -4,9 +4,8 @@ Order is always: your own environment, then `.env`, then the org's shared secret
 in 1Password, then whatever the provider's own CLI already cached. The 1Password
 step is what lets an org member run model-backed and hub-backed commands
 with no key of their own: vault membership is the gate and their own `op` login
-is the auth, so access is granted and revoked centrally. The op:// reference is
-not a secret and is committed; the value never is, and only the source name is
-ever printed.
+is the auth, so access is granted and revoked centrally. The op:// reference is supplied through BDTRACE_OP_OPENROUTER; no organization
+or vault reference is bundled. Credential values are never printed.
 """
 
 import os
