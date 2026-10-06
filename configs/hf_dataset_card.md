@@ -12,7 +12,7 @@ tags:
 
 # Procedural-Info-Theory
 
-Baseline: computed representation certificates from SWE-bench Lite. Produced by [bidirect-align-dev-traces](https://github.com/sample-user/bidirect-align-dev-traces).
+Baseline: computed representation certificates from SWE-bench Lite. Produced by bdtrace.
 
 ## Scope
 

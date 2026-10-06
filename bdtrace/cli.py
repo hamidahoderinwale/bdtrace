@@ -448,7 +448,7 @@ def main() -> None:
         if not extra:
             raise
         sys.exit(f"bdtrace: `{cmd}` needs the `{extra}` extra: uv sync --extra {extra}, or\n"
-                 f"  uv tool install 'bdtrace[{extra}] @ git+https://github.com/sample-user/bdtrace'")
+                 f"  uv tool install 'bdtrace[{extra}]'")
 
 
 def _dispatch_command(cmd: str, rest: list[str]) -> None:

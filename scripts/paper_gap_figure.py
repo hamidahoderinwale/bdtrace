@@ -189,7 +189,7 @@ ax6.text(0.85, 0.96, "Codebase", fontsize=9, va="center", ha="center", color=TEA
 # Divider
 ax6.plot([0.0, 1.0], [0.92, 0.92], color="#dddddd", lw=0.5)
 
-out = "/workspace/sample-project/figures/paper_gap_summary.png"
+out = str(__import__("pathlib").Path(__file__).resolve().parents[1] / "figures" / "paper_gap_summary.png")
 fig.savefig(out, dpi=200, facecolor="white")
 print(f"Saved to {out}")
 plt.close()

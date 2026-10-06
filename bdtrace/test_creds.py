@@ -15,6 +15,7 @@ def _no_ambient_keys(monkeypatch):
     for var in ("HF_TOKEN", "HUGGINGFACE_TOKEN", "OPENROUTER_API_KEY", "OPENAI_API_KEY"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(creds, "op_read", lambda ref: None)
+    monkeypatch.setitem(creds.OP_REFS, "openrouter", "op://example-vault/example-item/credential")
     # .env on a contributor's machine must not decide the outcome of a test
     monkeypatch.setattr("dotenv.load_dotenv", lambda *a, **k: False)
 
@@ -67,3 +68,12 @@ def test_config_report_runs_and_names_every_rung(monkeypatch):
     text = config_report()
     for expected in ("OPENROUTER_API_KEY", "org model key", "hugging face", "BDTRACE_MODEL"):
         assert expected in text, f"{expected!r} missing from config output"
+
+
+def test_unconfigured_vault_is_not_read(monkeypatch):
+    monkeypatch.setitem(creds.OP_REFS, "openrouter", "")
+    def unexpected_read(ref):
+        raise AssertionError("unconfigured vault must not be consulted")
+    monkeypatch.setattr(creds, "op_read", unexpected_read)
+    assert creds.resolve(("OPENROUTER_API_KEY",), op_key="openrouter") is None
+    assert "not configured" in creds.describe("openrouter")

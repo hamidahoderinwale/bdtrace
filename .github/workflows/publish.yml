@@ -2,7 +2,7 @@ name: publish
 
 # Publishes to PyPI on a version tag, via trusted publishing (OIDC): no API token
 # is stored anywhere. One-time setup on PyPI: add a pending publisher for project
-# bdtrace, owner sample-user, repo bdtrace, workflow publish.yml.
+# bdtrace, the repository owner, repo bdtrace, workflow publish.yml.
 
 on:
   push:

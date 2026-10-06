@@ -21,7 +21,7 @@ import subprocess
 # login instead (see export.ensure_hf_login).
 OP_REFS = {
     "openrouter": os.environ.get("BDTRACE_OP_OPENROUTER",
-                                 "op://example-vault/example-item/credential"),
+                                 ""),
 }
 
 
@@ -44,7 +44,7 @@ def resolve(env_vars: tuple[str, ...], op_key: str | None = None) -> tuple[str, 
     for var in env_vars:
         if os.environ.get(var):
             return os.environ[var], var
-    if op_key:
+    if op_key and OP_REFS.get(op_key):
         value = op_read(OP_REFS[op_key])
         if value:
             return value, f"1Password ({op_key}, org shared)"
@@ -53,5 +53,7 @@ def resolve(env_vars: tuple[str, ...], op_key: str | None = None) -> tuple[str, 
 
 def describe(op_key: str) -> str:
     """Whether the org secret is reachable right now, for `bdtrace config`."""
+    if not OP_REFS.get(op_key):
+        return "not configured (set BDTRACE_OP_OPENROUTER)"
     return "reachable (op signed in)" if op_read(OP_REFS[op_key]) else \
         "not reachable (no op CLI / not signed in / not in org)"

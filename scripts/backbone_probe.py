@@ -34,7 +34,7 @@ from scipy.sparse import csr_matrix
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-ROOT = pathlib.Path("/workspace/sample-project")
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 DATA  = ROOT / "output" / "paper2_pilot" / "bpe_sequences.jsonl"
 OUT_DIR = ROOT / "output" / "paper2_pilot"
 OUT_PNG  = OUT_DIR / "backbone_probe.png"

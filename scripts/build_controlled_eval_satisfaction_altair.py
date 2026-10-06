@@ -23,7 +23,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BASE_DIR = "/workspace/sample-project"
+BASE_DIR = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 DATA_PATH = os.path.join(BASE_DIR, "output/paper2_pilot/controlled_eval_results.json")
 OUT_PATH  = os.path.join(BASE_DIR, "output/figures/controlled_eval_satisfaction_altair.png")
 

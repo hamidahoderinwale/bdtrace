@@ -4,16 +4,12 @@ version = "0.1.0"
 description = "Export, share, and transform developer agent traces from local stores"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "sample-user" }]
 # The core install is deliberately tiny so `uvx --from git+...` gives someone the
 # import/anonymize/export/share path in seconds. Everything heavy is an extra;
 # the CLI names the extra to install when a command needs one.
 dependencies = [
     "python-dotenv>=1.0",
 ]
-
-[project.urls]
-Repository = "https://github.com/sample-user/bidirect-align-dev-traces"
 
 [project.optional-dependencies]
 semantic = [

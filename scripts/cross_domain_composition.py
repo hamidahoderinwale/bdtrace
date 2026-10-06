@@ -20,7 +20,7 @@ from scipy import stats
 
 # Config
 
-ENV_PATH = Path("/workspace/sample-project/.env")
+ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 MODELS = [
@@ -33,7 +33,7 @@ CHAIN_LENGTHS = [2, 4, 6, 8, 10]
 TASKS_PER_CELL = 5
 SEED = 42
 
-OUT_DIR = Path("/workspace/sample-project/output/cross_domain_composition")
+OUT_DIR = Path(__file__).resolve().parents[1] / "output" / "cross_domain_composition"
 
 
 def load_api_key() -> str:

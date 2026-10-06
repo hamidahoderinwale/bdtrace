@@ -104,13 +104,9 @@ def test_taxonomy_map_is_self_consistent():
     assert unresolved == {"run"}, f"only `run` is command-dependent; found {sorted(unresolved)}"
 
 
-# Where a procgrep checkout's own venv tends to live. The analysis scripts in
-# scripts/agent_trajectories_paper/ point at the same layout on the other
-# machine, hence both home directories.
+# Discover optional procgrep installs without any personal checkout paths.
 _CANDIDATE_BINS = (
-    Path.home() / "learning-from-dev" / "procgrep" / ".venv" / "bin" / "procgrep",
-    Path("/workspace/sample-project/.venv/bin/procgrep"),
-    Path("/workspace/sample-project/.venv/bin/procgrep"),
+    Path(__file__).resolve().parents[2] / "procgrep" / ".venv" / "bin" / "procgrep",
 )
 
 
