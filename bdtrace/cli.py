@@ -57,6 +57,7 @@ usage: bdtrace <object> <action> [args...]   (args go to the script's own argpar
   trace push --in traces.jsonl --repo-id user/name [--public] [--dry-run]
                              push straight to the Hugging Face hub (parquet-backed)
   trace show --in F [--id X] [-n N] [--turns]
+  trace compile --in F [--out G] [--no-asks] [--no-files] [-n N]
                              read a session as prompt-anchored turns: the prompt, then the
                              actions it caused, consecutive same-type actions collapsed
   trace audit --in F [--redact TERM] [--strict]
@@ -359,6 +360,20 @@ def _trace(rest: list[str]) -> None:
             print(show_mod._cli_json(show_mod.turns_summary(a.in_path)))
         else:
             show_mod.show(a.in_path, a.instance_id, a.n, a.width)
+    elif verb == "compile":
+        p = argparse.ArgumentParser(prog="bdtrace trace compile",
+                                    description="Compile each trace into a typed entry and action "
+                                                "skeleton: only what the record proves, none of the prose")
+        p.add_argument("--in", dest="in_path", type=Path, required=True)
+        p.add_argument("--out", dest="out_path", type=Path, default=None, help="compiled entries, JSONL")
+        p.add_argument("--no-asks", action="store_true", help="drop the task facet (procedure tier)")
+        p.add_argument("--no-files", action="store_true", help="drop file basenames")
+        p.add_argument("-n", type=int, default=1, help="entries to render on screen (default 1)")
+        a = p.parse_args(rest)
+        from bdtrace.compile import compile_file
+        info = compile_file(a.in_path, a.out_path, not a.no_asks, not a.no_files, a.n)
+        print(f"{info['records']} entries, skeleton {info['skeleton_chars']:,} chars"
+              + (f" -> {info['out']}" if info['out'] else ""), file=sys.stderr)
     elif verb == "audit":
         p = argparse.ArgumentParser(prog="bdtrace trace audit",
                                     description="What identity is still in a file you are about to share")
